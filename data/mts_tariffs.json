@@ -1,0 +1,157 @@
+[
+  {
+    "name": "Smart mini",
+    "activation_code": "*100*1#",
+    "regional_versions": [
+      {
+        "country_name": "Russia",
+        "region_name": "Moskva",
+        "transition_cost": 400.00,
+        "subscription_cost": 200.00,
+        "basic_services": [
+          {
+            "type": "outgoing_call",
+            "unit": "minute",
+            "countries": [
+              {
+                "name": "HOME_COUNTRY",
+                "operators": [
+                  {
+                    "name": "MTS",
+                    "regions": [
+                      {
+                        "name": "HOME_REGION",
+                        "cost": 0.00
+                      },
+                      {
+                        "name": "|REST_REGIONS|",
+                        "cost": 1.50
+                      }
+                    ]
+                  },
+                  {
+                    "name": "|REST_OPERATORS|",
+                    "regions": [
+                      {
+                        "name": "HOME_REGION",
+                        "cost": 1.50
+                      },
+                      {
+                        "name": "|REST_REGIONS|",
+                        "cost": 10.00
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "CIS_COUNTRIES",
+                "cost": 29.00
+              },
+              {
+                "name": "EUROPE_COUNTRIES",
+                "cost": 49.00
+              },
+              {
+                "name": "|REST_COUNTRIES|",
+                "cost": 70.00
+              }
+            ]
+          },
+          {
+            "type": "internet",
+            "unit": "megabyte",
+            "cost": 9.90
+          },
+          {
+            "type": "sms",
+            "unit": "message",
+            "countries": [
+              {
+                "name": "HOME_COUNTRY",
+                "operators": [
+                  {
+                    "name": "MTS",
+                    "regions": [
+                      {
+                        "name": "HOME_REGION",
+                        "cost": 0.50
+                      },
+                      {
+                        "name": "|REST_REGIONS|",
+                        "cost": 3.80
+                      }
+                    ]
+                  },
+                  {
+                    "name": "|REST_OPERATORS|",
+                    "regions": [
+                      {
+                        "name": "HOME_REGION",
+                        "cost": 0.50
+                      },
+                      {
+                        "name": "|REST_REGIONS|",
+                        "cost": 3.80
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "|REST_COUNTRIES|",
+                "cost": 5.25
+              }
+            ]
+          },
+          {
+            "type": "mms",
+            "unit": "message",
+            "cost": 6.50
+          }
+        ],
+        "services": [
+          {
+            "name": "Voice Packet",
+            "is_periodic": true,
+            "cost": 0.0,
+            "packet": {
+              "type": "voice",
+              "amount": 1000
+            },
+            "restrictions": [
+              {
+                "operator": "MTS",
+                "country": "Russia"
+              }
+            ]
+          },
+          {
+            "name": "SMS Packet",
+            "is_periodic": true,
+            "cost": 0.0,
+            "packet": {
+              "type": "sms",
+              "amount": 50
+            },
+            "restrictions": [
+              {
+                "region": "HOME_REGION"
+              }
+            ]
+          },
+          {
+            "name": "Internet Packet",
+            "is_periodic": true,
+            "cost": 0.0,
+            "packet": {
+              "type": "internet",
+              "amount": 500
+            },
+            "restrictions": []
+          }
+        ]
+      }
+    ]
+  }
+]

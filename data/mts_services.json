@@ -1,0 +1,70 @@
+[
+  {
+    "name": "Turbo Button 500 MB",
+    "is_periodic": false,
+    "activation_code": "",
+    "duration": {
+      "days": 30
+    },
+    "regional_versions": [
+      {
+        "region_name": "Moskva",
+        "cost": 95.00,
+        "packet": {
+          "type": "internet",
+          "amount": 500
+        },
+        "restrictions": []
+      }
+    ]
+  },
+  {
+    "name": "Turbo Button 2 GB",
+    "activation_code": "",
+    "is_periodic": false,
+    "duration": {
+      "days": 30
+    },
+    "regional_versions": [
+      {
+        "region_name": "Moskva",
+        "cost": 250.00,
+        "packet": {
+          "type": "internet",
+          "amount": 2048
+        },
+        "restrictions": []
+      }
+    ]
+  },
+  {
+    "name": "Turbo Button 5 GB",
+    "is_periodic": false,
+    "activation_code": "",
+    "duration": {
+      "days": 30
+    },
+    "regional_versions": [
+      {
+        "region_name": "Moskva",
+        "cost": 450.00,
+        "packet": {
+          "type": "internet",
+          "amount": 5120
+        },
+        "restrictions": []
+      }
+    ]
+  },
+  {
+    "name": "Balance Request",
+    "is_periodic": false,
+    "activation_code": "*100#",
+    "cost": 0.0
+  },
+  {
+    "name": "Billing Request",
+    "is_periodic": false,
+    "cost": 0.0
+  }
+]

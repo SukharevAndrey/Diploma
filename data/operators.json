@@ -1,0 +1,82 @@
+[
+  {
+    "name": "MTS",
+    "type": "mobile",
+    "countries": [
+      "Russia"
+    ],
+    "has_regions": true
+  },
+  {
+    "name": "Beeline",
+    "type": "mobile",
+    "countries": [
+      "Russia"
+    ],
+    "has_regions": true
+  },
+  {
+    "name": "MegaFon",
+    "type": "mobile",
+    "countries": [
+      "Russia"
+    ],
+    "has_regions": true
+  },
+  {
+    "name": "Yota",
+    "type": "mobile",
+    "countries": [
+      "Russia"
+    ],
+    "has_regions": false
+  },
+  {
+    "name": "Tele2",
+    "type": "mobile",
+    "countries": [
+      "Russia"
+    ],
+    "has_regions": true
+  },
+  {
+    "name": "ACME Russian Operator",
+    "type": "mobile",
+    "countries": [
+      "Russia"
+    ],
+    "has_regions": true
+  },
+  {
+    "name": "ACME CIS Operator",
+    "type": "mobile",
+    "countries": [
+      "Ukraine"
+    ],
+    "has_regions": false
+  },
+  {
+    "name": "ACME Europe Operator",
+    "type": "mobile",
+    "countries": [
+      "Germany"
+    ],
+    "has_regions": false
+  },
+  {
+    "name": "ACME Japan Operator",
+    "type": "mobile",
+    "countries": [
+      "Japan"
+    ],
+    "has_regions": false
+  },
+  {
+    "name": "MGTS",
+    "type": "fixed",
+    "countries": [
+      "Russia"
+    ],
+    "has_regions": true
+  }
+]
