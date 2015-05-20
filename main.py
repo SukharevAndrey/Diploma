@@ -228,119 +228,14 @@ class MobileOperatorSimulator:
     def preprocessed_tariffs_info(self):
         tariffs_info = file_to_json(TARIFFS_FILE_PATH)
         tariffs_info = self.preprocessed_tariffs_countries(tariffs_info)
-        tariffs_info = self.pre
         return tariffs_info
 
-    def get_country_info(self, name, info):
-        country_info = {'name': name}
-        if 'cost' in info:
-            country_info['cost'] = info['cost']
-        if 'operators' in info:
-            country_info['operators'] = info['operators']
-        return country_info
-
     def foo(self):
-        home_country_name = 'Russia'
-        home_region_name = 'Moskva'
-        cis_country_names = set(file_to_json('data/cis_countries.json'))
-        europe_country_names = set(file_to_json('data/europe_countries.json'))
-        country_infos = [{'id': 0,
-                          'name': 'HOME_COUNTRY',
-                          'operators': 0},
-                         {'id': 1,
-                          'name': 'CIS_COUNTRIES',
-                          'cost': 29.0},
-                         {'id': 2,
-                          'name': 'EUROPE_COUNTRIES',
-                          'cost': 49.0},
-                         {'id': 3,
-                          'name': '|REST_COUNTRIES|',
-                          'cost': 70.0}]
+        from preprocessor import TariffPreprocessor
 
-        operator_infos = [{'country': 0,
-                           'operators': [
-                               {'id': 0,
-                                'name': 'MTS',
-                                'regions': 0},
-                               {'id': 1,
-                                'name': '|REST_OPERATORS|',
-                                'regions': 1}]}]
-
-        region_infos = [[{'name': 'HOME_REGION',
-                          'cost': 0.0},
-                         {'name': '|REST_REGIONS|',
-                          'cost': 1.5}],
-                        [{'name': 'HOME_REGION',
-                          'cost': 1.5},
-                         {'name': '|REST_REGIONS|',
-                          'cost': 10.0}]]
-
-        country_id_match = defaultdict(list)
-        new_country_infos = []
-        used_countries = []
-        next_country_id = 0
-        for country in (sorted(country_infos,
-                               key=lambda country: country['name'])):
-            country_name = country['name']
-            country_id = country['id']
-            if country_name == 'HOME_COUNTRY':
-                used_countries.append(home_country_name)
-                country_id_match[country_id].append(next_country_id)
-                next_country_id += 1
-
-                country_info = self.get_country_info(home_country_name, country)
-                new_country_infos.append(country_info)
-            elif country_name == 'CIS_COUNTRIES':
-                for cis_country_name in cis_country_names-{home_country_name}:
-                    used_countries.append(cis_country_name)
-                    country_id_match[country_id].append(next_country_id)
-                    next_country_id += 1
-
-                    country_info = self.get_country_info(cis_country_name, country)
-                    new_country_infos.append(country_info)
-            elif country_name == 'EUROPE_COUNTRIES':
-                for eu_country_name in europe_country_names-{home_country_name}:
-                    used_countries.append(eu_country_name)
-                    country_id_match[country_id].append(next_country_id)
-                    next_country_id += 1
-
-                    country_info = self.get_country_info(eu_country_name, country)
-                    new_country_infos.append(country_info)
-            elif country_name == '|REST_COUNTRIES|':
-                rest_countries = self.db1_session.query(Country).\
-                    filter(~Country.name.in_(used_countries)).all()
-                for country_entity in rest_countries:
-                    country_id_match[country_id].append(next_country_id)
-                    next_country_id += 1
-
-                    country_info = self.get_country_info(country_entity.name, country)
-                    new_country_infos.append(country_info)
-            else:
-                used_countries.append(country_name)
-                country_id_match[country_id].append(next_country_id)
-                next_country_id += 1
-
-                country_info = self.get_country_info(home_country_name, country)
-                new_country_infos.append(country_info)
-
-        country_infos = new_country_infos
-
-        operator_id_match = defaultdict(list)
-        used_operators = []
-        new_operator_infos = []
-        next_operator_id = 0
-        for operator in sorted(operator_infos, key=lambda operator: operator['name']):
-            operator_name = operator['name']
-            operator_id = operator['id']
-
-            if operator_name == '|REST_OPERATORS|':
-                pass
-            else:
-                used_operators.append(operator_name)
-                operator_id_match[operator_id].append(next_operator_id)
-                next_operator_id += 1
-
-
+        tariffs_info = file_to_json(TARIFFS_FILE_PATH)
+        preprocessor = TariffPreprocessor(tariffs_info, self.db1_session)
+        preprocessor.preprocessed()
 
     def generate_tariffs(self):
         tariffs_info = file_to_json(TARIFFS_FILE_PATH)
