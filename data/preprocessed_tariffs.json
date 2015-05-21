@@ -1,2272 +1,1054 @@
 [
   {
-    "regional_versions": [
+    "name": "Moldova",
+    "cost": 29.0
+  },
+  {
+    "name": "Tajikistan",
+    "cost": 29.0
+  },
+  {
+    "name": "Kazakhstan",
+    "cost": 29.0
+  },
+  {
+    "name": "Belarus",
+    "cost": 29.0
+  },
+  {
+    "name": "Uzbekistan",
+    "cost": 29.0
+  },
+  {
+    "name": "Armenia",
+    "cost": 29.0
+  },
+  {
+    "name": "Azerbaijan",
+    "cost": 29.0
+  },
+  {
+    "name": "Kyrgyzstan",
+    "cost": 29.0
+  },
+  {
+    "name": "Ukraine",
+    "cost": 29.0
+  },
+  {
+    "name": "Czech Republic",
+    "cost": 49.0
+  },
+  {
+    "name": "Italy",
+    "cost": 49.0
+  },
+  {
+    "name": "Slovakia",
+    "cost": 49.0
+  },
+  {
+    "name": "Netherlands",
+    "cost": 49.0
+  },
+  {
+    "name": "Spain",
+    "cost": 49.0
+  },
+  {
+    "name": "Estonia",
+    "cost": 49.0
+  },
+  {
+    "name": "Republic of Ireland",
+    "cost": 49.0
+  },
+  {
+    "name": "Portugal",
+    "cost": 49.0
+  },
+  {
+    "name": "Poland",
+    "cost": 49.0
+  },
+  {
+    "name": "Romania",
+    "cost": 49.0
+  },
+  {
+    "name": "Denmark",
+    "cost": 49.0
+  },
+  {
+    "name": "Greece",
+    "cost": 49.0
+  },
+  {
+    "name": "Luxembourg",
+    "cost": 49.0
+  },
+  {
+    "name": "Cyprus",
+    "cost": 49.0
+  },
+  {
+    "name": "Germany",
+    "cost": 49.0
+  },
+  {
+    "name": "Sweden",
+    "cost": 49.0
+  },
+  {
+    "name": "United Kingdom",
+    "cost": 49.0
+  },
+  {
+    "name": "Slovenia",
+    "cost": 49.0
+  },
+  {
+    "name": "Croatia",
+    "cost": 49.0
+  },
+  {
+    "name": "Bulgaria",
+    "cost": 49.0
+  },
+  {
+    "name": "Belgium",
+    "cost": 49.0
+  },
+  {
+    "name": "Austria",
+    "cost": 49.0
+  },
+  {
+    "name": "Latvia",
+    "cost": 49.0
+  },
+  {
+    "name": "Finland",
+    "cost": 49.0
+  },
+  {
+    "name": "Lithuania",
+    "cost": 49.0
+  },
+  {
+    "name": "Malta",
+    "cost": 49.0
+  },
+  {
+    "name": "France",
+    "cost": 49.0
+  },
+  {
+    "name": "Hungary",
+    "cost": 49.0
+  },
+  {
+    "name": "Russia",
+    "operators": [
       {
-        "subscription_cost": 200.0,
-        "basic_services": [
+        "name": "MTS",
+        "regions": [
           {
-            "countries": [
-              {
-                "name": "Russia",
-                "operators": [
-                  {
-                    "name": "MTS",
-                    "regions": [
-                      {
-                        "name": "HOME_REGION",
-                        "cost": 0.0
-                      },
-                      {
-                        "name": "|REST_REGIONS|",
-                        "cost": 1.5
-                      }
-                    ]
-                  },
-                  {
-                    "name": "|REST_OPERATORS|",
-                    "regions": [
-                      {
-                        "name": "HOME_REGION",
-                        "cost": 1.5
-                      },
-                      {
-                        "name": "|REST_REGIONS|",
-                        "cost": 10.0
-                      }
-                    ]
-                  }
-                ]
-              },
-              {
-                "name": "CIS_COUNTRIES",
-                "cost": 29.0
-              },
-              {
-                "name": "EUROPE_COUNTRIES",
-                "cost": 49.0
-              },
-              {
-                "name": "|REST_COUNTRIES|",
-                "cost": 70.0
-              },
-              {
-                "name": "Moldova",
-                "cost": 29.0
-              },
-              {
-                "name": "Belarus",
-                "cost": 29.0
-              },
-              {
-                "name": "Kazakhstan",
-                "cost": 29.0
-              },
-              {
-                "name": "Ukraine",
-                "cost": 29.0
-              },
-              {
-                "name": "Armenia",
-                "cost": 29.0
-              },
-              {
-                "name": "Tajikistan",
-                "cost": 29.0
-              },
-              {
-                "name": "Azerbaijan",
-                "cost": 29.0
-              },
-              {
-                "name": "Kyrgyzstan",
-                "cost": 29.0
-              },
-              {
-                "name": "Uzbekistan",
-                "cost": 29.0
-              },
-              {
-                "name": "Greece",
-                "cost": 49.0
-              },
-              {
-                "name": "Sweden",
-                "cost": 49.0
-              },
-              {
-                "name": "Slovakia",
-                "cost": 49.0
-              },
-              {
-                "name": "Spain",
-                "cost": 49.0
-              },
-              {
-                "name": "Bulgaria",
-                "cost": 49.0
-              },
-              {
-                "name": "Netherlands",
-                "cost": 49.0
-              },
-              {
-                "name": "Luxembourg",
-                "cost": 49.0
-              },
-              {
-                "name": "Romania",
-                "cost": 49.0
-              },
-              {
-                "name": "Czech Republic",
-                "cost": 49.0
-              },
-              {
-                "name": "Denmark",
-                "cost": 49.0
-              },
-              {
-                "name": "Estonia",
-                "cost": 49.0
-              },
-              {
-                "name": "Ireland",
-                "cost": 49.0
-              },
-              {
-                "name": "Finland",
-                "cost": 49.0
-              },
-              {
-                "name": "Germany",
-                "cost": 49.0
-              },
-              {
-                "name": "Hungary",
-                "cost": 49.0
-              },
-              {
-                "name": "Latvia",
-                "cost": 49.0
-              },
-              {
-                "name": "France",
-                "cost": 49.0
-              },
-              {
-                "name": "Belgium",
-                "cost": 49.0
-              },
-              {
-                "name": "Slovenia",
-                "cost": 49.0
-              },
-              {
-                "name": "Croatia",
-                "cost": 49.0
-              },
-              {
-                "name": "United Kingdom",
-                "cost": 49.0
-              },
-              {
-                "name": "Austria",
-                "cost": 49.0
-              },
-              {
-                "name": "Lithuania",
-                "cost": 49.0
-              },
-              {
-                "name": "Italy",
-                "cost": 49.0
-              },
-              {
-                "name": "Poland",
-                "cost": 49.0
-              },
-              {
-                "name": "Malta",
-                "cost": 49.0
-              },
-              {
-                "name": "Portugal",
-                "cost": 49.0
-              },
-              {
-                "name": "Cyprus",
-                "cost": 49.0
-              },
-              {
-                "name": "Afghanistan",
-                "cost": 70.0
-              },
-              {
-                "name": "Aaland Islands",
-                "cost": 70.0
-              },
-              {
-                "name": "Albania",
-                "cost": 70.0
-              },
-              {
-                "name": "Algeria",
-                "cost": 70.0
-              },
-              {
-                "name": "American Samoa",
-                "cost": 70.0
-              },
-              {
-                "name": "Andorra",
-                "cost": 70.0
-              },
-              {
-                "name": "Angola",
-                "cost": 70.0
-              },
-              {
-                "name": "Anguilla",
-                "cost": 70.0
-              },
-              {
-                "name": "Antigua and Barbuda",
-                "cost": 70.0
-              },
-              {
-                "name": "Argentina",
-                "cost": 70.0
-              },
-              {
-                "name": "Armenia",
-                "cost": 70.0
-              },
-              {
-                "name": "Aruba",
-                "cost": 70.0
-              },
-              {
-                "name": "Australia",
-                "cost": 70.0
-              },
-              {
-                "name": "Austria",
-                "cost": 70.0
-              },
-              {
-                "name": "Azerbaijan",
-                "cost": 70.0
-              },
-              {
-                "name": "The Bahamas",
-                "cost": 70.0
-              },
-              {
-                "name": "Bahrain",
-                "cost": 70.0
-              },
-              {
-                "name": "Bangladesh",
-                "cost": 70.0
-              },
-              {
-                "name": "Barbados",
-                "cost": 70.0
-              },
-              {
-                "name": "Belarus",
-                "cost": 70.0
-              },
-              {
-                "name": "Belgium",
-                "cost": 70.0
-              },
-              {
-                "name": "Belize",
-                "cost": 70.0
-              },
-              {
-                "name": "Benin",
-                "cost": 70.0
-              },
-              {
-                "name": "Bermuda",
-                "cost": 70.0
-              },
-              {
-                "name": "Bhutan",
-                "cost": 70.0
-              },
-              {
-                "name": "Bolivia",
-                "cost": 70.0
-              },
-              {
-                "name": "Bonaire",
-                "cost": 70.0
-              },
-              {
-                "name": "Bosnia and Herzegovina",
-                "cost": 70.0
-              },
-              {
-                "name": "Botswana",
-                "cost": 70.0
-              },
-              {
-                "name": "Bouvet Island",
-                "cost": 70.0
-              },
-              {
-                "name": "Brazil",
-                "cost": 70.0
-              },
-              {
-                "name": "British Indian Ocean Territory",
-                "cost": 70.0
-              },
-              {
-                "name": "United States Minor Outlying Islands",
-                "cost": 70.0
-              },
-              {
-                "name": "British Virgin Islands",
-                "cost": 70.0
-              },
-              {
-                "name": "Brunei",
-                "cost": 70.0
-              },
-              {
-                "name": "Bulgaria",
-                "cost": 70.0
-              },
-              {
-                "name": "Burkina Faso",
-                "cost": 70.0
-              },
-              {
-                "name": "Burundi",
-                "cost": 70.0
-              },
-              {
-                "name": "Cambodia",
-                "cost": 70.0
-              },
-              {
-                "name": "Cameroon",
-                "cost": 70.0
-              },
-              {
-                "name": "Canada",
-                "cost": 70.0
-              },
-              {
-                "name": "Cape Verde",
-                "cost": 70.0
-              },
-              {
-                "name": "Cayman Islands",
-                "cost": 70.0
-              },
-              {
-                "name": "Central African Republic",
-                "cost": 70.0
-              },
-              {
-                "name": "Chad",
-                "cost": 70.0
-              },
-              {
-                "name": "Chile",
-                "cost": 70.0
-              },
-              {
-                "name": "China",
-                "cost": 70.0
-              },
-              {
-                "name": "Christmas Island",
-                "cost": 70.0
-              },
-              {
-                "name": "Cocos (Keeling) Islands",
-                "cost": 70.0
-              },
-              {
-                "name": "Colombia",
-                "cost": 70.0
-              },
-              {
-                "name": "Comoros",
-                "cost": 70.0
-              },
-              {
-                "name": "Republic of the Congo",
-                "cost": 70.0
-              },
-              {
-                "name": "Democratic Republic of the Congo",
-                "cost": 70.0
-              },
-              {
-                "name": "Cook Islands",
-                "cost": 70.0
-              },
-              {
-                "name": "Costa Rica",
-                "cost": 70.0
-              },
-              {
-                "name": "Croatia",
-                "cost": 70.0
-              },
-              {
-                "name": "Cuba",
-                "cost": 70.0
-              },
-              {
-                "name": "Curacao",
-                "cost": 70.0
-              },
-              {
-                "name": "Cyprus",
-                "cost": 70.0
-              },
-              {
-                "name": "Czech Republic",
-                "cost": 70.0
-              },
-              {
-                "name": "Denmark",
-                "cost": 70.0
-              },
-              {
-                "name": "Djibouti",
-                "cost": 70.0
-              },
-              {
-                "name": "Dominica",
-                "cost": 70.0
-              },
-              {
-                "name": "Dominican Republic",
-                "cost": 70.0
-              },
-              {
-                "name": "Ecuador",
-                "cost": 70.0
-              },
-              {
-                "name": "Egypt",
-                "cost": 70.0
-              },
-              {
-                "name": "El Salvador",
-                "cost": 70.0
-              },
-              {
-                "name": "Equatorial Guinea",
-                "cost": 70.0
-              },
-              {
-                "name": "Eritrea",
-                "cost": 70.0
-              },
-              {
-                "name": "Estonia",
-                "cost": 70.0
-              },
-              {
-                "name": "Ethiopia",
-                "cost": 70.0
-              },
-              {
-                "name": "Falkland Islands",
-                "cost": 70.0
-              },
-              {
-                "name": "Faroe Islands",
-                "cost": 70.0
-              },
-              {
-                "name": "Fiji",
-                "cost": 70.0
-              },
-              {
-                "name": "Finland",
-                "cost": 70.0
-              },
-              {
-                "name": "France",
-                "cost": 70.0
-              },
-              {
-                "name": "French Guiana",
-                "cost": 70.0
-              },
-              {
-                "name": "French Polynesia",
-                "cost": 70.0
-              },
-              {
-                "name": "French Southern and Antarctic Lands",
-                "cost": 70.0
-              },
-              {
-                "name": "Gabon",
-                "cost": 70.0
-              },
-              {
-                "name": "The Gambia",
-                "cost": 70.0
-              },
-              {
-                "name": "Georgia",
-                "cost": 70.0
-              },
-              {
-                "name": "Germany",
-                "cost": 70.0
-              },
-              {
-                "name": "Ghana",
-                "cost": 70.0
-              },
-              {
-                "name": "Gibraltar",
-                "cost": 70.0
-              },
-              {
-                "name": "Greece",
-                "cost": 70.0
-              },
-              {
-                "name": "Greenland",
-                "cost": 70.0
-              },
-              {
-                "name": "Grenada",
-                "cost": 70.0
-              },
-              {
-                "name": "Guadeloupe",
-                "cost": 70.0
-              },
-              {
-                "name": "Guam",
-                "cost": 70.0
-              },
-              {
-                "name": "Guatemala",
-                "cost": 70.0
-              },
-              {
-                "name": "Guernsey",
-                "cost": 70.0
-              },
-              {
-                "name": "Guinea",
-                "cost": 70.0
-              },
-              {
-                "name": "Guinea-Bissau",
-                "cost": 70.0
-              },
-              {
-                "name": "Guyana",
-                "cost": 70.0
-              },
-              {
-                "name": "Haiti",
-                "cost": 70.0
-              },
-              {
-                "name": "Heard Island and McDonald Islands",
-                "cost": 70.0
-              },
-              {
-                "name": "Honduras",
-                "cost": 70.0
-              },
-              {
-                "name": "Hong Kong",
-                "cost": 70.0
-              },
-              {
-                "name": "Hungary",
-                "cost": 70.0
-              },
-              {
-                "name": "Iceland",
-                "cost": 70.0
-              },
-              {
-                "name": "India",
-                "cost": 70.0
-              },
-              {
-                "name": "Indonesia",
-                "cost": 70.0
-              },
-              {
-                "name": "Ivory Coast",
-                "cost": 70.0
-              },
-              {
-                "name": "Iran",
-                "cost": 70.0
-              },
-              {
-                "name": "Iraq",
-                "cost": 70.0
-              },
-              {
-                "name": "Republic of Ireland",
-                "cost": 70.0
-              },
-              {
-                "name": "Isle of Man",
-                "cost": 70.0
-              },
-              {
-                "name": "Israel",
-                "cost": 70.0
-              },
-              {
-                "name": "Italy",
-                "cost": 70.0
-              },
-              {
-                "name": "Jamaica",
-                "cost": 70.0
-              },
-              {
-                "name": "Japan",
-                "cost": 70.0
-              },
-              {
-                "name": "Jersey",
-                "cost": 70.0
-              },
-              {
-                "name": "Jordan",
-                "cost": 70.0
-              },
-              {
-                "name": "Kazakhstan",
-                "cost": 70.0
-              },
-              {
-                "name": "Kenya",
-                "cost": 70.0
-              },
-              {
-                "name": "Kiribati",
-                "cost": 70.0
-              },
-              {
-                "name": "Kuwait",
-                "cost": 70.0
-              },
-              {
-                "name": "Kyrgyzstan",
-                "cost": 70.0
-              },
-              {
-                "name": "Laos",
-                "cost": 70.0
-              },
-              {
-                "name": "Latvia",
-                "cost": 70.0
-              },
-              {
-                "name": "Lebanon",
-                "cost": 70.0
-              },
-              {
-                "name": "Lesotho",
-                "cost": 70.0
-              },
-              {
-                "name": "Liberia",
-                "cost": 70.0
-              },
-              {
-                "name": "Libya",
-                "cost": 70.0
-              },
-              {
-                "name": "Liechtenstein",
-                "cost": 70.0
-              },
-              {
-                "name": "Lithuania",
-                "cost": 70.0
-              },
-              {
-                "name": "Luxembourg",
-                "cost": 70.0
-              },
-              {
-                "name": "Macau",
-                "cost": 70.0
-              },
-              {
-                "name": "Republic of Macedonia",
-                "cost": 70.0
-              },
-              {
-                "name": "Madagascar",
-                "cost": 70.0
-              },
-              {
-                "name": "Malawi",
-                "cost": 70.0
-              },
-              {
-                "name": "Malaysia",
-                "cost": 70.0
-              },
-              {
-                "name": "Maldives",
-                "cost": 70.0
-              },
-              {
-                "name": "Mali",
-                "cost": 70.0
-              },
-              {
-                "name": "Malta",
-                "cost": 70.0
-              },
-              {
-                "name": "Marshall Islands",
-                "cost": 70.0
-              },
-              {
-                "name": "Martinique",
-                "cost": 70.0
-              },
-              {
-                "name": "Mauritania",
-                "cost": 70.0
-              },
-              {
-                "name": "Mauritius",
-                "cost": 70.0
-              },
-              {
-                "name": "Mayotte",
-                "cost": 70.0
-              },
-              {
-                "name": "Mexico",
-                "cost": 70.0
-              },
-              {
-                "name": "Federated States of Micronesia",
-                "cost": 70.0
-              },
-              {
-                "name": "Moldova",
-                "cost": 70.0
-              },
-              {
-                "name": "Monaco",
-                "cost": 70.0
-              },
-              {
-                "name": "Mongolia",
-                "cost": 70.0
-              },
-              {
-                "name": "Montenegro",
-                "cost": 70.0
-              },
-              {
-                "name": "Montserrat",
-                "cost": 70.0
-              },
-              {
-                "name": "Morocco",
-                "cost": 70.0
-              },
-              {
-                "name": "Mozambique",
-                "cost": 70.0
-              },
-              {
-                "name": "Myanmar",
-                "cost": 70.0
-              },
-              {
-                "name": "Namibia",
-                "cost": 70.0
-              },
-              {
-                "name": "Nauru",
-                "cost": 70.0
-              },
-              {
-                "name": "Nepal",
-                "cost": 70.0
-              },
-              {
-                "name": "Netherlands",
-                "cost": 70.0
-              },
-              {
-                "name": "New Caledonia",
-                "cost": 70.0
-              },
-              {
-                "name": "New Zealand",
-                "cost": 70.0
-              },
-              {
-                "name": "Nicaragua",
-                "cost": 70.0
-              },
-              {
-                "name": "Niger",
-                "cost": 70.0
-              },
-              {
-                "name": "Nigeria",
-                "cost": 70.0
-              },
-              {
-                "name": "Niue",
-                "cost": 70.0
-              },
-              {
-                "name": "Norfolk Island",
-                "cost": 70.0
-              },
-              {
-                "name": "North Korea",
-                "cost": 70.0
-              },
-              {
-                "name": "Northern Mariana Islands",
-                "cost": 70.0
-              },
-              {
-                "name": "Norway",
-                "cost": 70.0
-              },
-              {
-                "name": "Oman",
-                "cost": 70.0
-              },
-              {
-                "name": "Pakistan",
-                "cost": 70.0
-              },
-              {
-                "name": "Palau",
-                "cost": 70.0
-              },
-              {
-                "name": "Palestine",
-                "cost": 70.0
-              },
-              {
-                "name": "Panama",
-                "cost": 70.0
-              },
-              {
-                "name": "Papua New Guinea",
-                "cost": 70.0
-              },
-              {
-                "name": "Paraguay",
-                "cost": 70.0
-              },
-              {
-                "name": "Peru",
-                "cost": 70.0
-              },
-              {
-                "name": "Philippines",
-                "cost": 70.0
-              },
-              {
-                "name": "Pitcairn Islands",
-                "cost": 70.0
-              },
-              {
-                "name": "Poland",
-                "cost": 70.0
-              },
-              {
-                "name": "Portugal",
-                "cost": 70.0
-              },
-              {
-                "name": "Puerto Rico",
-                "cost": 70.0
-              },
-              {
-                "name": "Qatar",
-                "cost": 70.0
-              },
-              {
-                "name": "Republic of Kosovo",
-                "cost": 70.0
-              },
-              {
-                "name": "Reunion",
-                "cost": 70.0
-              },
-              {
-                "name": "Romania",
-                "cost": 70.0
-              },
-              {
-                "name": "Rwanda",
-                "cost": 70.0
-              },
-              {
-                "name": "St. Barthelemy",
-                "cost": 70.0
-              },
-              {
-                "name": "Saint Helena",
-                "cost": 70.0
-              },
-              {
-                "name": "Saint Kitts and Nevis",
-                "cost": 70.0
-              },
-              {
-                "name": "Saint Lucia",
-                "cost": 70.0
-              },
-              {
-                "name": "Saint Martin",
-                "cost": 70.0
-              },
-              {
-                "name": "Saint Pierre and Miquelon",
-                "cost": 70.0
-              },
-              {
-                "name": "Saint Vincent and the Grenadines",
-                "cost": 70.0
-              },
-              {
-                "name": "Samoa",
-                "cost": 70.0
-              },
-              {
-                "name": "San Marino",
-                "cost": 70.0
-              },
-              {
-                "name": "Democratic Republic of Sao Tome and Principe",
-                "cost": 70.0
-              },
-              {
-                "name": "Saudi Arabia",
-                "cost": 70.0
-              },
-              {
-                "name": "Senegal",
-                "cost": 70.0
-              },
-              {
-                "name": "Serbia",
-                "cost": 70.0
-              },
-              {
-                "name": "Seychelles",
-                "cost": 70.0
-              },
-              {
-                "name": "Sierra Leone",
-                "cost": 70.0
-              },
-              {
-                "name": "Singapore",
-                "cost": 70.0
-              },
-              {
-                "name": "Sint Maarten",
-                "cost": 70.0
-              },
-              {
-                "name": "Slovakia",
-                "cost": 70.0
-              },
-              {
-                "name": "Slovenia",
-                "cost": 70.0
-              },
-              {
-                "name": "Solomon Islands",
-                "cost": 70.0
-              },
-              {
-                "name": "Somalia",
-                "cost": 70.0
-              },
-              {
-                "name": "South Africa",
-                "cost": 70.0
-              },
-              {
-                "name": "South Georgia",
-                "cost": 70.0
-              },
-              {
-                "name": "South Korea",
-                "cost": 70.0
-              },
-              {
-                "name": "South Sudan",
-                "cost": 70.0
-              },
-              {
-                "name": "Spain",
-                "cost": 70.0
-              },
-              {
-                "name": "Sri Lanka",
-                "cost": 70.0
-              },
-              {
-                "name": "Sudan",
-                "cost": 70.0
-              },
-              {
-                "name": "Suriname",
-                "cost": 70.0
-              },
-              {
-                "name": "Svalbard and Jan Mayen",
-                "cost": 70.0
-              },
-              {
-                "name": "Swaziland",
-                "cost": 70.0
-              },
-              {
-                "name": "Sweden",
-                "cost": 70.0
-              },
-              {
-                "name": "Switzerland",
-                "cost": 70.0
-              },
-              {
-                "name": "Syria",
-                "cost": 70.0
-              },
-              {
-                "name": "Taiwan",
-                "cost": 70.0
-              },
-              {
-                "name": "Tajikistan",
-                "cost": 70.0
-              },
-              {
-                "name": "Tanzania",
-                "cost": 70.0
-              },
-              {
-                "name": "Thailand",
-                "cost": 70.0
-              },
-              {
-                "name": "East Timor",
-                "cost": 70.0
-              },
-              {
-                "name": "Togo",
-                "cost": 70.0
-              },
-              {
-                "name": "Tokelau",
-                "cost": 70.0
-              },
-              {
-                "name": "Tonga",
-                "cost": 70.0
-              },
-              {
-                "name": "Trinidad and Tobago",
-                "cost": 70.0
-              },
-              {
-                "name": "Tunisia",
-                "cost": 70.0
-              },
-              {
-                "name": "Turkey",
-                "cost": 70.0
-              },
-              {
-                "name": "Turkmenistan",
-                "cost": 70.0
-              },
-              {
-                "name": "Turks and Caicos Islands",
-                "cost": 70.0
-              },
-              {
-                "name": "Tuvalu",
-                "cost": 70.0
-              },
-              {
-                "name": "Uganda",
-                "cost": 70.0
-              },
-              {
-                "name": "Ukraine",
-                "cost": 70.0
-              },
-              {
-                "name": "United Arab Emirates",
-                "cost": 70.0
-              },
-              {
-                "name": "United Kingdom",
-                "cost": 70.0
-              },
-              {
-                "name": "United States",
-                "cost": 70.0
-              },
-              {
-                "name": "Uruguay",
-                "cost": 70.0
-              },
-              {
-                "name": "Uzbekistan",
-                "cost": 70.0
-              },
-              {
-                "name": "Vanuatu",
-                "cost": 70.0
-              },
-              {
-                "name": "Venezuela",
-                "cost": 70.0
-              },
-              {
-                "name": "Vietnam",
-                "cost": 70.0
-              },
-              {
-                "name": "Wallis and Futuna",
-                "cost": 70.0
-              },
-              {
-                "name": "Western Sahara",
-                "cost": 70.0
-              },
-              {
-                "name": "Yemen",
-                "cost": 70.0
-              },
-              {
-                "name": "Zambia",
-                "cost": 70.0
-              },
-              {
-                "name": "Zimbabwe",
-                "cost": 70.0
-              }
-            ],
-            "unit": "minute",
-            "type": "outgoing_call"
-          },
-          {
-            "cost": 9.9,
-            "unit": "megabyte",
-            "type": "internet"
-          },
-          {
-            "countries": [
-              {
-                "name": "Russia",
-                "operators": [
-                  {
-                    "name": "MTS",
-                    "regions": [
-                      {
-                        "name": "HOME_REGION",
-                        "cost": 0.5
-                      },
-                      {
-                        "name": "|REST_REGIONS|",
-                        "cost": 3.8
-                      }
-                    ]
-                  },
-                  {
-                    "name": "|REST_OPERATORS|",
-                    "regions": [
-                      {
-                        "name": "HOME_REGION",
-                        "cost": 0.5
-                      },
-                      {
-                        "name": "|REST_REGIONS|",
-                        "cost": 3.8
-                      }
-                    ]
-                  }
-                ]
-              },
-              {
-                "name": "|REST_COUNTRIES|",
-                "cost": 5.25
-              },
-              {
-                "name": "Afghanistan",
-                "cost": 5.25
-              },
-              {
-                "name": "Aaland Islands",
-                "cost": 5.25
-              },
-              {
-                "name": "Albania",
-                "cost": 5.25
-              },
-              {
-                "name": "Algeria",
-                "cost": 5.25
-              },
-              {
-                "name": "American Samoa",
-                "cost": 5.25
-              },
-              {
-                "name": "Andorra",
-                "cost": 5.25
-              },
-              {
-                "name": "Angola",
-                "cost": 5.25
-              },
-              {
-                "name": "Anguilla",
-                "cost": 5.25
-              },
-              {
-                "name": "Antigua and Barbuda",
-                "cost": 5.25
-              },
-              {
-                "name": "Argentina",
-                "cost": 5.25
-              },
-              {
-                "name": "Armenia",
-                "cost": 5.25
-              },
-              {
-                "name": "Aruba",
-                "cost": 5.25
-              },
-              {
-                "name": "Australia",
-                "cost": 5.25
-              },
-              {
-                "name": "Austria",
-                "cost": 5.25
-              },
-              {
-                "name": "Azerbaijan",
-                "cost": 5.25
-              },
-              {
-                "name": "The Bahamas",
-                "cost": 5.25
-              },
-              {
-                "name": "Bahrain",
-                "cost": 5.25
-              },
-              {
-                "name": "Bangladesh",
-                "cost": 5.25
-              },
-              {
-                "name": "Barbados",
-                "cost": 5.25
-              },
-              {
-                "name": "Belarus",
-                "cost": 5.25
-              },
-              {
-                "name": "Belgium",
-                "cost": 5.25
-              },
-              {
-                "name": "Belize",
-                "cost": 5.25
-              },
-              {
-                "name": "Benin",
-                "cost": 5.25
-              },
-              {
-                "name": "Bermuda",
-                "cost": 5.25
-              },
-              {
-                "name": "Bhutan",
-                "cost": 5.25
-              },
-              {
-                "name": "Bolivia",
-                "cost": 5.25
-              },
-              {
-                "name": "Bonaire",
-                "cost": 5.25
-              },
-              {
-                "name": "Bosnia and Herzegovina",
-                "cost": 5.25
-              },
-              {
-                "name": "Botswana",
-                "cost": 5.25
-              },
-              {
-                "name": "Bouvet Island",
-                "cost": 5.25
-              },
-              {
-                "name": "Brazil",
-                "cost": 5.25
-              },
-              {
-                "name": "British Indian Ocean Territory",
-                "cost": 5.25
-              },
-              {
-                "name": "United States Minor Outlying Islands",
-                "cost": 5.25
-              },
-              {
-                "name": "British Virgin Islands",
-                "cost": 5.25
-              },
-              {
-                "name": "Brunei",
-                "cost": 5.25
-              },
-              {
-                "name": "Bulgaria",
-                "cost": 5.25
-              },
-              {
-                "name": "Burkina Faso",
-                "cost": 5.25
-              },
-              {
-                "name": "Burundi",
-                "cost": 5.25
-              },
-              {
-                "name": "Cambodia",
-                "cost": 5.25
-              },
-              {
-                "name": "Cameroon",
-                "cost": 5.25
-              },
-              {
-                "name": "Canada",
-                "cost": 5.25
-              },
-              {
-                "name": "Cape Verde",
-                "cost": 5.25
-              },
-              {
-                "name": "Cayman Islands",
-                "cost": 5.25
-              },
-              {
-                "name": "Central African Republic",
-                "cost": 5.25
-              },
-              {
-                "name": "Chad",
-                "cost": 5.25
-              },
-              {
-                "name": "Chile",
-                "cost": 5.25
-              },
-              {
-                "name": "China",
-                "cost": 5.25
-              },
-              {
-                "name": "Christmas Island",
-                "cost": 5.25
-              },
-              {
-                "name": "Cocos (Keeling) Islands",
-                "cost": 5.25
-              },
-              {
-                "name": "Colombia",
-                "cost": 5.25
-              },
-              {
-                "name": "Comoros",
-                "cost": 5.25
-              },
-              {
-                "name": "Republic of the Congo",
-                "cost": 5.25
-              },
-              {
-                "name": "Democratic Republic of the Congo",
-                "cost": 5.25
-              },
-              {
-                "name": "Cook Islands",
-                "cost": 5.25
-              },
-              {
-                "name": "Costa Rica",
-                "cost": 5.25
-              },
-              {
-                "name": "Croatia",
-                "cost": 5.25
-              },
-              {
-                "name": "Cuba",
-                "cost": 5.25
-              },
-              {
-                "name": "Curacao",
-                "cost": 5.25
-              },
-              {
-                "name": "Cyprus",
-                "cost": 5.25
-              },
-              {
-                "name": "Czech Republic",
-                "cost": 5.25
-              },
-              {
-                "name": "Denmark",
-                "cost": 5.25
-              },
-              {
-                "name": "Djibouti",
-                "cost": 5.25
-              },
-              {
-                "name": "Dominica",
-                "cost": 5.25
-              },
-              {
-                "name": "Dominican Republic",
-                "cost": 5.25
-              },
-              {
-                "name": "Ecuador",
-                "cost": 5.25
-              },
-              {
-                "name": "Egypt",
-                "cost": 5.25
-              },
-              {
-                "name": "El Salvador",
-                "cost": 5.25
-              },
-              {
-                "name": "Equatorial Guinea",
-                "cost": 5.25
-              },
-              {
-                "name": "Eritrea",
-                "cost": 5.25
-              },
-              {
-                "name": "Estonia",
-                "cost": 5.25
-              },
-              {
-                "name": "Ethiopia",
-                "cost": 5.25
-              },
-              {
-                "name": "Falkland Islands",
-                "cost": 5.25
-              },
-              {
-                "name": "Faroe Islands",
-                "cost": 5.25
-              },
-              {
-                "name": "Fiji",
-                "cost": 5.25
-              },
-              {
-                "name": "Finland",
-                "cost": 5.25
-              },
-              {
-                "name": "France",
-                "cost": 5.25
-              },
-              {
-                "name": "French Guiana",
-                "cost": 5.25
-              },
-              {
-                "name": "French Polynesia",
-                "cost": 5.25
-              },
-              {
-                "name": "French Southern and Antarctic Lands",
-                "cost": 5.25
-              },
-              {
-                "name": "Gabon",
-                "cost": 5.25
-              },
-              {
-                "name": "The Gambia",
-                "cost": 5.25
-              },
-              {
-                "name": "Georgia",
-                "cost": 5.25
-              },
-              {
-                "name": "Germany",
-                "cost": 5.25
-              },
-              {
-                "name": "Ghana",
-                "cost": 5.25
-              },
-              {
-                "name": "Gibraltar",
-                "cost": 5.25
-              },
-              {
-                "name": "Greece",
-                "cost": 5.25
-              },
-              {
-                "name": "Greenland",
-                "cost": 5.25
-              },
-              {
-                "name": "Grenada",
-                "cost": 5.25
-              },
-              {
-                "name": "Guadeloupe",
-                "cost": 5.25
-              },
-              {
-                "name": "Guam",
-                "cost": 5.25
-              },
-              {
-                "name": "Guatemala",
-                "cost": 5.25
-              },
-              {
-                "name": "Guernsey",
-                "cost": 5.25
-              },
-              {
-                "name": "Guinea",
-                "cost": 5.25
-              },
-              {
-                "name": "Guinea-Bissau",
-                "cost": 5.25
-              },
-              {
-                "name": "Guyana",
-                "cost": 5.25
-              },
-              {
-                "name": "Haiti",
-                "cost": 5.25
-              },
-              {
-                "name": "Heard Island and McDonald Islands",
-                "cost": 5.25
-              },
-              {
-                "name": "Honduras",
-                "cost": 5.25
-              },
-              {
-                "name": "Hong Kong",
-                "cost": 5.25
-              },
-              {
-                "name": "Hungary",
-                "cost": 5.25
-              },
-              {
-                "name": "Iceland",
-                "cost": 5.25
-              },
-              {
-                "name": "India",
-                "cost": 5.25
-              },
-              {
-                "name": "Indonesia",
-                "cost": 5.25
-              },
-              {
-                "name": "Ivory Coast",
-                "cost": 5.25
-              },
-              {
-                "name": "Iran",
-                "cost": 5.25
-              },
-              {
-                "name": "Iraq",
-                "cost": 5.25
-              },
-              {
-                "name": "Republic of Ireland",
-                "cost": 5.25
-              },
-              {
-                "name": "Isle of Man",
-                "cost": 5.25
-              },
-              {
-                "name": "Israel",
-                "cost": 5.25
-              },
-              {
-                "name": "Italy",
-                "cost": 5.25
-              },
-              {
-                "name": "Jamaica",
-                "cost": 5.25
-              },
-              {
-                "name": "Japan",
-                "cost": 5.25
-              },
-              {
-                "name": "Jersey",
-                "cost": 5.25
-              },
-              {
-                "name": "Jordan",
-                "cost": 5.25
-              },
-              {
-                "name": "Kazakhstan",
-                "cost": 5.25
-              },
-              {
-                "name": "Kenya",
-                "cost": 5.25
-              },
-              {
-                "name": "Kiribati",
-                "cost": 5.25
-              },
-              {
-                "name": "Kuwait",
-                "cost": 5.25
-              },
-              {
-                "name": "Kyrgyzstan",
-                "cost": 5.25
-              },
-              {
-                "name": "Laos",
-                "cost": 5.25
-              },
-              {
-                "name": "Latvia",
-                "cost": 5.25
-              },
-              {
-                "name": "Lebanon",
-                "cost": 5.25
-              },
-              {
-                "name": "Lesotho",
-                "cost": 5.25
-              },
-              {
-                "name": "Liberia",
-                "cost": 5.25
-              },
-              {
-                "name": "Libya",
-                "cost": 5.25
-              },
-              {
-                "name": "Liechtenstein",
-                "cost": 5.25
-              },
-              {
-                "name": "Lithuania",
-                "cost": 5.25
-              },
-              {
-                "name": "Luxembourg",
-                "cost": 5.25
-              },
-              {
-                "name": "Macau",
-                "cost": 5.25
-              },
-              {
-                "name": "Republic of Macedonia",
-                "cost": 5.25
-              },
-              {
-                "name": "Madagascar",
-                "cost": 5.25
-              },
-              {
-                "name": "Malawi",
-                "cost": 5.25
-              },
-              {
-                "name": "Malaysia",
-                "cost": 5.25
-              },
-              {
-                "name": "Maldives",
-                "cost": 5.25
-              },
-              {
-                "name": "Mali",
-                "cost": 5.25
-              },
-              {
-                "name": "Malta",
-                "cost": 5.25
-              },
-              {
-                "name": "Marshall Islands",
-                "cost": 5.25
-              },
-              {
-                "name": "Martinique",
-                "cost": 5.25
-              },
-              {
-                "name": "Mauritania",
-                "cost": 5.25
-              },
-              {
-                "name": "Mauritius",
-                "cost": 5.25
-              },
-              {
-                "name": "Mayotte",
-                "cost": 5.25
-              },
-              {
-                "name": "Mexico",
-                "cost": 5.25
-              },
-              {
-                "name": "Federated States of Micronesia",
-                "cost": 5.25
-              },
-              {
-                "name": "Moldova",
-                "cost": 5.25
-              },
-              {
-                "name": "Monaco",
-                "cost": 5.25
-              },
-              {
-                "name": "Mongolia",
-                "cost": 5.25
-              },
-              {
-                "name": "Montenegro",
-                "cost": 5.25
-              },
-              {
-                "name": "Montserrat",
-                "cost": 5.25
-              },
-              {
-                "name": "Morocco",
-                "cost": 5.25
-              },
-              {
-                "name": "Mozambique",
-                "cost": 5.25
-              },
-              {
-                "name": "Myanmar",
-                "cost": 5.25
-              },
-              {
-                "name": "Namibia",
-                "cost": 5.25
-              },
-              {
-                "name": "Nauru",
-                "cost": 5.25
-              },
-              {
-                "name": "Nepal",
-                "cost": 5.25
-              },
-              {
-                "name": "Netherlands",
-                "cost": 5.25
-              },
-              {
-                "name": "New Caledonia",
-                "cost": 5.25
-              },
-              {
-                "name": "New Zealand",
-                "cost": 5.25
-              },
-              {
-                "name": "Nicaragua",
-                "cost": 5.25
-              },
-              {
-                "name": "Niger",
-                "cost": 5.25
-              },
-              {
-                "name": "Nigeria",
-                "cost": 5.25
-              },
-              {
-                "name": "Niue",
-                "cost": 5.25
-              },
-              {
-                "name": "Norfolk Island",
-                "cost": 5.25
-              },
-              {
-                "name": "North Korea",
-                "cost": 5.25
-              },
-              {
-                "name": "Northern Mariana Islands",
-                "cost": 5.25
-              },
-              {
-                "name": "Norway",
-                "cost": 5.25
-              },
-              {
-                "name": "Oman",
-                "cost": 5.25
-              },
-              {
-                "name": "Pakistan",
-                "cost": 5.25
-              },
-              {
-                "name": "Palau",
-                "cost": 5.25
-              },
-              {
-                "name": "Palestine",
-                "cost": 5.25
-              },
-              {
-                "name": "Panama",
-                "cost": 5.25
-              },
-              {
-                "name": "Papua New Guinea",
-                "cost": 5.25
-              },
-              {
-                "name": "Paraguay",
-                "cost": 5.25
-              },
-              {
-                "name": "Peru",
-                "cost": 5.25
-              },
-              {
-                "name": "Philippines",
-                "cost": 5.25
-              },
-              {
-                "name": "Pitcairn Islands",
-                "cost": 5.25
-              },
-              {
-                "name": "Poland",
-                "cost": 5.25
-              },
-              {
-                "name": "Portugal",
-                "cost": 5.25
-              },
-              {
-                "name": "Puerto Rico",
-                "cost": 5.25
-              },
-              {
-                "name": "Qatar",
-                "cost": 5.25
-              },
-              {
-                "name": "Republic of Kosovo",
-                "cost": 5.25
-              },
-              {
-                "name": "Reunion",
-                "cost": 5.25
-              },
-              {
-                "name": "Romania",
-                "cost": 5.25
-              },
-              {
-                "name": "Rwanda",
-                "cost": 5.25
-              },
-              {
-                "name": "St. Barthelemy",
-                "cost": 5.25
-              },
-              {
-                "name": "Saint Helena",
-                "cost": 5.25
-              },
-              {
-                "name": "Saint Kitts and Nevis",
-                "cost": 5.25
-              },
-              {
-                "name": "Saint Lucia",
-                "cost": 5.25
-              },
-              {
-                "name": "Saint Martin",
-                "cost": 5.25
-              },
-              {
-                "name": "Saint Pierre and Miquelon",
-                "cost": 5.25
-              },
-              {
-                "name": "Saint Vincent and the Grenadines",
-                "cost": 5.25
-              },
-              {
-                "name": "Samoa",
-                "cost": 5.25
-              },
-              {
-                "name": "San Marino",
-                "cost": 5.25
-              },
-              {
-                "name": "Democratic Republic of Sao Tome and Principe",
-                "cost": 5.25
-              },
-              {
-                "name": "Saudi Arabia",
-                "cost": 5.25
-              },
-              {
-                "name": "Senegal",
-                "cost": 5.25
-              },
-              {
-                "name": "Serbia",
-                "cost": 5.25
-              },
-              {
-                "name": "Seychelles",
-                "cost": 5.25
-              },
-              {
-                "name": "Sierra Leone",
-                "cost": 5.25
-              },
-              {
-                "name": "Singapore",
-                "cost": 5.25
-              },
-              {
-                "name": "Sint Maarten",
-                "cost": 5.25
-              },
-              {
-                "name": "Slovakia",
-                "cost": 5.25
-              },
-              {
-                "name": "Slovenia",
-                "cost": 5.25
-              },
-              {
-                "name": "Solomon Islands",
-                "cost": 5.25
-              },
-              {
-                "name": "Somalia",
-                "cost": 5.25
-              },
-              {
-                "name": "South Africa",
-                "cost": 5.25
-              },
-              {
-                "name": "South Georgia",
-                "cost": 5.25
-              },
-              {
-                "name": "South Korea",
-                "cost": 5.25
-              },
-              {
-                "name": "South Sudan",
-                "cost": 5.25
-              },
-              {
-                "name": "Spain",
-                "cost": 5.25
-              },
-              {
-                "name": "Sri Lanka",
-                "cost": 5.25
-              },
-              {
-                "name": "Sudan",
-                "cost": 5.25
-              },
-              {
-                "name": "Suriname",
-                "cost": 5.25
-              },
-              {
-                "name": "Svalbard and Jan Mayen",
-                "cost": 5.25
-              },
-              {
-                "name": "Swaziland",
-                "cost": 5.25
-              },
-              {
-                "name": "Sweden",
-                "cost": 5.25
-              },
-              {
-                "name": "Switzerland",
-                "cost": 5.25
-              },
-              {
-                "name": "Syria",
-                "cost": 5.25
-              },
-              {
-                "name": "Taiwan",
-                "cost": 5.25
-              },
-              {
-                "name": "Tajikistan",
-                "cost": 5.25
-              },
-              {
-                "name": "Tanzania",
-                "cost": 5.25
-              },
-              {
-                "name": "Thailand",
-                "cost": 5.25
-              },
-              {
-                "name": "East Timor",
-                "cost": 5.25
-              },
-              {
-                "name": "Togo",
-                "cost": 5.25
-              },
-              {
-                "name": "Tokelau",
-                "cost": 5.25
-              },
-              {
-                "name": "Tonga",
-                "cost": 5.25
-              },
-              {
-                "name": "Trinidad and Tobago",
-                "cost": 5.25
-              },
-              {
-                "name": "Tunisia",
-                "cost": 5.25
-              },
-              {
-                "name": "Turkey",
-                "cost": 5.25
-              },
-              {
-                "name": "Turkmenistan",
-                "cost": 5.25
-              },
-              {
-                "name": "Turks and Caicos Islands",
-                "cost": 5.25
-              },
-              {
-                "name": "Tuvalu",
-                "cost": 5.25
-              },
-              {
-                "name": "Uganda",
-                "cost": 5.25
-              },
-              {
-                "name": "Ukraine",
-                "cost": 5.25
-              },
-              {
-                "name": "United Arab Emirates",
-                "cost": 5.25
-              },
-              {
-                "name": "United Kingdom",
-                "cost": 5.25
-              },
-              {
-                "name": "United States",
-                "cost": 5.25
-              },
-              {
-                "name": "Uruguay",
-                "cost": 5.25
-              },
-              {
-                "name": "Uzbekistan",
-                "cost": 5.25
-              },
-              {
-                "name": "Vanuatu",
-                "cost": 5.25
-              },
-              {
-                "name": "Venezuela",
-                "cost": 5.25
-              },
-              {
-                "name": "Vietnam",
-                "cost": 5.25
-              },
-              {
-                "name": "Wallis and Futuna",
-                "cost": 5.25
-              },
-              {
-                "name": "Western Sahara",
-                "cost": 5.25
-              },
-              {
-                "name": "Yemen",
-                "cost": 5.25
-              },
-              {
-                "name": "Zambia",
-                "cost": 5.25
-              },
-              {
-                "name": "Zimbabwe",
-                "cost": 5.25
-              }
-            ],
-            "unit": "message",
-            "type": "sms"
-          },
-          {
-            "cost": 6.5,
-            "unit": "message",
-            "type": "mms"
+            "name": "Moskva",
+            "cost": 0.0
           }
-        ],
-        "region_name": "Moskva",
-        "services": [
+        ]
+      },
+      {
+        "name": "Yota",
+        "regions": [
           {
-            "name": "Voice Packet",
-            "packet": {
-              "type": "voice",
-              "amount": 1000
-            },
-            "cost": 0.0,
-            "restrictions": [
-              {
-                "operator": "MTS",
-                "country": "Russia"
-              }
-            ],
-            "is_periodic": true
-          },
-          {
-            "name": "SMS Packet",
-            "packet": {
-              "type": "sms",
-              "amount": 50
-            },
-            "cost": 0.0,
-            "restrictions": [
-              {
-                "region": "HOME_REGION"
-              }
-            ],
-            "is_periodic": true
-          },
-          {
-            "name": "Internet Packet",
-            "packet": {
-              "type": "internet",
-              "amount": 500
-            },
-            "cost": 0.0,
-            "restrictions": [],
-            "is_periodic": true
+            "name": "Moskva",
+            "cost": 1.5
           }
-        ],
-        "transition_cost": 400.0
+        ]
+      },
+      {
+        "name": "MegaFon",
+        "regions": [
+          {
+            "name": "Moskva",
+            "cost": 1.5
+          }
+        ]
+      },
+      {
+        "name": "Beeline",
+        "regions": [
+          {
+            "name": "Moskva",
+            "cost": 1.5
+          }
+        ]
+      },
+      {
+        "name": "MGTS",
+        "regions": [
+          {
+            "name": "Moskva",
+            "cost": 1.5
+          }
+        ]
+      },
+      {
+        "name": "ACME Russian Operator",
+        "regions": [
+          {
+            "name": "Moskva",
+            "cost": 1.5
+          }
+        ]
+      },
+      {
+        "name": "Tele2",
+        "regions": [
+          {
+            "name": "Moskva",
+            "cost": 1.5
+          }
+        ]
       }
-    ],
-    "name": "Smart mini",
-    "activation_code": "*100*1#"
+    ]
+  },
+  {
+    "name": "Afghanistan",
+    "cost": 70.0
+  },
+  {
+    "name": "Aaland Islands",
+    "cost": 70.0
+  },
+  {
+    "name": "Albania",
+    "cost": 70.0
+  },
+  {
+    "name": "Algeria",
+    "cost": 70.0
+  },
+  {
+    "name": "American Samoa",
+    "cost": 70.0
+  },
+  {
+    "name": "Andorra",
+    "cost": 70.0
+  },
+  {
+    "name": "Angola",
+    "cost": 70.0
+  },
+  {
+    "name": "Anguilla",
+    "cost": 70.0
+  },
+  {
+    "name": "Antigua and Barbuda",
+    "cost": 70.0
+  },
+  {
+    "name": "Argentina",
+    "cost": 70.0
+  },
+  {
+    "name": "Aruba",
+    "cost": 70.0
+  },
+  {
+    "name": "Australia",
+    "cost": 70.0
+  },
+  {
+    "name": "The Bahamas",
+    "cost": 70.0
+  },
+  {
+    "name": "Bahrain",
+    "cost": 70.0
+  },
+  {
+    "name": "Bangladesh",
+    "cost": 70.0
+  },
+  {
+    "name": "Barbados",
+    "cost": 70.0
+  },
+  {
+    "name": "Belize",
+    "cost": 70.0
+  },
+  {
+    "name": "Benin",
+    "cost": 70.0
+  },
+  {
+    "name": "Bermuda",
+    "cost": 70.0
+  },
+  {
+    "name": "Bhutan",
+    "cost": 70.0
+  },
+  {
+    "name": "Bolivia",
+    "cost": 70.0
+  },
+  {
+    "name": "Bonaire",
+    "cost": 70.0
+  },
+  {
+    "name": "Bosnia and Herzegovina",
+    "cost": 70.0
+  },
+  {
+    "name": "Botswana",
+    "cost": 70.0
+  },
+  {
+    "name": "Bouvet Island",
+    "cost": 70.0
+  },
+  {
+    "name": "Brazil",
+    "cost": 70.0
+  },
+  {
+    "name": "British Indian Ocean Territory",
+    "cost": 70.0
+  },
+  {
+    "name": "United States Minor Outlying Islands",
+    "cost": 70.0
+  },
+  {
+    "name": "British Virgin Islands",
+    "cost": 70.0
+  },
+  {
+    "name": "Brunei",
+    "cost": 70.0
+  },
+  {
+    "name": "Burkina Faso",
+    "cost": 70.0
+  },
+  {
+    "name": "Burundi",
+    "cost": 70.0
+  },
+  {
+    "name": "Cambodia",
+    "cost": 70.0
+  },
+  {
+    "name": "Cameroon",
+    "cost": 70.0
+  },
+  {
+    "name": "Canada",
+    "cost": 70.0
+  },
+  {
+    "name": "Cape Verde",
+    "cost": 70.0
+  },
+  {
+    "name": "Cayman Islands",
+    "cost": 70.0
+  },
+  {
+    "name": "Central African Republic",
+    "cost": 70.0
+  },
+  {
+    "name": "Chad",
+    "cost": 70.0
+  },
+  {
+    "name": "Chile",
+    "cost": 70.0
+  },
+  {
+    "name": "China",
+    "cost": 70.0
+  },
+  {
+    "name": "Christmas Island",
+    "cost": 70.0
+  },
+  {
+    "name": "Cocos (Keeling) Islands",
+    "cost": 70.0
+  },
+  {
+    "name": "Colombia",
+    "cost": 70.0
+  },
+  {
+    "name": "Comoros",
+    "cost": 70.0
+  },
+  {
+    "name": "Republic of the Congo",
+    "cost": 70.0
+  },
+  {
+    "name": "Democratic Republic of the Congo",
+    "cost": 70.0
+  },
+  {
+    "name": "Cook Islands",
+    "cost": 70.0
+  },
+  {
+    "name": "Costa Rica",
+    "cost": 70.0
+  },
+  {
+    "name": "Cuba",
+    "cost": 70.0
+  },
+  {
+    "name": "Curacao",
+    "cost": 70.0
+  },
+  {
+    "name": "Djibouti",
+    "cost": 70.0
+  },
+  {
+    "name": "Dominica",
+    "cost": 70.0
+  },
+  {
+    "name": "Dominican Republic",
+    "cost": 70.0
+  },
+  {
+    "name": "Ecuador",
+    "cost": 70.0
+  },
+  {
+    "name": "Egypt",
+    "cost": 70.0
+  },
+  {
+    "name": "El Salvador",
+    "cost": 70.0
+  },
+  {
+    "name": "Equatorial Guinea",
+    "cost": 70.0
+  },
+  {
+    "name": "Eritrea",
+    "cost": 70.0
+  },
+  {
+    "name": "Ethiopia",
+    "cost": 70.0
+  },
+  {
+    "name": "Falkland Islands",
+    "cost": 70.0
+  },
+  {
+    "name": "Faroe Islands",
+    "cost": 70.0
+  },
+  {
+    "name": "Fiji",
+    "cost": 70.0
+  },
+  {
+    "name": "French Guiana",
+    "cost": 70.0
+  },
+  {
+    "name": "French Polynesia",
+    "cost": 70.0
+  },
+  {
+    "name": "French Southern and Antarctic Lands",
+    "cost": 70.0
+  },
+  {
+    "name": "Gabon",
+    "cost": 70.0
+  },
+  {
+    "name": "The Gambia",
+    "cost": 70.0
+  },
+  {
+    "name": "Georgia",
+    "cost": 70.0
+  },
+  {
+    "name": "Ghana",
+    "cost": 70.0
+  },
+  {
+    "name": "Gibraltar",
+    "cost": 70.0
+  },
+  {
+    "name": "Greenland",
+    "cost": 70.0
+  },
+  {
+    "name": "Grenada",
+    "cost": 70.0
+  },
+  {
+    "name": "Guadeloupe",
+    "cost": 70.0
+  },
+  {
+    "name": "Guam",
+    "cost": 70.0
+  },
+  {
+    "name": "Guatemala",
+    "cost": 70.0
+  },
+  {
+    "name": "Guernsey",
+    "cost": 70.0
+  },
+  {
+    "name": "Guinea",
+    "cost": 70.0
+  },
+  {
+    "name": "Guinea-Bissau",
+    "cost": 70.0
+  },
+  {
+    "name": "Guyana",
+    "cost": 70.0
+  },
+  {
+    "name": "Haiti",
+    "cost": 70.0
+  },
+  {
+    "name": "Heard Island and McDonald Islands",
+    "cost": 70.0
+  },
+  {
+    "name": "Honduras",
+    "cost": 70.0
+  },
+  {
+    "name": "Hong Kong",
+    "cost": 70.0
+  },
+  {
+    "name": "Iceland",
+    "cost": 70.0
+  },
+  {
+    "name": "India",
+    "cost": 70.0
+  },
+  {
+    "name": "Indonesia",
+    "cost": 70.0
+  },
+  {
+    "name": "Ivory Coast",
+    "cost": 70.0
+  },
+  {
+    "name": "Iran",
+    "cost": 70.0
+  },
+  {
+    "name": "Iraq",
+    "cost": 70.0
+  },
+  {
+    "name": "Isle of Man",
+    "cost": 70.0
+  },
+  {
+    "name": "Israel",
+    "cost": 70.0
+  },
+  {
+    "name": "Jamaica",
+    "cost": 70.0
+  },
+  {
+    "name": "Japan",
+    "cost": 70.0
+  },
+  {
+    "name": "Jersey",
+    "cost": 70.0
+  },
+  {
+    "name": "Jordan",
+    "cost": 70.0
+  },
+  {
+    "name": "Kenya",
+    "cost": 70.0
+  },
+  {
+    "name": "Kiribati",
+    "cost": 70.0
+  },
+  {
+    "name": "Kuwait",
+    "cost": 70.0
+  },
+  {
+    "name": "Laos",
+    "cost": 70.0
+  },
+  {
+    "name": "Lebanon",
+    "cost": 70.0
+  },
+  {
+    "name": "Lesotho",
+    "cost": 70.0
+  },
+  {
+    "name": "Liberia",
+    "cost": 70.0
+  },
+  {
+    "name": "Libya",
+    "cost": 70.0
+  },
+  {
+    "name": "Liechtenstein",
+    "cost": 70.0
+  },
+  {
+    "name": "Macau",
+    "cost": 70.0
+  },
+  {
+    "name": "Republic of Macedonia",
+    "cost": 70.0
+  },
+  {
+    "name": "Madagascar",
+    "cost": 70.0
+  },
+  {
+    "name": "Malawi",
+    "cost": 70.0
+  },
+  {
+    "name": "Malaysia",
+    "cost": 70.0
+  },
+  {
+    "name": "Maldives",
+    "cost": 70.0
+  },
+  {
+    "name": "Mali",
+    "cost": 70.0
+  },
+  {
+    "name": "Marshall Islands",
+    "cost": 70.0
+  },
+  {
+    "name": "Martinique",
+    "cost": 70.0
+  },
+  {
+    "name": "Mauritania",
+    "cost": 70.0
+  },
+  {
+    "name": "Mauritius",
+    "cost": 70.0
+  },
+  {
+    "name": "Mayotte",
+    "cost": 70.0
+  },
+  {
+    "name": "Mexico",
+    "cost": 70.0
+  },
+  {
+    "name": "Federated States of Micronesia",
+    "cost": 70.0
+  },
+  {
+    "name": "Monaco",
+    "cost": 70.0
+  },
+  {
+    "name": "Mongolia",
+    "cost": 70.0
+  },
+  {
+    "name": "Montenegro",
+    "cost": 70.0
+  },
+  {
+    "name": "Montserrat",
+    "cost": 70.0
+  },
+  {
+    "name": "Morocco",
+    "cost": 70.0
+  },
+  {
+    "name": "Mozambique",
+    "cost": 70.0
+  },
+  {
+    "name": "Myanmar",
+    "cost": 70.0
+  },
+  {
+    "name": "Namibia",
+    "cost": 70.0
+  },
+  {
+    "name": "Nauru",
+    "cost": 70.0
+  },
+  {
+    "name": "Nepal",
+    "cost": 70.0
+  },
+  {
+    "name": "New Caledonia",
+    "cost": 70.0
+  },
+  {
+    "name": "New Zealand",
+    "cost": 70.0
+  },
+  {
+    "name": "Nicaragua",
+    "cost": 70.0
+  },
+  {
+    "name": "Niger",
+    "cost": 70.0
+  },
+  {
+    "name": "Nigeria",
+    "cost": 70.0
+  },
+  {
+    "name": "Niue",
+    "cost": 70.0
+  },
+  {
+    "name": "Norfolk Island",
+    "cost": 70.0
+  },
+  {
+    "name": "North Korea",
+    "cost": 70.0
+  },
+  {
+    "name": "Northern Mariana Islands",
+    "cost": 70.0
+  },
+  {
+    "name": "Norway",
+    "cost": 70.0
+  },
+  {
+    "name": "Oman",
+    "cost": 70.0
+  },
+  {
+    "name": "Pakistan",
+    "cost": 70.0
+  },
+  {
+    "name": "Palau",
+    "cost": 70.0
+  },
+  {
+    "name": "Palestine",
+    "cost": 70.0
+  },
+  {
+    "name": "Panama",
+    "cost": 70.0
+  },
+  {
+    "name": "Papua New Guinea",
+    "cost": 70.0
+  },
+  {
+    "name": "Paraguay",
+    "cost": 70.0
+  },
+  {
+    "name": "Peru",
+    "cost": 70.0
+  },
+  {
+    "name": "Philippines",
+    "cost": 70.0
+  },
+  {
+    "name": "Pitcairn Islands",
+    "cost": 70.0
+  },
+  {
+    "name": "Puerto Rico",
+    "cost": 70.0
+  },
+  {
+    "name": "Qatar",
+    "cost": 70.0
+  },
+  {
+    "name": "Republic of Kosovo",
+    "cost": 70.0
+  },
+  {
+    "name": "Reunion",
+    "cost": 70.0
+  },
+  {
+    "name": "Rwanda",
+    "cost": 70.0
+  },
+  {
+    "name": "St. Barthelemy",
+    "cost": 70.0
+  },
+  {
+    "name": "Saint Helena",
+    "cost": 70.0
+  },
+  {
+    "name": "Saint Kitts and Nevis",
+    "cost": 70.0
+  },
+  {
+    "name": "Saint Lucia",
+    "cost": 70.0
+  },
+  {
+    "name": "Saint Martin",
+    "cost": 70.0
+  },
+  {
+    "name": "Saint Pierre and Miquelon",
+    "cost": 70.0
+  },
+  {
+    "name": "Saint Vincent and the Grenadines",
+    "cost": 70.0
+  },
+  {
+    "name": "Samoa",
+    "cost": 70.0
+  },
+  {
+    "name": "San Marino",
+    "cost": 70.0
+  },
+  {
+    "name": "Democratic Republic of Sao Tome and Principe",
+    "cost": 70.0
+  },
+  {
+    "name": "Saudi Arabia",
+    "cost": 70.0
+  },
+  {
+    "name": "Senegal",
+    "cost": 70.0
+  },
+  {
+    "name": "Serbia",
+    "cost": 70.0
+  },
+  {
+    "name": "Seychelles",
+    "cost": 70.0
+  },
+  {
+    "name": "Sierra Leone",
+    "cost": 70.0
+  },
+  {
+    "name": "Singapore",
+    "cost": 70.0
+  },
+  {
+    "name": "Sint Maarten",
+    "cost": 70.0
+  },
+  {
+    "name": "Solomon Islands",
+    "cost": 70.0
+  },
+  {
+    "name": "Somalia",
+    "cost": 70.0
+  },
+  {
+    "name": "South Africa",
+    "cost": 70.0
+  },
+  {
+    "name": "South Georgia",
+    "cost": 70.0
+  },
+  {
+    "name": "South Korea",
+    "cost": 70.0
+  },
+  {
+    "name": "South Sudan",
+    "cost": 70.0
+  },
+  {
+    "name": "Sri Lanka",
+    "cost": 70.0
+  },
+  {
+    "name": "Sudan",
+    "cost": 70.0
+  },
+  {
+    "name": "Suriname",
+    "cost": 70.0
+  },
+  {
+    "name": "Svalbard and Jan Mayen",
+    "cost": 70.0
+  },
+  {
+    "name": "Swaziland",
+    "cost": 70.0
+  },
+  {
+    "name": "Switzerland",
+    "cost": 70.0
+  },
+  {
+    "name": "Syria",
+    "cost": 70.0
+  },
+  {
+    "name": "Taiwan",
+    "cost": 70.0
+  },
+  {
+    "name": "Tanzania",
+    "cost": 70.0
+  },
+  {
+    "name": "Thailand",
+    "cost": 70.0
+  },
+  {
+    "name": "East Timor",
+    "cost": 70.0
+  },
+  {
+    "name": "Togo",
+    "cost": 70.0
+  },
+  {
+    "name": "Tokelau",
+    "cost": 70.0
+  },
+  {
+    "name": "Tonga",
+    "cost": 70.0
+  },
+  {
+    "name": "Trinidad and Tobago",
+    "cost": 70.0
+  },
+  {
+    "name": "Tunisia",
+    "cost": 70.0
+  },
+  {
+    "name": "Turkey",
+    "cost": 70.0
+  },
+  {
+    "name": "Turkmenistan",
+    "cost": 70.0
+  },
+  {
+    "name": "Turks and Caicos Islands",
+    "cost": 70.0
+  },
+  {
+    "name": "Tuvalu",
+    "cost": 70.0
+  },
+  {
+    "name": "Uganda",
+    "cost": 70.0
+  },
+  {
+    "name": "United Arab Emirates",
+    "cost": 70.0
+  },
+  {
+    "name": "United States",
+    "cost": 70.0
+  },
+  {
+    "name": "Uruguay",
+    "cost": 70.0
+  },
+  {
+    "name": "Vanuatu",
+    "cost": 70.0
+  },
+  {
+    "name": "Venezuela",
+    "cost": 70.0
+  },
+  {
+    "name": "Vietnam",
+    "cost": 70.0
+  },
+  {
+    "name": "Wallis and Futuna",
+    "cost": 70.0
+  },
+  {
+    "name": "Western Sahara",
+    "cost": 70.0
+  },
+  {
+    "name": "Yemen",
+    "cost": 70.0
+  },
+  {
+    "name": "Zambia",
+    "cost": 70.0
+  },
+  {
+    "name": "Zimbabwe",
+    "cost": 70.0
   }
 ]

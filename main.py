@@ -31,7 +31,7 @@ def file_to_json(file_name):
 class MobileOperatorSimulator:
     def __init__(self, metadata):
         self.metadata = metadata
-        self.db1_engine = create_engine('sqlite:///:memory:', pool_size=POOL_SIZE, echo=True)
+        self.db1_engine = create_engine('sqlite:///:memory:', pool_size=POOL_SIZE, echo=False)
         self.db2_engine = None
 
         self.generate_schema(self.db1_engine)
@@ -140,140 +140,143 @@ class MobileOperatorSimulator:
 
         self.db1_session.commit()
 
-    def parse_regional_costs(self, home_operator, target_operators, info):
-        costs = []
+    def generate_tariffs(self):
+        pass
 
-        home_region = home_operator.region
-        home_country = home_operator.country
+    # def parse_regional_costs(self, home_operator, target_operators, info):
+    #     costs = []
+    #
+    #     home_region = home_operator.region
+    #     home_country = home_operator.country
+    #
+    #     used_regions = []
+    #     region_infos = []
+    #     for region in sorted(info, key=lambda region: region['name']):
+    #         region_name = region['name']
+    #         cost = region['cost']
+    #         if region_name == 'HOME_REGION':
+    #             used_regions.append(home_region.name)
+    #             #region_info = {'region': }
+    #         elif region_name == '|REST_REGIONS|':
+    #             rest_regions = self.db1_session.query(Region).\
+    #                 filter(and_(~Region.name.in_(used_regions)),
+    #                              Region.country == home_country).all()
+    #             del info[region]
+    #             for region_record in rest_regions:
+    #                 region_info = {'name': region_record.name, 'cost': cost}
+    #                 info.append(region_info)
+    #         else:  # Concrete region name
+    #             used_regions.append(region_name)
+    #
+    #         # TODO: Incomplete
 
-        used_regions = []
-        region_infos = []
-        for region in sorted(info, key=lambda region: region['name']):
-            region_name = region['name']
-            cost = region['cost']
-            if region_name == 'HOME_REGION':
-                used_regions.append(home_region.name)
-                #region_info = {'region': }
-            elif region_name == '|REST_REGIONS|':
-                rest_regions = self.db1_session.query(Region).\
-                    filter(and_(~Region.name.in_(used_regions)),
-                                 Region.country == home_country).all()
-                del info[region]
-                for region_record in rest_regions:
-                    region_info = {'name': region_record.name, 'cost': cost}
-                    info.append(region_info)
-            else:  # Concrete region name
-                used_regions.append(region_name)
+    # def preprocessed_tariffs_countries(self, tariffs_info):
+    #     home_country = 'Russia'
+    #     cis_country_names = set(file_to_json('data/cis_countries.json'))
+    #     europe_country_names = set(file_to_json('data/europe_countries.json'))
+    #
+    #     for t_info in tariffs_info:
+    #         for version in t_info['regional_versions']:
+    #             home_region_name = version['region_name']
+    #
+    #             for service_info in version['basic_services']:
+    #                 if 'countries' in service_info:
+    #                     used_countries = []
+    #                     new_country_infos = []
+    #                     to_delete = []
+    #                     for country_info in sorted(service_info['countries'],
+    #                                                key=lambda country: country['name']):
+    #                         country_name = country_info['name']
+    #                         if country_name == 'HOME_COUNTRY':
+    #                             country_info['name'] = home_country
+    #                             used_countries.append(home_country)
+    #                         elif country_name == 'CIS_COUNTRIES':
+    #                             to_delete.append('CIS_COUNTRIES')
+    #                             cost = country_info['cost']
+    #                             for name in cis_country_names - {home_country}:
+    #                                 info = {'name': name, 'cost': cost}
+    #                                 if 'regions' in country_info:
+    #                                     info['regions'] = country_info['regions'][:]
+    #                                 new_country_infos.append(info)
+    #                         elif country_name == 'EUROPE_COUNTRIES':
+    #                             to_delete.append('EUROPE_COUNTRIES')
+    #                             cost = country_info['cost']
+    #                             for name in europe_country_names:
+    #                                 info = {'name': name, 'cost': cost}
+    #                                 new_country_infos.append(info)
+    #                         elif country_name == '|REST_COUNTRIES|':
+    #                             to_delete.append('|REST_COUNTRIES|')
+    #                             cost = country_info['cost']
+    #                             rest_countries = self.db1_session.query(Country).\
+    #                                 filter(~Country.name.in_(used_countries)).all()
+    #                             for country in rest_countries:
+    #                                 info = {'name': country.name, 'cost': cost}
+    #                                 print(info)
+    #                                 if 'regions' in country_info:
+    #                                     info['regions'] = country_info['regions'][:]
+    #                                 new_country_infos.append(info)
+    #                         else:
+    #                             used_countries.append(country_name)
+    #                     #print(to_delete)
+    #                     # Deleting macros
+    #                     #for macro in to_delete:
+    #                     #    service_info['countries'].remove(macro)
+    #
+    #                     # Inserting new countries
+    #                     for info in new_country_infos:
+    #                         service_info['countries'].append(info)
+    #
+    #     return tariffs_info
 
-            # TODO: Incomplete
-
-    def preprocessed_tariffs_countries(self, tariffs_info):
-        home_country = 'Russia'
-        cis_country_names = set(file_to_json('data/cis_countries.json'))
-        europe_country_names = set(file_to_json('data/europe_countries.json'))
-
-        for t_info in tariffs_info:
-            for version in t_info['regional_versions']:
-                home_region_name = version['region_name']
-
-                for service_info in version['basic_services']:
-                    if 'countries' in service_info:
-                        used_countries = []
-                        new_country_infos = []
-                        to_delete = []
-                        for country_info in sorted(service_info['countries'],
-                                                   key=lambda country: country['name']):
-                            country_name = country_info['name']
-                            if country_name == 'HOME_COUNTRY':
-                                country_info['name'] = home_country
-                                used_countries.append(home_country)
-                            elif country_name == 'CIS_COUNTRIES':
-                                to_delete.append('CIS_COUNTRIES')
-                                cost = country_info['cost']
-                                for name in cis_country_names - {home_country}:
-                                    info = {'name': name, 'cost': cost}
-                                    if 'regions' in country_info:
-                                        info['regions'] = country_info['regions'][:]
-                                    new_country_infos.append(info)
-                            elif country_name == 'EUROPE_COUNTRIES':
-                                to_delete.append('EUROPE_COUNTRIES')
-                                cost = country_info['cost']
-                                for name in europe_country_names:
-                                    info = {'name': name, 'cost': cost}
-                                    new_country_infos.append(info)
-                            elif country_name == '|REST_COUNTRIES|':
-                                to_delete.append('|REST_COUNTRIES|')
-                                cost = country_info['cost']
-                                rest_countries = self.db1_session.query(Country).\
-                                    filter(~Country.name.in_(used_countries)).all()
-                                for country in rest_countries:
-                                    info = {'name': country.name, 'cost': cost}
-                                    print(info)
-                                    if 'regions' in country_info:
-                                        info['regions'] = country_info['regions'][:]
-                                    new_country_infos.append(info)
-                            else:
-                                used_countries.append(country_name)
-                        #print(to_delete)
-                        # Deleting macros
-                        #for macro in to_delete:
-                        #    service_info['countries'].remove(macro)
-
-                        # Inserting new countries
-                        for info in new_country_infos:
-                            service_info['countries'].append(info)
-
-        return tariffs_info
-
-    def preprocessed_tariffs_info(self):
-        tariffs_info = file_to_json(TARIFFS_FILE_PATH)
-        tariffs_info = self.preprocessed_tariffs_countries(tariffs_info)
-        return tariffs_info
+    # def preprocessed_tariffs_info(self):
+    #     tariffs_info = file_to_json(TARIFFS_FILE_PATH)
+    #     tariffs_info = self.preprocessed_tariffs_countries(tariffs_info)
+    #     return tariffs_info
 
     def foo(self):
         from preprocessor import TariffPreprocessor
 
         tariffs_info = file_to_json(TARIFFS_FILE_PATH)
-        preprocessor = TariffPreprocessor(tariffs_info, self.db1_session)
+        preprocessor = TariffPreprocessor(tariffs_info[0], self.db1_session)
         preprocessor.preprocessed()
 
-    def generate_tariffs(self):
-        tariffs_info = file_to_json(TARIFFS_FILE_PATH)
-
-        russia = self.db1_session.query(Country).filter_by(name='Russia').one()
-
-        for t_info in tariffs_info:
-            tariff_name = t_info['name']
-            activation_code = t_info['activation_code']
-
-            for version in t_info['regional_versions']:
-                region_name = version['region_name']
-
-                region = self.db1_session.query(Region).filter_by(name=region_name).one()
-                regional_operator = self.db1_session.query(MobileOperator).\
-                                     filter_by(name='MTS', country=russia, region=region).one()
-
-                tariff = Tariff(name=tariff_name,
-                                activation_code=activation_code,
-                                operator=regional_operator)
-
-                for service_info in version['basic_services']:
-                    service_name = service_info['type']
-
-                    if 'countries' in service_info:
-                        pass
-                    else:
-                        use_cost = service_info['cost']
-                        cost = Cost(use_cost=use_cost,
-                                    operator_from=regional_operator)
-                        service = Service(name=service_name,
-                                          operator=regional_operator,
-                                          costs=[cost])
-                        tariff.attached_services.append(service)
-
-                self.db1_session.add(tariff)
-
-        self.db1_session.commit()
+    # def generate_tariffs(self):
+    #     tariffs_info = file_to_json(TARIFFS_FILE_PATH)
+    #
+    #     russia = self.db1_session.query(Country).filter_by(name='Russia').one()
+    #
+    #     for t_info in tariffs_info:
+    #         tariff_name = t_info['name']
+    #         activation_code = t_info['activation_code']
+    #
+    #         for version in t_info['regional_versions']:
+    #             region_name = version['region_name']
+    #
+    #             region = self.db1_session.query(Region).filter_by(name=region_name).one()
+    #             regional_operator = self.db1_session.query(MobileOperator).\
+    #                                  filter_by(name='MTS', country=russia, region=region).one()
+    #
+    #             tariff = Tariff(name=tariff_name,
+    #                             activation_code=activation_code,
+    #                             operator=regional_operator)
+    #
+    #             for service_info in version['basic_services']:
+    #                 service_name = service_info['type']
+    #
+    #                 if 'countries' in service_info:
+    #                     pass
+    #                 else:
+    #                     use_cost = service_info['cost']
+    #                     cost = Cost(use_cost=use_cost,
+    #                                 operator_from=regional_operator)
+    #                     service = Service(name=service_name,
+    #                                       operator=regional_operator,
+    #                                       costs=[cost])
+    #                     tariff.attached_services.append(service)
+    #
+    #             self.db1_session.add(tariff)
+    #
+    #     self.db1_session.commit()
 
     # def generate_tariffs(self):
     #     tariffs_info = file_to_json(TARIFFS_FILE_PATH)
