@@ -1,15 +1,14 @@
-from sqlalchemy import and_
-from sqlalchemy.orm import aliased
+import json
 
-from main import file_to_json
+from sqlalchemy import and_
+
+from tools import file_to_json
 from entities.location import *
 from entities.operator import *
 
-import json
 
 class TariffPreprocessor:
-    def __init__(self, info, session):
-        self.info = info
+    def __init__(self, session):
         self.db_session = session
 
     def get_country_info(self, name, info):
@@ -36,35 +35,9 @@ class TariffPreprocessor:
 
         return region_info
 
-    def preprocessed(self):
-        home_country_name = 'Russia'
-        home_region_name = 'Moskva'
-        country_infos = [{'name': 'HOME_COUNTRY',
-                          'operators': 0},
-                         {'name': 'CIS_COUNTRIES',
-                          'cost': 29.0},
-                         {'name': 'EUROPE_COUNTRIES',
-                          'cost': 49.0},
-                         {'name': '|REST_COUNTRIES|',
-                          'cost': 70.0}]
-
-        operator_infos = [[{'name': 'MTS',
-                            'regions': 0},
-                           {'name': '|REST_OPERATORS|',
-                            'regions': 1}]]
-
-        region_infos = [[{'name': 'HOME_REGION',
-                          'cost': 0.0},
-                         {'name': '|REST_REGIONS|',
-                          'cost': 1.5}],
-                        [{'name': 'HOME_REGION',
-                          'cost': 1.5},
-                         {'name': '|REST_REGIONS|',
-                          'cost': 10.0}]]
-
+    def parse_basic_service(self, home_country_name, home_region_name, country_infos):
         cis_country_names = set(file_to_json('data/cis_countries.json'))
         eu_country_names = set(file_to_json('data/europe_countries.json'))
-
         new_country_infos = []
         used_countries = []
         for country in sorted(country_infos, key=lambda country: country['name']):
@@ -100,7 +73,7 @@ class TariffPreprocessor:
             if 'operators' in country:
                 new_operator_infos = []
                 used_operators = []
-                local_operator_infos = operator_infos[country['operators']]
+                local_operator_infos = country['operators']
                 for operator in sorted(local_operator_infos,
                                        key=lambda operator: operator['name']):
                     operator_name = operator['name']
@@ -124,37 +97,49 @@ class TariffPreprocessor:
 
                 for operator in new_operator_infos:
                     operator_name = operator['name']
-                    stmt = self.db_session.query(MobileOperator).\
-                        filter_by(name=operator_name, country=country_entity).subquery()
-                    local_operators = aliased(MobileOperator, stmt)
 
                     if 'regions' in operator:
                         new_region_infos = []
                         used_regions = []
-                        local_region_infos = region_infos[operator['regions']]
+                        local_region_infos = operator['regions']
                         for region in sorted(local_region_infos,
                                              key=lambda region: region['name']):
                             region_name = region['name']
                             if region_name == 'HOME_REGION':
                                 # TODO: Don't add if operator has not that region
-                                region_entity = self.db_session.query(Region).filter_by(country=country_entity,
-                                                                                        name=home_region_name).one()
-                                try:
-                                    region_operator = self.db_session.query(local_operators).\
-                                        filter_by(region=region_entity).one()
-                                except:
-                                    pass
                                 used_regions.append(home_region_name)
                                 region_info = self.get_region_info(home_region_name, region)
                                 new_region_infos.append(region_info)
                             elif region_name == '|REST_REGIONS|':
-                                pass
+                                rest_regions = self.db_session.query(Region).\
+                                    join(Region.operators).\
+                                    filter(and_(~Region.name.in_(used_regions),
+                                                MobileOperator.name == operator_name)).all()
+                                for region_entity in rest_regions:
+                                    region_info = self.get_region_info(region_entity.name, region)
+                                    new_region_infos.append(region_info)
                             else:
                                 used_regions.append(region_name)
                                 region_info = self.get_region_info(region_name, region)
                                 new_region_infos.append(region_info)
                         operator['regions'] = new_region_infos
+        return new_country_infos
 
-        with open('data/preprocessed_tariffs.json', 'w', encoding='utf-8') as file:
-            file.write(json.dumps(new_country_infos, indent=2))
+    def preprocess(self, info, replace=True):
+        if replace:
+            tariffs_info = info
+        else:
+            tariffs_info = info.copy()
 
+        for tariff_info in tariffs_info:
+            for regional_version in tariff_info['regional_versions']:
+                home_country_name = regional_version['country_name']
+                home_region_name = regional_version['region_name']
+                for service_info in regional_version['basic_services']:
+                    if 'countries' in service_info:
+                        new_countries_info = self.parse_basic_service(home_country_name,
+                                                                home_region_name,
+                                                                service_info['countries'])
+                        service_info['countries'] = new_countries_info
+        if not replace:
+            return tariffs_info

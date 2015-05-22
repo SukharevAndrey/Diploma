@@ -122,7 +122,7 @@
             "restrictions": [
               {
                 "operator": "MTS",
-                "country": "Russia"
+                "country": "HOME_COUNTRY"
               }
             ]
           },

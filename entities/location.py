@@ -7,15 +7,12 @@ class Country(Base):
     __tablename__ = 'country'
 
     id = db.Column(db.Integer, primary_key=True)
-    # price_region_id = db.Column(db.Integer, db.ForeignKey('priceRegion.id'))
     capital_id = db.Column(db.Integer, db.ForeignKey('place.id'))
 
     name = db.Column(db.String, nullable=False)
     iso2_code = db.Column(db.String)
     iso3_code = db.Column(db.String)
 
-    # price_region = relationship('PriceRegion', uselist=False)
-    # states = relationship('State')
     regions = relationship('Region')
     capital = relationship('Place', uselist=False)
 
@@ -28,12 +25,12 @@ class Region(Base):
 
     id = db.Column(db.Integer, primary_key=True)
     country_id = db.Column(db.Integer, db.ForeignKey('country.id'))
-    # price_region_id = db.Column(db.Integer, db.ForeignKey('priceRegion.id'))
 
     name = db.Column(db.String, nullable=False)
     type = db.Column(db.String, default='oblast')
     code = db.Column(db.String)
     country = relationship('Country', uselist=False)
+    operators = relationship('MobileOperator')
 
 
 class Place(Base):
@@ -41,11 +38,9 @@ class Place(Base):
 
     id = db.Column(db.Integer, primary_key=True)
     region_id = db.Column(db.Integer, db.ForeignKey('region.id'))
-    # price_region_id = db.Column(db.Integer, db.ForeignKey('priceRegion.id'))
 
     name = db.Column(db.String, nullable=False)
 
-    # price_region = relationship('PriceRegion', uselist=False)
     region = relationship('Region', uselist=False)
     capital_of = relationship('Country', uselist=False)
 
@@ -103,13 +98,3 @@ class Location(Base):
     country = relationship('Country', uselist=False)
     region = relationship('Region', uselist=False)
     place = relationship('Place', uselist=False)
-
-#
-# class PriceRegion(Base):
-#     __tablename__ = 'priceRegion'
-#
-#     id = db.Column(db.Integer, primary_key=True)
-#
-#     countries = relationship('Country')
-#     region = relationship('Region', uselist=False)
-#     places = relationship('Place')
