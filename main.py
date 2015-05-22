@@ -12,6 +12,8 @@ from random_data import *
 from preprocessor import TariffPreprocessor
 from tools import file_to_json
 
+import json
+
 POOL_SIZE = 20
 
 COUNTRIES_FILE_PATH = 'data/countries.json'
@@ -24,7 +26,7 @@ REGIONS_FILE_PATH = 'data/russia_subjects.json'
 class MobileOperatorSimulator:
     def __init__(self, metadata):
         self.metadata = metadata
-        self.db1_engine = create_engine('sqlite:///:memory:', pool_size=POOL_SIZE, echo=True)
+        self.db1_engine = create_engine('sqlite:///:memory:', pool_size=POOL_SIZE, echo=False)
         self.db2_engine = None
 
         self.generate_schema(self.db1_engine)
@@ -138,6 +140,8 @@ class MobileOperatorSimulator:
         tariffs_info = file_to_json(TARIFFS_FILE_PATH)
         preprocessor = TariffPreprocessor(self.db1_session)
         preprocessor.preprocess(tariffs_info, replace=True)
+        # with open('data/preprocessed_tariffs.json', 'w', encoding='utf-8') as file:
+        #     file.write(json.dumps(tariffs_info, indent=2))
 
         for tariff_info in tariffs_info:
             tariff_name = tariff_info['name']
@@ -156,6 +160,7 @@ class MobileOperatorSimulator:
                                 activation_code=activation_code,
                                 operator=regional_operator)
 
+                # Adding basic services such as calls, sms, etc...
                 for service_info in regional_version['basic_services']:
                     service_name = service_info['type']
                     service = Service(name=service_name,
@@ -184,6 +189,7 @@ class MobileOperatorSimulator:
                                                         operator_to=local_operator)
                                             service.costs.append(cost)
                                     else:
+                                        # TODO: Generalize?
                                         use_cost = operator_info['cost']
                                         # Setting cost to all regional operators with that name
                                         operators = self.db1_session.query(MobileOperator).\
@@ -209,6 +215,34 @@ class MobileOperatorSimulator:
                         cost = Cost(use_cost=use_cost,
                                     operator_from=regional_operator)
                         service.costs.append(cost)
+
+                    tariff.attached_services.append(service)
+
+                # Adding included services such as packets
+                for service_info in regional_version['services']:
+                    service_name = service_info['name']
+                    is_periodic = service_info['is_periodic']
+                    s_cost = service_info['cost']
+
+                    service = Service(name=service_name,
+                                      operator=regional_operator)
+                    if is_periodic:
+                        cost = Cost(operator_from=regional_operator,
+                                    use_cost=s_cost)
+                    else:
+                        cost = Cost(operator_from=regional_operator,
+                                    subscription_cost=s_cost)
+                    service.costs.append(cost)
+
+                    if 'packet' in service_info:
+                        packet_info = service_info['packet']
+                        packet = Packet(type=packet_info['type'],
+                                        amount=packet_info['amount'])
+                        service.packet = packet
+
+                    if 'restrictions' in service_info:
+                        # TODO: Add restrictions
+                        pass
 
                     tariff.attached_services.append(service)
 
@@ -320,10 +354,6 @@ class SimulatedCustomer:
 def main():
     sim = MobileOperatorSimulator(Base.metadata)
     sim.initial_fill()
-    sim.generate_tariffs()
-    # foo = sim.preprocessed_tariffs_info()
-    # with open('data/preprocessed_tariffs.json', 'w') as file:
-    #     file.write(json.dumps(foo))
 
 if __name__ == '__main__':
     main()
