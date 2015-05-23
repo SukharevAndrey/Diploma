@@ -113,7 +113,7 @@ class CustomerAgreement(Base):
     agreement_id = db.Column(db.Integer, db.ForeignKey('agreement.id'))
 
     sign_date = db.Column(db.Date, default=db.func.now())
-    period = db.Column(db.Date)  # TODO: Time period
+    date_to = db.Column(db.Date)
     income_rating = db.Column(db.Integer, default=0)
 
     customer = relationship('Customer')

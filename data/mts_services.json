@@ -1,5 +1,51 @@
 [
   {
+    "name": "BIT",
+    "is_periodic": true,
+    "activation_code": "*252#",
+    "duration": {
+      "days": 1
+    },
+    "regional_versions": [
+      {
+        "region_name": "Moskva",
+        "cost": 8.0,
+        "packet": {
+          "type": "internet",
+          "amount": 75
+        },
+        "restrictions": [
+          {
+            "region": "Moskva"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "SuperBIT",
+    "is_periodic": true,
+    "activation_code": "*628#",
+    "duration": {
+      "days": 30
+    },
+    "regional_versions": [
+      {
+        "region_name": "Moskva",
+        "cost": 350.0,
+        "packet": {
+          "type": "internet",
+          "amount": 3072
+        },
+        "restrictions": [
+          {
+            "country": "Russia"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "name": "Turbo Button 500 MB",
     "is_periodic": false,
     "activation_code": "",

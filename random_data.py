@@ -2,7 +2,9 @@ import string
 import random
 from datetime import date
 
-from entities.customer import Individual, IndividualInfo
+from entities.customer import Individual, IndividualInfo, Device
+
+used_IMEI = set()
 
 month_days = {1: 31, 2: 28, 3: 31, 4: 30, 5: 31, 6: 30,
               7: 31, 8: 31, 9: 30, 10: 31, 11: 30, 12: 31}
@@ -52,3 +54,17 @@ def random_individual():
     individual = Individual(info=info)
 
     return individual
+
+def random_IMEI():
+    return ''.join(map(str, [random.randint(0, 9) for i in range(15)]))
+
+def random_device():
+    imei = random_IMEI()
+    while imei in used_IMEI:
+        imei = random_IMEI()
+
+    device_type = random.choice(['phone', 'smartphone', 'tablet', 'modem'])
+
+    d = Device(IMEI=imei,
+               type=device_type)
+    return d

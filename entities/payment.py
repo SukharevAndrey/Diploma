@@ -96,21 +96,6 @@ class ThirdPartyCollection(PaymentMethod):
     id = db.Column(db.Integer, db.ForeignKey('paymentMethod.id'), primary_key=True)
 
 
-# class Cost(Base):
-#     __tablename__ = 'cost'
-#
-#     id = db.Column(db.Integer, primary_key=True)
-#     sender_region_id = db.Column(db.Integer, db.ForeignKey('priceRegion.id'))
-#     recipient_region_id = db.Column(db.Integer, db.ForeignKey('priceRegion.id'))
-#
-#     use_cost = db.Column(db.Numeric, default=0)
-#     subscription_cost = db.Column(db.Numeric, default=0)
-#
-#     sender_region = relationship('PriceRegion', foreign_keys=[sender_region_id], uselist=False)
-#     recipient_region = relationship('PriceRegion', foreign_keys=[recipient_region_id], uselist=False)
-#
-#     services = relationship('Service', secondary='serviceCost')
-
 class Cost(Base):
     __tablename__ = 'cost'
 
