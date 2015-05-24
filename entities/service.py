@@ -98,7 +98,7 @@ class ServiceLog(Base):
 class Request(Base):
     __tablename__ = 'request'
     __table_args__ = (
-        db.CheckConstraint("type IN ('activation', 'deactivation')"),
+        db.CheckConstraint("type IN ('activation', 'deactivation', 'status')"),
     )
 
     id = db.Column(db.Integer, primary_key=True)

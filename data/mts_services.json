@@ -111,6 +111,7 @@
   {
     "name": "Billing Request",
     "is_periodic": false,
+    "activation_code": "",
     "cost": 0.0
   }
 ]

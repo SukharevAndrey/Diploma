@@ -151,8 +151,8 @@ class MobileOperatorGenerator:
 
         for s_info in services_info:
             name = s_info['name']
-            activation_code = s_info['name']
-            is_periodic = s_info['name']
+            activation_code = s_info['activation_code']
+            is_periodic = s_info['is_periodic']
             if 'regional_versions' in s_info:
                 for version in s_info['regional_versions']:
                     region_name = version['region_name']
@@ -180,6 +180,11 @@ class MobileOperatorGenerator:
                         session.add(packet)
 
                     session.add_all([cost, service])
+            else:
+                service = Service(name=name, activation_code=activation_code)
+                session.add(service)
+
+        session.commit()
         self.print_status('Done')
 
     def generate_tariffs(self, session):
@@ -302,9 +307,21 @@ class MobileOperatorGenerator:
         session.commit()
         self.print_status('Done')
 
+    def generate_payment_methods(self, session):
+        self.print_status('Generating payment methods')
+        cash = Cash()
+        qiwi = ThirdPartyCollection(name='QIWI')
+        yandex = ThirdPartyCollection(name='Yandex.Money')
+        webmoney = ThirdPartyCollection(name='WebMoney')
+
+        session.add_all([cash, qiwi, yandex, webmoney])
+        session.commit()
+        self.print_status('Done')
+
     def generate_static_data(self, session):
         self.generate_agreements(session)
         self.generate_calc_methods(session)
+        self.generate_payment_methods(session)
         self.generate_countries(session)
         self.generate_russian_regions(session)
         self.generate_mobile_operators(session)
