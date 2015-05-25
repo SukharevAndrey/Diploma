@@ -84,6 +84,9 @@ class MobileOperatorSystem:
 
         self.session.commit()
 
+    def handle_used_service(self, service_log):
+        pass
+
     def connect_tariff(self, device, tariff):
         print('Connecting tariff: ', tariff.name)
         # If device already has a tariff
@@ -203,7 +206,7 @@ class SimulatedCustomer:
         print('Changing location to: Country = %s, Region = %s, Place = %s' % (country_name, region_name, place_name))
         if device.locations:
             latest_location = self.session.query(Location).filter_by(device=device, date_to=None).one()
-            latest_location.date_to = datetime.now()
+            latest_location.date_to = db.func.now()
 
         region, place = None, None
 
@@ -221,15 +224,24 @@ class SimulatedCustomer:
     def make_call(self):
         pass
 
-    def send_sms(self, device, recipient_phone_number, location=None):
+    def send_sms(self, device, recipient_phone_number, recipient_location=None):
+        sms_service = None
         for service in device.tariff.attached_services:
             if service.name == 'sms':
                 sms_service = service
                 break
+        if not sms_service:
+            raise Exception
 
-        # device_service = self.session.query(DeviceService).\
-        #     filter_by(service=sms_service, device=device).one()
-        # log = ServiceLog(device_service=device_service)
+        device_service = self.session.query(DeviceService).\
+            filter_by(service=sms_service, device=device).one()
+        log = ServiceLog(device_service=device_service,
+                         recipient_phone_number=recipient_phone_number,
+                         recipient_location=recipient_location)
+
+        self.session.add(log)
+        self.session.commit()
+        self.system.handle_used_service(log)
 
     def send_mms(self):
         pass

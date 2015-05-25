@@ -83,15 +83,13 @@ class ServiceLog(Base):
     id = db.Column(db.Integer, primary_key=True)
     device_service_id = db.Column(db.Integer, db.ForeignKey('deviceService.id'))
     recipient_phone_number_id = db.Column(db.Integer, db.ForeignKey('phoneNumber.id'))
-    device_location_id = db.Column(db.Integer, db.ForeignKey('location.id'))
     recipient_location_id = db.Column(db.Integer, db.ForeignKey('location.id'))
 
     use_date = db.Column(db.DateTime, default=db.func.now())
     amount = db.Column(db.Integer, default=1)
 
     device_service = relationship('DeviceService', uselist=False)
-    device_location = relationship('Location', foreign_keys=[device_location_id], uselist=False)
-    recipient_location = relationship('Location', foreign_keys=[recipient_location_id], uselist=False)
+    recipient_location = relationship('Location', uselist=False)
     recipient_phone_number = relationship('PhoneNumber', uselist=False)
     bill = relationship('Bill', uselist=False)
 
