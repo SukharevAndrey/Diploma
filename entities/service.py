@@ -100,6 +100,8 @@ class Request(Base):
         db.CheckConstraint("type IN ('activation', 'deactivation', 'status')"),
     )
 
+    # TODO: Implicit, explicit
+
     id = db.Column(db.Integer, primary_key=True)
     device_id = db.Column(db.Integer, db.ForeignKey('device.id'))
     service_id = db.Column(db.Integer, db.ForeignKey('service.id'))

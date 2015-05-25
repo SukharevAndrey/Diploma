@@ -1,7 +1,6 @@
 from decimal import Decimal
 
 from sqlalchemy import create_engine, and_
-from sqlalchemy.event import listens_for
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from base import Base
@@ -68,6 +67,7 @@ class MobileOperatorSystem:
             raise NotImplementedError
         elif request.type == 'status':
             print('Doing nothing')
+            # TODO: Maybe send sms from system
 
     def handle_payment(self, device, payment):
         print('Received payment')
@@ -79,7 +79,7 @@ class MobileOperatorSystem:
             balance = self.session.query(Balance).filter_by(type='credit', device=device).one()
 
         payment.balance = balance
-        balance.amount += payment.amount
+        balance.amount += Decimal(payment.amount)
 
         # TODO: Implement bonuses charging
 
@@ -89,7 +89,9 @@ class MobileOperatorSystem:
         print('Connecting tariff: ', tariff.name)
         # If device already has a tariff
         if device.tariff is not None:
-            raise NotImplementedError
+            for service in tariff.attached_services:
+                self.deactivate_service(device, service, commit=False)
+            # TODO: Charge activation sum
 
         # Add to user basic services (like calls, sms, mms, internet)
         for service in tariff.attached_services:
@@ -109,6 +111,43 @@ class MobileOperatorSystem:
             device_service.packet_left = service.packet.amount
         device.services.append(device_service)
 
+        if commit:
+            self.session.commit()
+
+    def activate_service(self, device, service, commit=True):
+        print('Activating service: ', service.name)
+        self.session.query(DeviceService).\
+            filter_by(device=device, service=service, is_activated=False).one().\
+            update({'is_activated': True},
+                   synchronize_session='fetch')
+
+        if commit:
+            self.session.commit()
+
+    def deactivate_service(self, device, service, commit=True):
+        print('Deactivating service: ', service.name)
+        self.session.query(DeviceService).\
+            filter_by(device=device, service=service, is_activated=True).one().\
+            update({'is_activated': False},
+                   synchronize_session='fetch')
+        if commit:
+            self.session.commit()
+
+    def block_service(self, device, service, commit=True):
+        print('Blocking service: ', service.name)
+        self.session.query(DeviceService).\
+            filter_by(device=device, service=service, is_blocked=False).one().\
+            update({'is_blocked': True},
+                   synchronize_session='fetch')
+        if commit:
+            self.session.commit()
+
+    def unlock_service(self, device, service, commit=True):
+        print('Blocking service: ', service.name)
+        self.session.query(DeviceService).\
+            filter_by(device=device, service=service, is_blocked=True).one().\
+            update({'is_blocked': False},
+                   synchronize_session='fetch')
         if commit:
             self.session.commit()
 
@@ -161,81 +200,6 @@ class SimulatedCustomer:
         self.session.commit()
         return device
 
-    # def activate_tariff(self, device, info):
-    #     regional_operator = device.phone_number.mobile_operator
-    #     tariff_name = info['name']
-    #     tariff = self.session.query(Tariff).filter_by(name=tariff_name,
-    #                                                   operator=regional_operator,
-    #                                                   in_archive=False).one()
-    #     if device.tariff is not None:
-    #         # Sending request
-    #         request = Request(type='activation', device=device, service=tariff)
-    #         self.session.add(request)
-    #
-    #         for service in device.tariff.attached_services:
-    #             device_service = self.session.query(DeviceService).\
-    #                 filter_by(device=device, service=service).one()
-    #             device_service.is_activated = False
-    #         cost_entity = tariff.costs[0]
-    #         # TODO: Charge sum
-    #
-    #     for service in tariff.attached_services:
-    #         device_service = DeviceService(service=service)
-    #         if service.packet is not None:
-    #             device_service.packet_left = service.packet.amount
-    #         device.services.append(device_service)
-    #
-    #     device.tariff = tariff
-    #     device_tariff = DeviceService(service=tariff)
-    #     device.services.append(device_tariff)
-    #
-    #     self.session.commit()
-
-    def block_service(self, device, service_name):
-        regional_operator = device.phone_number.mobile_operator
-        service = self.session.query(Service).\
-            filter_by(name=service_name, operator=regional_operator).one()
-
-        self.session.query(DeviceService).\
-            filter(and_(DeviceService.is_activated,
-                        DeviceService.service == service,
-                        DeviceService.device == device)).\
-            update({'is_blocked': True},
-                   synchronize_session='fetch')
-
-        self.session.commit()
-
-    def activate_service(self, device, service_name):
-        regional_operator = device.phone_number.mobile_operator
-        service = self.session.query(Service).\
-            filter_by(name=service_name, operator=regional_operator).one()
-
-        self.session.query(DeviceService).\
-            filter(and_(~DeviceService.is_activated,
-                        DeviceService.service == service,
-                        DeviceService.device == device)).\
-            update({'is_activated': True},
-                   synchronize_session='fetch')
-
-        self.session.commit()
-
-    def deactivate_service(self, device, service_name):
-        regional_operator = device.phone_number.mobile_operator
-        service = self.session.query(Service).\
-            filter_by(name=service_name, operator=regional_operator).one()
-
-        self.session.query(DeviceService).\
-            filter(and_(DeviceService.is_activated,
-                        DeviceService.service == service,
-                        DeviceService.device == device)).\
-            update({'is_activated': False},
-                   synchronize_session='fetch')
-
-        self.session.commit()
-
-    # def connect_service(self, device, service_name):
-    #     pass
-
     def make_call(self):
         pass
 
@@ -284,14 +248,6 @@ class SimulatedCustomer:
             raise NotImplementedError
 
         payment = Payment(amount=info['amount'], method=payment_method)
-        # if self.customer_type == 'individual':
-        #     balance = self.session.query(Balance).filter_by(type='main', device=device).one()
-        # else:
-        #     balance = self.session.query(Balance).filter_by(type='credit', device=device).one()
-        # payment.balance = balance
-        # balance.amount += Decimal(payment.amount)
-        #
-        #  (probably with events)
 
         self.session.add(payment)
         self.session.commit()
@@ -299,7 +255,7 @@ class SimulatedCustomer:
 
     def begin_simulation(self):
         tariff_info = {
-            'code': '*100*1#', # smart mini
+            'code': '*100*1#',  # smart mini
             'type': 'activation',
             'service_type': 'tariff'
         }
@@ -309,7 +265,7 @@ class SimulatedCustomer:
             'name': 'QIWI'
         }
         balance_request_info = {
-            'code': '*100#', # balance request
+            'code': '*100#',  # balance request
             'type': 'status',
             'service_type': 'service'
         }
