@@ -308,7 +308,7 @@ class MobileOperatorGenerator:
         self.print_status('Done')
 
     def generate_payment_methods(self, session):
-        self.print_status('Generating payment methods')
+        self.print_status('Generating payment methods...')
         cash = Cash()
         qiwi = ThirdPartyCollection(name='QIWI')
         yandex = ThirdPartyCollection(name='Yandex.Money')
