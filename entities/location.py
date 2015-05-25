@@ -94,7 +94,13 @@ class Location(Base):
     country_id = db.Column(db.Integer, db.ForeignKey('country.id'))
     region_id = db.Column(db.Integer, db.ForeignKey('region.id'))
     place_id = db.Column(db.Integer, db.ForeignKey('place.id'))
+    device_id = db.Column(db.Integer, db.ForeignKey('device.id'))
+
+    date_from = db.Column(db.DateTime, default=db.func.now())
+    date_to = db.Column(db.DateTime)
 
     country = relationship('Country', uselist=False)
     region = relationship('Region', uselist=False)
     place = relationship('Place', uselist=False)
+
+    device = relationship('Device', uselist=False)

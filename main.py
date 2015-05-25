@@ -1,7 +1,9 @@
 from decimal import Decimal
+from datetime import datetime
 
 from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm.exc import NoResultFound
 
 from base import Base
 from generator import MobileOperatorGenerator
@@ -28,8 +30,6 @@ class MobileOperatorSimulator:
         self.db1_session = scoped_session(sessionmaker(bind=self.db1_engine))
         self.db2_session = scoped_session(sessionmaker(bind=self.db2_engine))
 
-        self.initial_balance = 200
-
         self.system = MobileOperatorSystem(self.db1_session)
 
         self.customers = []
@@ -38,10 +38,7 @@ class MobileOperatorSimulator:
         self.metadata.create_all(engine)
 
     def generate_customers(self):
-        #self.db1_engine.echo = True
-        # for i in range(10):
-        #     c = SimulatedCustomer(self.db1_session)
-        #     self.customers.append(c)
+        self.db1_engine.echo = True
         c = SimulatedCustomer(self.db1_session, self.system, verbose=True)
         c.begin_simulation()
 
@@ -54,7 +51,7 @@ class MobileOperatorSimulator:
 class MobileOperatorSystem:
     def __init__(self, session):
         self.session = session
-        self.used_phone_numbers = set()
+        self.initial_balance = 200.0
 
     def handle_request(self, request):
         print('Received request')
@@ -76,12 +73,14 @@ class MobileOperatorSystem:
         if calc_method.type == 'advance':
             balance = self.session.query(Balance).filter_by(type='main', device=device).one()
         else:  # credit
+            # TODO: Handle multiple credit balances
             balance = self.session.query(Balance).filter_by(type='credit', device=device).one()
 
         payment.balance = balance
         balance.amount += Decimal(payment.amount)
 
         # TODO: Implement bonuses charging
+        # TODO: Pay unpaid bills
 
         self.session.commit()
 
@@ -200,11 +199,37 @@ class SimulatedCustomer:
         self.session.commit()
         return device
 
+    def change_device_location(self, device, country_name, region_name=None, place_name=None):
+        print('Changing location to: Country = %s, Region = %s, Place = %s' % (country_name, region_name, place_name))
+        if device.locations:
+            latest_location = self.session.query(Location).filter_by(device=device, date_to=None).one()
+            latest_location.date_to = datetime.now()
+
+        region, place = None, None
+
+        country = self.session.query(Country).filter_by(name=country_name).one()
+        if region_name:
+            region = self.session.query(Region).filter_by(country=country, name=region_name).one()
+        if place_name:
+            place = self.session.query(Place).filter_by(region=region, name=place_name).one()
+
+        new_location = Location(country=country, region=region, place=place)
+        device.locations.append(new_location)
+
+        self.session.commit()
+
     def make_call(self):
         pass
 
-    def send_sms(self):
-        pass
+    def send_sms(self, device, recipient_phone_number, location=None):
+        for service in device.tariff.attached_services:
+            if service.name == 'sms':
+                sms_service = service
+                break
+
+        # device_service = self.session.query(DeviceService).\
+        #     filter_by(service=sms_service, device=device).one()
+        # log = ServiceLog(device_service=device_service)
 
     def send_mms(self):
         pass
@@ -275,9 +300,12 @@ class SimulatedCustomer:
         self.sign_agreement()
         account = self.register_account(agreement, 'advance')
         device = self.add_device(account)
+        self.change_device_location(device, country_name='Russia', region_name='Moskva')
         self.ussd_request(device, tariff_info)
         self.make_payment(device, payment_info)
         self.ussd_request(device, balance_request_info)
+        self.send_sms(device, None)
+        self.change_device_location(device, country_name='Russia', region_name='Brjanskaja')
 
     def simulate_day(self):
         pass

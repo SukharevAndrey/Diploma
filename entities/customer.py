@@ -170,3 +170,5 @@ class Device(Base):
     balances = relationship('Balance')
     services = relationship('DeviceService')
     requests = relationship('Request')
+    locations = relationship('Location')
+
