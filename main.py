@@ -22,13 +22,13 @@ class MobileOperatorSimulator:
     def __init__(self, metadata):
         self.metadata = metadata
         self.db1_engine = create_engine('sqlite:///:memory:', pool_size=POOL_SIZE, echo=False)
-        self.db2_engine = create_engine('sqlite:///:memory:', pool_size=POOL_SIZE, echo=False)
+        # self.db2_engine = create_engine('sqlite:///:memory:', pool_size=POOL_SIZE, echo=False)
 
         self.generate_schema(self.db1_engine)
-        self.generate_schema(self.db2_engine)
+        # self.generate_schema(self.db2_engine)
 
         self.db1_session = scoped_session(sessionmaker(bind=self.db1_engine))
-        self.db2_session = scoped_session(sessionmaker(bind=self.db2_engine))
+        # self.db2_session = scoped_session(sessionmaker(bind=self.db2_engine))
 
         self.system = MobileOperatorSystem(self.db1_session)
 
@@ -38,7 +38,7 @@ class MobileOperatorSimulator:
         self.metadata.create_all(engine)
 
     def generate_customers(self):
-        self.db1_engine.echo = True
+        self.db1_engine.echo = False
         c = SimulatedCustomer(self.db1_session, self.system, verbose=True)
         c.begin_simulation()
 
@@ -54,7 +54,7 @@ class MobileOperatorSystem:
         self.initial_balance = 200.0
 
     def handle_request(self, request):
-        print('Received request')
+        print('Handling request')
         if request.type == 'activation':
             if request.service is not None:
                 self.connect_service(request.device, request.service)
@@ -67,7 +67,7 @@ class MobileOperatorSystem:
             # TODO: Maybe send sms from system
 
     def handle_payment(self, device, payment):
-        print('Received payment')
+        print('Handling payment')
         calc_method = device.account.calc_method
 
         if calc_method.type == 'advance':
@@ -76,8 +76,10 @@ class MobileOperatorSystem:
             # TODO: Handle multiple credit balances
             balance = self.session.query(Balance).filter_by(type='credit', device=device).one()
 
+        print('Replenishing %s balance at %f' % (balance.type, payment.amount))
         payment.balance = balance
         balance.amount += Decimal(payment.amount)
+        print('Current balance: %f' % balance.amount)
 
         # TODO: Implement bonuses charging
         # TODO: Pay unpaid bills
@@ -85,15 +87,16 @@ class MobileOperatorSystem:
         self.session.commit()
 
     def handle_used_service(self, service_log):
-        pass
+        print('Handling used service')
 
     def connect_tariff(self, device, tariff):
         print('Connecting tariff: ', tariff.name)
         # If device already has a tariff
-        if device.tariff is not None:
+        if device.tariff:
+            print("The device already has tariff '%s', disconnecting it first" % tariff.name)
             for service in tariff.attached_services:
                 self.deactivate_service(device, service, commit=False)
-            # TODO: Charge activation sum
+            # TODO: Charge activation sum if latest tariff change was less than month ago
 
         # Add to user basic services (like calls, sms, mms, internet)
         for service in tariff.attached_services:
@@ -119,7 +122,7 @@ class MobileOperatorSystem:
     def activate_service(self, device, service, commit=True):
         print('Activating service: ', service.name)
         self.session.query(DeviceService).\
-            filter_by(device=device, service=service, is_activated=False).one().\
+            filter_by(device=device, service=service, is_activated=False).\
             update({'is_activated': True},
                    synchronize_session='fetch')
 
@@ -129,7 +132,7 @@ class MobileOperatorSystem:
     def deactivate_service(self, device, service, commit=True):
         print('Deactivating service: ', service.name)
         self.session.query(DeviceService).\
-            filter_by(device=device, service=service, is_activated=True).one().\
+            filter_by(device=device, service=service, is_activated=True).\
             update({'is_activated': False},
                    synchronize_session='fetch')
         if commit:
@@ -138,7 +141,7 @@ class MobileOperatorSystem:
     def block_service(self, device, service, commit=True):
         print('Blocking service: ', service.name)
         self.session.query(DeviceService).\
-            filter_by(device=device, service=service, is_blocked=False).one().\
+            filter_by(device=device, service=service, is_blocked=False).\
             update({'is_blocked': True},
                    synchronize_session='fetch')
         if commit:
@@ -147,7 +150,7 @@ class MobileOperatorSystem:
     def unlock_service(self, device, service, commit=True):
         print('Blocking service: ', service.name)
         self.session.query(DeviceService).\
-            filter_by(device=device, service=service, is_blocked=True).one().\
+            filter_by(device=device, service=service, is_blocked=True).\
             update({'is_blocked': False},
                    synchronize_session='fetch')
         if commit:
@@ -186,7 +189,7 @@ class SimulatedCustomer:
         self.session.commit()
         return account
 
-    def add_device(self, account):
+    def add_device(self, account, device_info=None):
         print('Attaching device')
         device = random_device()
         device.account = account
@@ -202,7 +205,14 @@ class SimulatedCustomer:
         self.session.commit()
         return device
 
-    def change_device_location(self, device, country_name, region_name=None, place_name=None):
+    def device_location(self, device, location_info):
+        country_name, region_name, place_name = None, None, None
+        country_name = location_info['country']
+        if 'region' in location_info:
+            region_name = location_info['region']
+        if 'place' in location_info:
+            place_name = location_info['place']
+
         print('Changing location to: Country = %s, Region = %s, Place = %s' % (country_name, region_name, place_name))
         if device.locations:
             latest_location = self.session.query(Location).filter_by(device=device, date_to=None).one()
@@ -224,7 +234,8 @@ class SimulatedCustomer:
     def make_call(self):
         pass
 
-    def send_sms(self, device, recipient_phone_number, recipient_location=None):
+    def send_sms(self, device, sms_info):
+        print('Sending sms to phone number %s in %s')
         sms_service = None
         for service in device.tariff.attached_services:
             if service.name == 'sms':
@@ -233,11 +244,30 @@ class SimulatedCustomer:
         if not sms_service:
             raise Exception
 
+        recipient_info = sms_info['recipient']
+        try:
+            recipient_phone_number = self.session.query(PhoneNumber).filter_by(area_code=recipient_info['code'],
+                                                                               number=recipient_info['number']).one()
+            print('Phone number is already registered in base and belongs to operator %s' %
+                  recipient_phone_number.mobile_operator.name)
+        except NoResultFound:
+            print('Phone number is not registered in base. Registering')
+            operator_info = recipient_info['operator']
+            operator_country = self.session.query(Country).filter_by(name=operator_info['country']).one()
+            operator_region = self.session.query(Region).filter_by(name=operator_info['region'],
+                                                                   country=operator_country).one()
+            regional_operator = self.session.query(MobileOperator).filter_by(name=operator_info['name'],
+                                                                             country=operator_country,
+                                                                             region=operator_region).one()
+            recipient_phone_number = PhoneNumber(area_code=recipient_info['code'],
+                                                 number=recipient_info['number'],
+                                                 mobile_operator=regional_operator)
+            self.session.add(recipient_phone_number)
+
         device_service = self.session.query(DeviceService).\
-            filter_by(service=sms_service, device=device).one()
+            filter_by(service=sms_service, is_activated=True, device=device).one()
         log = ServiceLog(device_service=device_service,
-                         recipient_phone_number=recipient_phone_number,
-                         recipient_location=recipient_location)
+                         recipient_phone_number=recipient_phone_number)
 
         self.session.add(log)
         self.session.commit()
@@ -249,42 +279,42 @@ class SimulatedCustomer:
     def use_internet(self):
         pass
 
-    def ussd_request(self, device, info):
-        print('Making request: ', info)
+    def ussd_request(self, device, request_info):
+        print('Making request: ', request_info)
 
         regional_operator = device.phone_number.mobile_operator
 
-        if info['service_type'] == 'service':
+        if request_info['service_type'] == 'service':
             try:
                 service = self.session.query(Service).\
-                    filter_by(activation_code=info['code'], operator=regional_operator).one()
-            except:
-                service = self.session.query(Service).filter_by(activation_code=info['code']).one()
-            request = Request(type=info['type'], device=device, service=service)
+                    filter_by(activation_code=request_info['code'], operator=regional_operator).one()
+            except NoResultFound:
+                service = self.session.query(Service).filter_by(activation_code=request_info['code']).one()
+            request = Request(type=request_info['type'], device=device, service=service)
         else:
             try:
                 tariff = self.session.query(Tariff).\
-                    filter_by(activation_code=info['code'], operator=regional_operator).one()
-            except:
-                tariff = self.session.query(Tariff).filter_by(activation_code=info['code']).one()
-            request = Request(type=info['type'], device=device, tariff=tariff)
+                    filter_by(activation_code=request_info['code'], operator=regional_operator).one()
+            except NoResultFound:
+                tariff = self.session.query(Tariff).filter_by(activation_code=request_info['code']).one()
+            request = Request(type=request_info['type'], device=device, tariff=tariff)
 
         self.session.add(request)
         self.session.commit()
         self.system.handle_request(request)
 
-    def make_payment(self, device, info):
-        print('Making payment: ', info)
-        if info['method'] == 'third_party':
-            name = info['name']
+    def make_payment(self, device, payment_info):
+        print('Making payment: ', payment_info)
+        if payment_info['method'] == 'third_party':
+            name = payment_info['name']
             payment_method = self.session.query(ThirdPartyCollection).filter_by(name=name).one()
-        elif info['method'] == 'cash':
+        elif payment_info['method'] == 'cash':
             payment_method = self.session.query(Cash).one()
         else:  # credit card
             # TODO: Implement credit card payment
             raise NotImplementedError
 
-        payment = Payment(amount=info['amount'], method=payment_method)
+        payment = Payment(amount=payment_info['amount'], method=payment_method)
 
         self.session.add(payment)
         self.session.commit()
@@ -296,6 +326,11 @@ class SimulatedCustomer:
             'type': 'activation',
             'service_type': 'tariff'
         }
+        service_info = {
+            'code': '*252#',  # BIT
+            'type': 'activation',
+            'service_type': 'service'
+        }
         payment_info = {
             'amount': 100.0,
             'method': 'third_party',
@@ -306,18 +341,40 @@ class SimulatedCustomer:
             'type': 'status',
             'service_type': 'service'
         }
-
+        sms_info = {
+            'text': 'Lorem ipsum',
+            'recipient': {
+                'code': '916',
+                'number': '1234567',
+                'operator': {
+                    'name': 'MTS',
+                    'country': 'Russia',
+                    'region': 'Moskva'
+                }
+            }
+        }
+        location1_info = {
+            'country': 'Russia',
+            'region': 'Moskva'
+        }
+        location2_info = {
+            'country': 'Russia',
+            'region': 'Brjanskaja'
+        }
         agreement = self.sign_agreement()
         self.sign_agreement()
         self.sign_agreement()
         account = self.register_account(agreement, 'advance')
         device = self.add_device(account)
-        self.change_device_location(device, country_name='Russia', region_name='Moskva')
-        self.ussd_request(device, tariff_info)
+        self.device_location(device, location1_info)
+        self.ussd_request(device, tariff_info)  # connecting tariff
+        self.ussd_request(device, tariff_info)  # connecting it again
+        self.ussd_request(device, service_info)  # connecting BIT
         self.make_payment(device, payment_info)
         self.ussd_request(device, balance_request_info)
-        self.send_sms(device, None)
-        self.change_device_location(device, country_name='Russia', region_name='Brjanskaja')
+        self.send_sms(device, sms_info)
+        self.send_sms(device, sms_info)
+        self.device_location(device, location2_info)
 
     def simulate_day(self):
         pass

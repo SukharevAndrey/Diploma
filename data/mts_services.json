@@ -111,7 +111,7 @@
   {
     "name": "Billing Request",
     "is_periodic": false,
-    "activation_code": "",
+    "activation_code": "*152#",
     "cost": 0.0
   }
 ]
