@@ -19,6 +19,7 @@ class Service(Base):
     in_archive = db.Column(db.Boolean, default=False)
     activation_code = db.Column(db.String)
     deactivation_code = db.Column(db.String)
+    activation_cost = db.Column(db.Numeric, default=0)
 
     operator = relationship('MobileOperator', uselist=False)
     tariffs = relationship('Tariff', secondary='tariffServices')

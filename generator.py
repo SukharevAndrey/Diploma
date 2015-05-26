@@ -152,6 +152,8 @@ class MobileOperatorGenerator:
         for s_info in services_info:
             name = s_info['name']
             activation_code = s_info['activation_code']
+            if 'activation_cost' in s_info:
+                activation_cost = s_info['activation_cost']  # TODO: Handle this
             is_periodic = s_info['is_periodic']
             if 'regional_versions' in s_info:
                 for version in s_info['regional_versions']:
@@ -210,9 +212,10 @@ class MobileOperatorGenerator:
 
                 tariff = Tariff(name=tariff_name,
                                 activation_code=activation_code,
+                                activation_cost=transition_cost,
                                 operator=regional_operator)
 
-                cost = Cost(use_cost=transition_cost,
+                cost = Cost(operator_from=regional_operator,
                             subscription_cost=subscription_cost)
                 tariff.costs.append(cost)
 
@@ -310,6 +313,8 @@ class MobileOperatorGenerator:
     def generate_payment_methods(self, session):
         self.print_status('Generating payment methods...')
         cash = Cash()
+
+        # TODO: All third party payments from jsom
         qiwi = ThirdPartyCollection(name='QIWI')
         yandex = ThirdPartyCollection(name='Yandex.Money')
         webmoney = ThirdPartyCollection(name='WebMoney')

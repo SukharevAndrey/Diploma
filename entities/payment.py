@@ -33,7 +33,7 @@ class Bill(Base):
     paid = db.Column(db.Numeric, default=0)
     debt = db.Column(db.Numeric, default=0)
 
-    service_info = relationship('ServiceLog', uselist=False)
+    service_log = relationship('ServiceLog', uselist=False)
     balance = relationship('Balance', uselist=False)
 
 

@@ -86,6 +86,26 @@ class MobileOperatorSystem:
 
         self.session.commit()
 
+    def handle_connected_service(self, service_info):
+        print('Handling connected service')
+        log = ServiceLog(device_service=service_info,
+                         amount=0)
+
+        service = service_info.service
+
+        if service.activation_cost == Decimal(0):
+            print('Activation is free')
+        else:
+            # TODO: Charge activation sum if latest tariff change was less than month ago
+            # TODO: Handle charging subscription cost for current period
+            print('Writing bill: need to pay %f' % service.activation_cost)
+            bill = Bill(debt=service.activation_cost)
+            log.bill = bill
+
+        # TODO: Handle bill
+        self.session.add(log)
+        self.session.commit()
+
     def handle_used_service(self, service_log):
         print('Handling used service')
 
@@ -96,28 +116,30 @@ class MobileOperatorSystem:
             print("The device already has tariff '%s', disconnecting it first" % tariff.name)
             for service in tariff.attached_services:
                 self.deactivate_service(device, service, commit=False)
-            # TODO: Charge activation sum if latest tariff change was less than month ago
+
+        device.tariff = tariff
+        self.connect_service(device, tariff, commit=False)  # connect tariff as a service
 
         # Add to user basic services (like calls, sms, mms, internet)
         for service in tariff.attached_services:
             self.connect_service(device, service, commit=False)
-
-        device.tariff = tariff
-        device_tariff = DeviceService(service=tariff)  # tariff as a service
-        device.services.append(device_tariff)
 
         self.session.commit()
 
     def connect_service(self, device, service, commit=True):
         print('Connecting service: ', service.name)
 
-        device_service = DeviceService(service=service)
+        device_service = DeviceService(device=device, service=service)
         if service.packet is not None:
             device_service.packet_left = service.packet.amount
         device.services.append(device_service)
 
+        self.session.add(device_service)
+
         if commit:
             self.session.commit()
+
+        self.handle_connected_service(device_service)
 
     def activate_service(self, device, service, commit=True):
         print('Activating service: ', service.name)
@@ -205,7 +227,7 @@ class SimulatedCustomer:
         self.session.commit()
         return device
 
-    def device_location(self, device, location_info):
+    def set_device_location(self, device, location_info):
         country_name, region_name, place_name = None, None, None
         country_name = location_info['country']
         if 'region' in location_info:
@@ -267,6 +289,7 @@ class SimulatedCustomer:
         device_service = self.session.query(DeviceService).\
             filter_by(service=sms_service, is_activated=True, device=device).one()
         log = ServiceLog(device_service=device_service,
+                         amount=1,
                          recipient_phone_number=recipient_phone_number)
 
         self.session.add(log)
@@ -366,7 +389,7 @@ class SimulatedCustomer:
         self.sign_agreement()
         account = self.register_account(agreement, 'advance')
         device = self.add_device(account)
-        self.device_location(device, location1_info)
+        self.set_device_location(device, location1_info)
         self.ussd_request(device, tariff_info)  # connecting tariff
         self.ussd_request(device, tariff_info)  # connecting it again
         self.ussd_request(device, service_info)  # connecting BIT
@@ -374,7 +397,7 @@ class SimulatedCustomer:
         self.ussd_request(device, balance_request_info)
         self.send_sms(device, sms_info)
         self.send_sms(device, sms_info)
-        self.device_location(device, location2_info)
+        self.set_device_location(device, location2_info)
 
     def simulate_day(self):
         pass

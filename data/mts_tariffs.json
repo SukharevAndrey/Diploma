@@ -6,7 +6,7 @@
       {
         "country_name": "Russia",
         "region_name": "Moskva",
-        "transition_cost": 400.00,
+        "transition_cost": 220.00,
         "subscription_cost": 200.00,
         "basic_services": [
           {
