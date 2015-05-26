@@ -40,14 +40,6 @@
     "has_regions": true
   },
   {
-    "name": "ACME Russian Operator",
-    "type": "mobile",
-    "countries": [
-      "Russia"
-    ],
-    "has_regions": true
-  },
-  {
     "name": "ACME CIS Operator",
     "type": "mobile",
     "countries": [

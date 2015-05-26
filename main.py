@@ -38,7 +38,7 @@ class MobileOperatorSimulator:
         self.metadata.create_all(engine)
 
     def generate_customers(self):
-        self.db1_engine.echo = False
+        self.db1_engine.echo = True
         c = SimulatedCustomer(self.db1_session, self.system, verbose=True)
         c.begin_simulation()
 
@@ -106,8 +106,52 @@ class MobileOperatorSystem:
         self.session.add(log)
         self.session.commit()
 
+    def get_device_location(self, device, date):
+        try:
+            return self.session.query(Location).filter(and_(Location.device == device,
+                                                            Location.date_from <= date,
+                                                            Location.date_to >= date)).one()
+        except NoResultFound:
+            return device.locations[-1]
+
+    def get_device_packet_services(self, device, service_name):
+        return self.session.query(Service).\
+            join(DeviceService, and_(DeviceService.service_id == Service.id,
+                                     DeviceService.device_id == device.id,
+                                     DeviceService.is_activated,
+                                     DeviceService.packet_left > 0)).\
+            join(Packet, and_(Packet.service_id == Service.id,
+                              Packet.type == service_name)).all()
+
     def handle_used_service(self, service_log):
         print('Handling used service')
+
+        service_info = service_log.device_service
+        service = service_info.service
+        device = service_info.device
+
+        if service_log.recipient_phone_number:
+            # It is outgoing call, sms, mms or internet
+            device_operator = device.phone_number.mobile_operator
+            recipient_operator = service_log.recipient_phone_number.mobile_operator
+
+            packet_services = self.get_device_packet_services(device, service.name)
+            if packet_services:
+                print('We can pay it from packets')
+                for packet_service in packet_services:
+                    print(packet_service.name)
+
+            cost = self.session.query(Cost).filter(Cost.operator_from == device_operator,
+                                                   Cost.operator_to == recipient_operator,
+                                                   Cost.service == service).one()
+            print('Writing bill: need to pay %f (%d * %f)' % (service_log.amount*cost.use_cost,
+                                                              service_log.amount,
+                                                              cost.use_cost))
+            bill = Bill(debt=cost.use_cost*service_log.amount)
+            service_log.bill = bill
+            self.session.add(bill)
+        else:
+            pass
 
     def connect_tariff(self, device, tariff):
         print('Connecting tariff: ', tariff.name)
@@ -130,7 +174,7 @@ class MobileOperatorSystem:
         print('Connecting service: ', service.name)
 
         device_service = DeviceService(device=device, service=service)
-        if service.packet is not None:
+        if service.packet:
             device_service.packet_left = service.packet.amount
         device.services.append(device_service)
 
@@ -235,10 +279,15 @@ class SimulatedCustomer:
         if 'place' in location_info:
             place_name = location_info['place']
 
+        if 'date' in location_info:
+            location_date = location_info['date']
+        else:
+            location_date = db.func.now()
+
         print('Changing location to: Country = %s, Region = %s, Place = %s' % (country_name, region_name, place_name))
         if device.locations:
             latest_location = self.session.query(Location).filter_by(device=device, date_to=None).one()
-            latest_location.date_to = db.func.now()
+            latest_location.date_to = location_date
 
         region, place = None, None
 
@@ -248,7 +297,7 @@ class SimulatedCustomer:
         if place_name:
             place = self.session.query(Place).filter_by(region=region, name=place_name).one()
 
-        new_location = Location(country=country, region=region, place=place)
+        new_location = Location(date_from=location_date, country=country, region=region, place=place)
         device.locations.append(new_location)
 
         self.session.commit()
@@ -270,8 +319,8 @@ class SimulatedCustomer:
         try:
             recipient_phone_number = self.session.query(PhoneNumber).filter_by(area_code=recipient_info['code'],
                                                                                number=recipient_info['number']).one()
-            print('Phone number is already registered in base and belongs to operator %s' %
-                  recipient_phone_number.mobile_operator.name)
+            print('Phone number is already registered in base and belongs to operator %s %s' %
+                  (recipient_phone_number.mobile_operator.name, recipient_phone_number.mobile_operator.country.name))
         except NoResultFound:
             print('Phone number is not registered in base. Registering')
             operator_info = recipient_info['operator']
@@ -378,11 +427,13 @@ class SimulatedCustomer:
         }
         location1_info = {
             'country': 'Russia',
-            'region': 'Moskva'
+            'region': 'Moskva',
+            'date': datetime(2015, 5, 25, 0, 0, 0)
         }
         location2_info = {
             'country': 'Russia',
-            'region': 'Brjanskaja'
+            'region': 'Brjanskaja',
+            'date': datetime.now()
         }
         agreement = self.sign_agreement()
         self.sign_agreement()
@@ -398,6 +449,11 @@ class SimulatedCustomer:
         self.send_sms(device, sms_info)
         self.send_sms(device, sms_info)
         self.set_device_location(device, location2_info)
+        # for location in device.locations:
+        #     print(location.country.name, location.region.name, location.date_from, location.date_to)
+        # #location = self.system.get_device_location(device, datetime(2015, 5, 26, 0, 0, 0))
+        # location = self.system.get_device_location(device, datetime.now())
+        # print(location.country.name, location.region.name)
 
     def simulate_day(self):
         pass

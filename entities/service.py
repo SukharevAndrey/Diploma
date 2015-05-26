@@ -24,13 +24,14 @@ class Service(Base):
     operator = relationship('MobileOperator', uselist=False)
     tariffs = relationship('Tariff', secondary='tariffServices')
     packet = relationship('Packet', uselist=False)
-    costs = relationship('Cost', secondary='serviceCost')
+    # costs = relationship('Cost', secondary='serviceCost')
+    costs = relationship('Cost')
 
 
 class Packet(Base):
     __tablename__ = 'packet'
     __table_args__ = (
-        db.CheckConstraint("type IN ('voice', 'sms', 'mms', 'internet')"),
+        db.CheckConstraint("type IN ('outgoing_call', 'sms', 'mms', 'internet')"),
     )
 
     id = db.Column(db.Integer, primary_key=True)

@@ -100,6 +100,7 @@ class Cost(Base):
     __tablename__ = 'cost'
 
     id = db.Column(db.Integer, primary_key=True)
+    service_id = db.Column(db.Integer, db.ForeignKey('service.id'))
     operator_from_id = db.Column(db.Integer, db.ForeignKey('mobileOperator.id'))
     operator_to_id = db.Column(db.Integer, db.ForeignKey('mobileOperator.id'))
 
@@ -108,11 +109,12 @@ class Cost(Base):
 
     operator_from = relationship('MobileOperator', foreign_keys=[operator_from_id], uselist=False)
     operator_to = relationship('MobileOperator', foreign_keys=[operator_to_id], uselist=False)
-    services = relationship('Service', secondary='serviceCost')
+    # services = relationship('Service', secondary='serviceCost')
+    service = relationship('Service', uselist=False)
 
 
-class ServiceCost(Base):
-    __tablename__ = 'serviceCost'
-
-    service_id = db.Column(db.Integer, db.ForeignKey('service.id'), primary_key=True)
-    cost_id = db.Column(db.Integer, db.ForeignKey('cost.id'), primary_key=True)
+# class ServiceCost(Base):
+#     __tablename__ = 'serviceCost'
+#
+#     service_id = db.Column(db.Integer, db.ForeignKey('service.id'), primary_key=True)
+#     cost_id = db.Column(db.Integer, db.ForeignKey('cost.id'), primary_key=True)

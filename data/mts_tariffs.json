@@ -116,7 +116,7 @@
             "is_periodic": true,
             "cost": 0.0,
             "packet": {
-              "type": "voice",
+              "type": "outgoing_call",
               "amount": 1000
             },
             "restrictions": [
