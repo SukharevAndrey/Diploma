@@ -125,6 +125,52 @@ class MobileOperatorSystem:
                               Packet.type == service_name)).\
             filter(DeviceService.is_activated).all()
 
+    def get_phone_number(self, phone_info):
+        try:
+            phone_number = self.session.query(PhoneNumber).filter_by(area_code=phone_info['code'],
+                                                                     number=phone_info['number']).one()
+            print('Phone number is already registered in base and belongs to operator %s %s' %
+                  (phone_number.mobile_operator.name, phone_number.mobile_operator.country.iso3_code))
+        except NoResultFound:
+            print('Phone number is not registered in base')
+            phone_number = self.register_phone_number(phone_info, commit=False)
+        return phone_number
+
+    def register_phone_number(self, phone_info, commit=True):
+        print('Registering phone number')
+        operator_info = phone_info['operator']
+        country = self.session.query(Country).filter_by(name=operator_info['country']).one()
+        region = self.session.query(Region).filter_by(name=operator_info['region'],
+                                                      country=country).one()
+        regional_operator = self.session.query(MobileOperator).filter_by(name=operator_info['name'],
+                                                                         country=country,
+                                                                         region=region).one()
+        phone_number = PhoneNumber(area_code=phone_info['code'],
+                                   number=phone_info['number'],
+                                   mobile_operator=regional_operator)
+        self.session.add(phone_number)
+
+        if commit:
+            self.session.commit()
+
+        return phone_number
+
+    def round_call_duration(self, minutes, seconds):
+        if minutes == 0:
+            if seconds <= 3:
+                return 0
+            else:
+                return 1
+        else:
+            if seconds == 0:
+                return minutes
+            else:
+                return minutes+1
+
+    def round_internet_session(self, megabytes, kilobytes):
+        # TODO: Implement
+        return megabytes
+
     def handle_used_service(self, service_log):
         print('Handling used service')
 
@@ -134,52 +180,56 @@ class MobileOperatorSystem:
 
         unpaid_service_amount = service_log.amount
 
-        if service_log.recipient_phone_number:
-            # It is outgoing call, sms, mms or internet
-            device_operator = device.phone_number.mobile_operator
-            recipient_operator = service_log.recipient_phone_number.mobile_operator
+        packet_services = self.get_device_packet_services(device, service.name)
+        if packet_services:
+            # Placing packets in order: tariff packets, additional packets
+            packet_charge_queue = deque()
+            for packet_service in packet_services:
+                if packet_service.packet_left > 0:
+                    if packet_service in device.tariff.attached_services:
+                        packet_charge_queue.appendleft(packet_service)
+                    else:
+                        packet_charge_queue.append(packet_service)
 
-            packet_services = self.get_device_packet_services(device, service.name)
-            if packet_services:
-                # Placing packets in order: tariff packets, additional packets
-                packet_charge_queue = deque()
-                for packet_service in packet_services:
-                    if packet_service.packet_left > 0:
-                        if packet_service in device.tariff.attached_services:
-                            packet_charge_queue.appendleft(packet_service)
-                        else:
-                            packet_charge_queue.append(packet_service)
+            if packet_charge_queue:
+                print('We can pay it from packets')
+                # TODO: Handle packet restrictions
 
-                if packet_charge_queue:
-                    print('We can pay it from packets')
+            # While we can pay service from packets
+            while unpaid_service_amount > 0 and packet_charge_queue:
+                packet_service_info = packet_charge_queue.pop()
+                packet_charge = min(packet_service_info.packet_left, unpaid_service_amount)
+                packet_service_info.packet_left -= packet_charge
+                unpaid_service_amount -= packet_charge
+                print('Charging %d units from packet %s' % (packet_charge,
+                                                            packet_service_info.service.name))
+                print('Units left in packet: %d, unpaid units: %d' % (packet_service_info.packet_left,
+                                                                      unpaid_service_amount))
 
-                # While we can pay service from packets
-                while unpaid_service_amount > 0 and packet_charge_queue:
-                    packet_service_info = packet_charge_queue.pop()
-                    packet_charge = min(packet_service_info.packet_left, unpaid_service_amount)
-                    packet_service_info.packet_left -= packet_charge
-                    unpaid_service_amount -= packet_charge
-                    print('Charging %d units from packet %s' % (packet_charge,
-                                                                packet_service_info.service.name))
-                    print('Units left in packet: %d, unpaid units: %d' % (packet_service_info.packet_left,
-                                                                          unpaid_service_amount))
+            # TODO: Block services with packet_left == 0?
 
-            if unpaid_service_amount > 0:
-                if service.name == 'internet' and packet_services:
-                    # It is "unlimited", so additional charge is not required
-                    print('Internet is now 64 kbit/sec')
-                else:
+        if unpaid_service_amount > 0:
+            if service.name == 'internet' and packet_services:
+                # It is "unlimited", so additional charge is not required
+                print('Internet is now 64 kbit/sec')
+            else:
+                device_operator = device.phone_number.mobile_operator
+                if service_log.recipient_phone_number:
+                    # It is outgoing call, sms, mms or internet
+                    recipient_operator = service_log.recipient_phone_number.mobile_operator
                     cost = self.session.query(Cost).filter(Cost.operator_from == device_operator,
                                                            Cost.operator_to == recipient_operator,
                                                            Cost.service == service).one()
-                    print('Writing bill: need to pay %f (%d * %f)' % (unpaid_service_amount*cost.use_cost,
-                                                                      unpaid_service_amount,
-                                                                      cost.use_cost))
-                    bill = Bill(debt=cost.use_cost*service_log.amount)
-                    service_log.bill = bill
-                    self.session.add(bill)
-        else:
-            pass
+                else:
+                    cost = self.session.query(Cost).filter(Cost.operator_from == device_operator,
+                                                           Cost.service == service).one()
+
+                print('Writing bill: need to pay %f (%d * %f)' % (unpaid_service_amount*cost.use_cost,
+                                                                  unpaid_service_amount,
+                                                                  cost.use_cost))
+                bill = Bill(debt=cost.use_cost*service_log.amount)
+                service_log.bill = bill
+                self.session.add(bill)
 
     def connect_tariff(self, device, tariff):
         print('Connecting tariff: ', tariff.name)
@@ -330,54 +380,47 @@ class SimulatedCustomer:
 
         self.session.commit()
 
-    def make_call(self):
-        pass
+    def use_service(self, device, service_info, amount=1):
+        recipient_phone_number = None
 
-    def send_sms(self, device, sms_info):
-        print('Sending sms to phone number %s in %s')
-        sms_service = None
-        for service in device.tariff.attached_services:
-            if service.name == 'sms':
-                sms_service = service
-                break
-        if not sms_service:
-            raise Exception
-
-        recipient_info = sms_info['recipient']
-        try:
-            recipient_phone_number = self.session.query(PhoneNumber).filter_by(area_code=recipient_info['code'],
-                                                                               number=recipient_info['number']).one()
-            print('Phone number is already registered in base and belongs to operator %s %s' %
-                  (recipient_phone_number.mobile_operator.name, recipient_phone_number.mobile_operator.country.name))
-        except NoResultFound:
-            print('Phone number is not registered in base. Registering')
-            operator_info = recipient_info['operator']
-            operator_country = self.session.query(Country).filter_by(name=operator_info['country']).one()
-            operator_region = self.session.query(Region).filter_by(name=operator_info['region'],
-                                                                   country=operator_country).one()
-            regional_operator = self.session.query(MobileOperator).filter_by(name=operator_info['name'],
-                                                                             country=operator_country,
-                                                                             region=operator_region).one()
-            recipient_phone_number = PhoneNumber(area_code=recipient_info['code'],
-                                                 number=recipient_info['number'],
-                                                 mobile_operator=regional_operator)
-            self.session.add(recipient_phone_number)
+        if 'recipient' in service_info:
+            recipient_info = service_info['recipient']
+            recipient_phone_number = self.system.get_phone_number(recipient_info)
 
         device_service = self.session.query(DeviceService).\
-            filter_by(service=sms_service, is_activated=True, device=device).one()
+            join(Service, and_(DeviceService.service_id == Service.id,
+                               DeviceService.device_id == device.id,
+                               DeviceService.is_activated,
+                               Service.name == service_info['name'])).one()
+
         log = ServiceLog(device_service=device_service,
-                         amount=1,
+                         amount=amount,
                          recipient_phone_number=recipient_phone_number)
 
         self.session.add(log)
         self.session.commit()
         self.system.handle_used_service(log)
 
-    def send_mms(self):
-        pass
+    def make_call(self, device, call_info):
+        print('Making call to phone number %s' % (call_info['recipient']['code'] +
+                                                  ' ' + call_info['recipient']['number']))
+        # TODO: Save original call duration
+        self.use_service(device, call_info, self.system.round_call_duration(call_info['minutes'], call_info['seconds']))
 
-    def use_internet(self):
-        pass
+    def send_sms(self, device, sms_info):
+        print('Sending sms to phone number %s' % (sms_info['recipient']['code'] +
+                                                  ' ' + sms_info['recipient']['number']))
+        self.use_service(device, sms_info, 1)
+
+    def send_mms(self, device, mms_info):
+        print('Sending sms to phone number %s' % (mms_info['recipient']['code'] +
+                                                  ' ' + mms_info['recipient']['number']))
+        self.use_service(device, mms_info, 1)
+
+    def use_internet(self, device, session_info):
+        print('Using internet')
+        self.use_service(device, session_info, self.system.round_internet_session(session_info['megabytes'],
+                                                                                  session_info['kilobytes']))
 
     def ussd_request(self, device, request_info):
         print('Making request: ', request_info)
@@ -442,6 +485,7 @@ class SimulatedCustomer:
             'service_type': 'service'
         }
         sms_info = {
+            'name': 'sms',
             'text': 'Lorem ipsum',
             'recipient': {
                 'code': '916',
@@ -452,6 +496,25 @@ class SimulatedCustomer:
                     'region': 'Moskva'
                 }
             }
+        }
+        call_info = {
+            'name': 'outgoing_call',
+            'minutes': 5,
+            'seconds': 12,
+            'recipient': {
+                'code': '916',
+                'number': '7654321',
+                'operator': {
+                    'name': 'MTS',
+                    'country': 'Russia',
+                    'region': 'Moskva'
+                }
+            }
+        }
+        internet_session_info = {
+            'name': 'internet',
+            'megabytes': 50,
+            'kilobytes': 21
         }
         location1_info = {
             'country': 'Russia',
@@ -474,8 +537,11 @@ class SimulatedCustomer:
         self.ussd_request(device, service_info)  # connecting BIT
         self.make_payment(device, payment_info)
         self.ussd_request(device, balance_request_info)
-        for i in range(51):
-            self.send_sms(device, sms_info)
+        #for i in range(51):
+        #    self.send_sms(device, sms_info)
+        self.send_sms(device, sms_info)
+        self.make_call(device, call_info)
+        self.use_internet(device, internet_session_info)
         self.set_device_location(device, location2_info)
         # for location in device.locations:
         #     print(location.country.name, location.region.name, location.date_from, location.date_to)
