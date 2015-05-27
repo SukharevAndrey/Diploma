@@ -12,9 +12,10 @@ class Balance(Base):
     id = db.Column(db.Integer, primary_key=True)
     device_id = db.Column(db.Integer, db.ForeignKey('device.id'))
 
+    date_created = db.Column(db.DateTime, default=db.func.now())
+    due_date = db.Column(db.DateTime)
     type = db.Column(db.String, default='main')
     amount = db.Column(db.Numeric, default=0)
-    due_date = db.Column(db.DateTime, nullable=True)
 
     device = relationship('Device', uselist=False)
     payments = relationship('Payment')
