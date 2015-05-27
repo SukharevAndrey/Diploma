@@ -19,6 +19,8 @@ from entities.location import *
 POOL_SIZE = 20
 base_schema = Base.metadata
 
+# TODO: Proper session handling
+
 class MobileOperatorSimulator:
     def __init__(self, metadata):
         self.metadata = metadata
@@ -39,7 +41,7 @@ class MobileOperatorSimulator:
         self.metadata.create_all(engine)
 
     def generate_customers(self):
-        self.db1_engine.echo = True
+        self.db1_engine.echo = False
         c = SimulatedCustomer(self.db1_session, self.system, verbose=True)
         c.begin_simulation()
 
@@ -121,8 +123,7 @@ class MobileOperatorSystem:
                                DeviceService.device_id == device.id)).\
             join(Packet, and_(Packet.service_id == Service.id,
                               Packet.type == service_name)).\
-            filter(and_(DeviceService.is_activated,
-                        DeviceService.packet_left > 0)).all()
+            filter(DeviceService.is_activated).all()
 
     def handle_used_service(self, service_log):
         print('Handling used service')
@@ -140,28 +141,43 @@ class MobileOperatorSystem:
 
             packet_services = self.get_device_packet_services(device, service.name)
             if packet_services:
-                print('We can pay it from packets')
                 # Placing packets in order: tariff packets, additional packets
-                packet_charge_order = deque()
+                packet_charge_queue = deque()
                 for packet_service in packet_services:
-                    if packet_service in device.tariff.attached_services:
-                        packet_charge_order.appendleft(packet_service)
-                    else:
-                        packet_charge_order.append(packet_service)
+                    if packet_service.packet_left > 0:
+                        if packet_service in device.tariff.attached_services:
+                            packet_charge_queue.appendleft(packet_service)
+                        else:
+                            packet_charge_queue.append(packet_service)
 
-                # TODO: Change from packets from right to left
-                # TODO: If unpaid > 0 and service is not internet, then create bill
-                # TODO: Else just think than everything is paid
+                if packet_charge_queue:
+                    print('We can pay it from packets')
 
-            cost = self.session.query(Cost).filter(Cost.operator_from == device_operator,
-                                                   Cost.operator_to == recipient_operator,
-                                                   Cost.service == service).one()
-            print('Writing bill: need to pay %f (%d * %f)' % (unpaid_service_amount*cost.use_cost,
-                                                              unpaid_service_amount,
-                                                              cost.use_cost))
-            bill = Bill(debt=cost.use_cost*service_log.amount)
-            service_log.bill = bill
-            self.session.add(bill)
+                # While we can pay service from packets
+                while unpaid_service_amount > 0 and packet_charge_queue:
+                    packet_service_info = packet_charge_queue.pop()
+                    packet_charge = min(packet_service_info.packet_left, unpaid_service_amount)
+                    packet_service_info.packet_left -= packet_charge
+                    unpaid_service_amount -= packet_charge
+                    print('Charging %d units from packet %s' % (packet_charge,
+                                                                packet_service_info.service.name))
+                    print('Units left in packet: %d, unpaid units: %d' % (packet_service_info.packet_left,
+                                                                          unpaid_service_amount))
+
+            if unpaid_service_amount > 0:
+                if service.name == 'internet' and packet_services:
+                    # It is "unlimited", so additional charge is not required
+                    print('Internet is now 64 kbit/sec')
+                else:
+                    cost = self.session.query(Cost).filter(Cost.operator_from == device_operator,
+                                                           Cost.operator_to == recipient_operator,
+                                                           Cost.service == service).one()
+                    print('Writing bill: need to pay %f (%d * %f)' % (unpaid_service_amount*cost.use_cost,
+                                                                      unpaid_service_amount,
+                                                                      cost.use_cost))
+                    bill = Bill(debt=cost.use_cost*service_log.amount)
+                    service_log.bill = bill
+                    self.session.add(bill)
         else:
             pass
 
@@ -458,22 +474,14 @@ class SimulatedCustomer:
         self.ussd_request(device, service_info)  # connecting BIT
         self.make_payment(device, payment_info)
         self.ussd_request(device, balance_request_info)
-        self.send_sms(device, sms_info)
-        self.send_sms(device, sms_info)
+        for i in range(51):
+            self.send_sms(device, sms_info)
         self.set_device_location(device, location2_info)
         # for location in device.locations:
         #     print(location.country.name, location.region.name, location.date_from, location.date_to)
         # #location = self.system.get_device_location(device, datetime(2015, 5, 26, 0, 0, 0))
         # location = self.system.get_device_location(device, datetime.now())
         # print(location.country.name, location.region.name)
-        service_name = 'internet'
-        # services = self.session.query(Service).\
-        # join(DeviceService, and_(DeviceService.service_id == Service.id,
-        #                          DeviceService.device_id == device.id,
-        #                          DeviceService.is_activated,
-        #                          DeviceService.packet_left > 0)).\
-        # join(Packet, and_(Packet.service_id == Service.id,
-        #                   Packet.type == service_name)).all
 
     def simulate_day(self):
         pass
