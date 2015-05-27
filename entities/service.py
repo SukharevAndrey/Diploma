@@ -108,7 +108,7 @@ class Request(Base):
     service_id = db.Column(db.Integer, db.ForeignKey('service.id'))
     tariff_id = db.Column(db.Integer, db.ForeignKey('tariff.id'))
 
-    date = db.Column(db.DateTime, default=db.func.now())
+    date_created = db.Column(db.DateTime, default=db.func.now())
     type = db.Column(db.String, default='activation')
     request_type = db.Column(db.String)
 

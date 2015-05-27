@@ -46,7 +46,7 @@ class Payment(Base):
     method_id = db.Column(db.Integer, db.ForeignKey('paymentMethod.id'))
 
     amount = db.Column(db.Numeric, default=0)
-    date = db.Column(db.Date, default=db.func.now())
+    date = db.Column(db.DateTime, default=db.func.now())
 
     balance = relationship('Balance', uselist=False)
     method = relationship('PaymentMethod', foreign_keys=[method_id], uselist=False)
