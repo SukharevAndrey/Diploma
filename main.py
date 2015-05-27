@@ -3,7 +3,6 @@ from datetime import datetime
 from collections import deque
 
 from sqlalchemy import create_engine, and_, or_
-from sqlalchemy.sql import exists
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -43,7 +42,7 @@ class MobileOperatorSimulator:
         self.metadata.create_all(engine)
 
     def generate_customers(self):
-        self.db1_engine.echo = True
+        self.db1_engine.echo = False
         c = SimulatedCustomer(self.db1_session, self.system, verbose=True)
         c.begin_simulation()
 
@@ -101,7 +100,7 @@ class MobileOperatorSystem:
         balance = self.get_active_balance(device)
         print('Replenishing %s balance at %f' % (balance.type, payment.amount))
         payment.balance = balance
-        balance.amount += Decimal(payment.amount)
+        balance.amount += payment.amount
         print('Current balance: %f' % balance.amount)
 
         # TODO: Implement bonuses charging
@@ -143,13 +142,10 @@ class MobileOperatorSystem:
             return True
 
     def get_device_location(self, device, date):
-        # TODO: Get rid of exception (using or_)
-        try:
-            return self.session.query(Location).filter(and_(Location.device == device,
-                                                            Location.date_from <= date,
-                                                            Location.date_to >= date)).one()
-        except NoResultFound:
-            return device.locations[-1]
+        return self.session.query(Location).filter(and_(Location.device == device,
+                                                        Location.date_from <= date,
+                                                        or_(Location.date_to.is_(None),
+                                                            Location.date_to >= date))).one()
 
     def get_device_packet_services(self, device, service_name):
         return self.session.query(DeviceService).\
@@ -262,6 +258,7 @@ class MobileOperatorSystem:
                 print('Internet is now 64 kbit/sec')
             else:
                 device_operator = device.phone_number.mobile_operator
+                # TODO: Handle rouming
                 if service_log.recipient_phone_number:
                     # It is outgoing call, sms, mms or internet
                     recipient_operator = service_log.recipient_phone_number.mobile_operator
@@ -635,12 +632,14 @@ class SimulatedCustomer:
         self.send_sms(device, sms_info)
         self.make_call(device, call_info)
         self.use_internet(device, internet_session_info)
+        self.use_internet(device, internet_session_info)
         self.set_device_location(device, location2_info)
         self.ussd_request(device, tariff_info)  # connecting tariff again
         self.ussd_request(device, tariff_info)  # connecting tariff again
         # for location in device.locations:
         #     print(location.country.name, location.region.name, location.date_from, location.date_to)
-        # #location = self.system.get_device_location(device, datetime(2015, 5, 26, 0, 0, 0))
+        # location = self.system.get_device_location(device, datetime(2015, 5, 26, 12, 0, 0))
+        # print(location.country.name, location.region.name)
         # location = self.system.get_device_location(device, datetime.now())
         # print(location.country.name, location.region.name)
 
