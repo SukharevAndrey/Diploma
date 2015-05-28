@@ -155,7 +155,7 @@ class MobileOperatorSystem:
                               Packet.type == service_name)).\
             filter(DeviceService.is_activated).all()
 
-    def get_phone_number(self, phone_info):
+    def get_phone_number(self, operator_info, phone_info):
         try:
             phone_number = self.session.query(PhoneNumber).filter_by(area_code=phone_info['code'],
                                                                      number=phone_info['number']).one()
@@ -163,13 +163,13 @@ class MobileOperatorSystem:
                   (phone_number.mobile_operator.name, phone_number.mobile_operator.country.iso3_code))
         except NoResultFound:
             print('Phone number is not registered in base')
-            phone_number = self.register_phone_number(phone_info, commit=False)
+            phone_number = self.register_phone_number(operator_info, phone_info, commit=False)
         return phone_number
 
-    def register_phone_number(self, phone_info, commit=True):
+    def register_phone_number(self, operator_info, phone_info, commit=True):
         print('Registering phone number')
-        operator_info = phone_info['operator']
         country = self.session.query(Country).filter_by(name=operator_info['country']).one()
+        # TODO: Handle situation when region is None
         region = self.session.query(Region).filter_by(name=operator_info['region'],
                                                       country=country).one()
         regional_operator = self.session.query(MobileOperator).filter_by(name=operator_info['name'],
@@ -369,10 +369,14 @@ class MobileOperatorSystem:
             self.session.commit()
 
     def get_free_phone_number(self):
-        for area_code in ['916']:
-            for number in range(9999999):
-                print('yielding', area_code, str(number).zfill(7))
-                yield area_code, str(number).zfill(7)
+        print('Getting free phone number')
+        # TODO: Normal generation
+        # TODO: Handling country and region
+        # for area_code in ['916']:
+        #     for number in range(9999999):
+        #         print('yielding', area_code, str(number).zfill(7))
+        #         yield area_code, str(number).zfill(7)
+        return '916', '0000000'
 
 
 class SimulatedCustomer:
@@ -386,33 +390,66 @@ class SimulatedCustomer:
         session.add(self.customer)
         session.commit()
 
-    def sign_agreement(self):
+    def sign_agreement(self, agreement_info):
+        print('Signing agreement: ', agreement_info)
+        sign_date = agreement_info['date']
+
         agreement = self.session.query(Agreement).filter_by(destination=self.customer_type).one()
-        c_agreement = CustomerAgreement(signed_agreement=agreement)
+        c_agreement = CustomerAgreement(sign_date=sign_date,
+                                        signed_agreement=agreement)
         self.customer.agreements.append(c_agreement)
         self.session.commit()
         return c_agreement
 
-    def register_account(self, agreement, calculation_method_type):
+    def register_account(self, agreement, account_info):
+        print('Registering account: ', account_info)
+        registration_date = account_info['date']
+
         calc_method = self.session.query(CalculationMethod).\
-            filter_by(type=calculation_method_type).one()
-        account = Account(calc_method=calc_method)
+            filter_by(type=account_info['calc_method']).one()
+        account = Account(date_from=registration_date,
+                          calc_method=calc_method)
         agreement.accounts.append(account)
         self.session.commit()
         return account
 
-    def add_device(self, account, device_info=None):
-        print('Attaching device')
-        device = random_device()
-        device.account = account
-        balance = Balance(amount=200)
-        home_region = self.session.query(Region).filter_by(name='Moskva').one()
-        home_operator = self.session.query(MobileOperator).filter_by(name='MTS', region=home_region).one()
-        # area_code, number = self.system.get_free_phone_number()
-        area_code, number = '916', '0000000'
-        phone_number = PhoneNumber(area_code=area_code, number=number, mobile_operator=home_operator)
-        device.balances.append(balance)
+    def add_device(self, account, device_info):
+        print('Attaching device to account: ', device_info)
+        registration_date = device_info['date']
+
+        device = Device(account=account,
+                        date_registered=registration_date,
+                        IMEI=device_info['IMEI'],
+                        type=device_info['type'])
+
+        operator_info = device_info['operator']
+
+        if 'phone_number' in device_info:
+            phone_number_info = device_info['phone_number']
+        else:
+            code, number = self.system.get_free_phone_number()
+            phone_number_info = {
+                'code': code,
+                'number': number
+            }
+
+        # TODO: Handle date
+        phone_number = self.system.register_phone_number(operator_info, phone_number_info)
         device.phone_number = phone_number
+
+        calc_method = account.calc_method
+        if calc_method.type == 'advance':
+            balance = Balance(date_created=registration_date,
+                              type='main',
+                              amount=self.system.initial_balance)
+        else:
+            balance = Balance(date_created=registration_date,
+                              type='credit',
+                              amount=self.system.initial_balance)
+        device.balances.append(balance)
+
+        # TODO: Handle initial tariff
+
         self.session.add(device)
         self.session.commit()
         return device
@@ -455,9 +492,10 @@ class SimulatedCustomer:
         recipient_phone_number = None
         usage_date = service_info['date']
 
-        if 'recipient' in service_info:
-            recipient_info = service_info['recipient']
-            recipient_phone_number = self.system.get_phone_number(recipient_info)
+        if 'phone_number' in service_info and 'operator' in service_info:
+            operator_info = service_info['operator']
+            phone_number_info = service_info['phone_number']
+            recipient_phone_number = self.system.get_phone_number(operator_info, phone_number_info)
 
         device_service = self.session.query(DeviceService).\
             join(Service, and_(DeviceService.service_id == Service.id,
@@ -475,19 +513,19 @@ class SimulatedCustomer:
         self.system.handle_used_service(log)
 
     def make_call(self, device, call_info):
-        print('Making call to phone number %s' % (call_info['recipient']['code'] +
-                                                  ' ' + call_info['recipient']['number']))
+        print('Making call to phone number %s' % (call_info['phone_number']['code'] +
+                                                  ' ' + call_info['phone_number']['number']))
         # TODO: Save original call duration
         self.use_service(device, call_info, self.system.round_call_duration(call_info['minutes'], call_info['seconds']))
 
     def send_sms(self, device, sms_info):
-        print('Sending sms to phone number %s' % (sms_info['recipient']['code'] +
-                                                  ' ' + sms_info['recipient']['number']))
+        print('Sending sms to phone number %s' % (sms_info['phone_number']['code'] +
+                                                  ' ' + sms_info['phone_number']['number']))
         self.use_service(device, sms_info, 1)
 
     def send_mms(self, device, mms_info):
-        print('Sending sms to phone number %s' % (mms_info['recipient']['code'] +
-                                                  ' ' + mms_info['recipient']['number']))
+        print('Sending sms to phone number %s' % (mms_info['phone_number']['code'] +
+                                                  ' ' + mms_info['phone_number']['number']))
         self.use_service(device, mms_info, 1)
 
     def use_internet(self, device, session_info):
@@ -541,6 +579,28 @@ class SimulatedCustomer:
         self.system.handle_payment(device, payment)
 
     def begin_simulation(self):
+        agreement_info = {
+            'date': datetime(2015, 5, 21, 0, 0, 0),
+        }
+        account_info = {
+            'date': datetime(2015, 5, 22, 0, 0, 0),
+            'calc_method': 'advance'
+        }
+        device_info = {
+            'date': datetime(2015, 5, 23, 0, 0, 0),
+            'type': 'smartphone',
+            'IMEI': '123456789012345',
+            'initial_tariff': 'Smart mini',
+            'operator': {
+                'name': 'MTS',
+                'country': 'Russia',
+                'region': 'Moskva'
+            },
+            'phone_number': {
+                'code': '916',
+                'number': '9876543'
+            }
+        }
         tariff_info = {
             'date': datetime(2015, 5, 26, 9, 0, 0),
             'code': '*100*1#',  # smart mini
@@ -569,14 +629,14 @@ class SimulatedCustomer:
             'date': datetime(2015, 5, 26, 12, 1, 0),
             'name': 'sms',
             'text': 'Lorem ipsum',
-            'recipient': {
-                'code': '916',
-                'number': '1234567',
-                'operator': {
+            'operator': {
                     'name': 'MTS',
                     'country': 'Russia',
                     'region': 'Moskva'
-                }
+            },
+            'phone_number': {
+                'code': '916',
+                'number': '1234567',
             }
         }
         call_info = {
@@ -584,14 +644,14 @@ class SimulatedCustomer:
             'name': 'outgoing_call',
             'minutes': 5,
             'seconds': 12,
-            'recipient': {
-                'code': '916',
-                'number': '7654321',
-                'operator': {
+            'operator': {
                     'name': 'MTS',
                     'country': 'Russia',
                     'region': 'Moskva'
-                }
+            },
+            'phone_number': {
+                'code': '916',
+                'number': '7654321',
             }
         }
         internet_session_info = {
@@ -610,17 +670,11 @@ class SimulatedCustomer:
             'country': 'Russia',
             'region': 'Brjanskaja',
         }
-        account_info = {
-
-        }
-        device_info = {
-
-        }
-        agreement = self.sign_agreement()
-        self.sign_agreement()
-        self.sign_agreement()
-        account = self.register_account(agreement, 'advance')
-        device = self.add_device(account)
+        agreement = self.sign_agreement(agreement_info)
+        self.sign_agreement(agreement_info)
+        self.sign_agreement(agreement_info)
+        account = self.register_account(agreement, account_info)
+        device = self.add_device(account, device_info)
         self.set_device_location(device, location1_info)
         self.make_payment(device, payment_info)
         self.ussd_request(device, tariff_info)  # connecting tariff

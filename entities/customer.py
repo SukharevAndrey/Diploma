@@ -140,6 +140,9 @@ class Account(Base):
     agreement_id = db.Column(db.Integer, db.ForeignKey('customerAgreement.id'))
     calculation_method_id = db.Column(db.Integer, db.ForeignKey('calculationMethod.id'))
 
+    date_from = db.Column(db.DateTime, default=db.func.now())
+    date_to = db.Column(db.DateTime)
+
     credit_limit = db.Column(db.Numeric, default=0)
     trust_category = db.Column(db.Integer, default=0)
     bill_group = db.Column(db.Integer, default=0)
@@ -160,6 +163,7 @@ class Device(Base):
     tariff_id = db.Column(db.Integer, db.ForeignKey('tariff.id'))
     account_id = db.Column(db.Integer, db.ForeignKey('account.id'))
 
+    date_registered = db.Column(db.DateTime, default=db.func.now())
     IMEI = db.Column(db.String, unique=True)
     type = db.Column(db.String, default='phone')
 
