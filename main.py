@@ -7,8 +7,10 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
 from base import Base
-from generator import MobileOperatorGenerator
+from generator import MobileOperatorGenerator, TimeLineGenerator
 from random_data import *
+
+from actions import *
 
 from entities.customer import *
 from entities.payment import *
@@ -516,7 +518,8 @@ class SimulatedCustomer:
         print('Making call to phone number %s' % (call_info['phone_number']['code'] +
                                                   ' ' + call_info['phone_number']['number']))
         # TODO: Save original call duration
-        self.use_service(device, call_info, self.system.round_call_duration(call_info['minutes'], call_info['seconds']))
+        self.use_service(device, call_info, self.system.round_call_duration(call_info['minutes'],
+                                                                            call_info['seconds']))
 
     def send_sms(self, device, sms_info):
         print('Sending sms to phone number %s' % (sms_info['phone_number']['code'] +
@@ -578,6 +581,13 @@ class SimulatedCustomer:
         self.session.commit()
         self.system.handle_payment(device, payment)
 
+    def handle_action(self, action):
+        if isinstance(action, Call):
+            call_info = Call.to_dict()
+            self.make_call(None, call_info)
+        else:
+            raise NotImplementedError
+
     def begin_simulation(self):
         agreement_info = {
             'date': datetime(2015, 5, 21, 0, 0, 0),
@@ -630,9 +640,9 @@ class SimulatedCustomer:
             'name': 'sms',
             'text': 'Lorem ipsum',
             'operator': {
-                    'name': 'MTS',
-                    'country': 'Russia',
-                    'region': 'Moskva'
+                'name': 'MTS',
+                'country': 'Russia',
+                'region': 'Moskva'
             },
             'phone_number': {
                 'code': '916',
@@ -645,9 +655,9 @@ class SimulatedCustomer:
             'minutes': 5,
             'seconds': 12,
             'operator': {
-                    'name': 'MTS',
-                    'country': 'Russia',
-                    'region': 'Moskva'
+                'name': 'MTS',
+                'country': 'Russia',
+                'region': 'Moskva'
             },
             'phone_number': {
                 'code': '916',
@@ -696,6 +706,19 @@ class SimulatedCustomer:
         # print(location.country.name, location.region.name)
         # location = self.system.get_device_location(device, datetime.now())
         # print(location.country.name, location.region.name)
+        # costs = self.session.query(Cost).all()
+        # services = self.session.query(Service).all()
+        # tariffs = self.session.query(Tariff).all()
+        # mobile_operators = self.session.query(MobileOperator).all()
+        # print(len(costs))
+        # print(len(services))
+        # print(len(tariffs))
+        # print(len(mobile_operators))
+        gen = TimeLineGenerator(self, device)
+        date = (2015, 5, 29)
+        actions = gen.generate_timeline(date)
+        for action in actions:
+            action.perform()
 
     def simulate_day(self):
         pass

@@ -1,11 +1,15 @@
+from datetime import datetime, timedelta
+
+import numpy as np
+
 from transliterate import translit
 
+from actions import Call, IntersectionError
 from entities.customer import *
 from entities.location import *
 from entities.operator import *
 from entities.service import *
 from entities.payment import *
-
 from tools import file_to_json
 from random_data import *
 from preprocessor import TariffPreprocessor
@@ -332,3 +336,64 @@ class MobileOperatorGenerator:
         self.generate_mobile_operators(session)
         self.generate_services(session)
         self.generate_tariffs(session)
+
+
+class TimeLineGenerator:
+    MINUTES_IN_DAY = 1440
+    HOURS_IN_DAY = 24
+    MINUTES_IN_HOUR = 60
+    SECONDS_IN_MINUTE = 60
+
+    def __init__(self, customer, device):
+        self.customer = customer
+        self.device = device
+
+    def minutes_to_time(self, minute):
+        return divmod(minute, self.MINUTES_IN_HOUR)
+
+    def generate_timeline(self, date):
+        return self.generate_calls(date, 10)
+
+    def generate_calls(self, date, amount):
+        start_times = self.get_start_times(type='outgoing_call', date=date, amount=amount)
+        calls = []
+        for i in range(amount-1):
+            start_time = start_times[i]
+            next_start_time = start_times[i+1]
+            delta = next_start_time - start_time
+            call = Call(self.customer, self.device, start_time, delta)
+            self.gen_call_duration(call)
+            calls.append(call)
+        return calls
+
+    def gen_call_duration(self, call):
+        while True:
+            duration_minutes = np.random.randint(0, 30)
+            duration_seconds = np.random.randint(0, 59)
+            duration = timedelta(minutes=duration_minutes, seconds=duration_seconds)
+            try:
+                call.duration = duration
+            except IntersectionError:
+                continue
+            return
+
+    def get_start_times(self, type, date, amount):
+        year, month, day = date
+        if type == 'outgoing_call':
+            times = []
+            hm = np.random.randint(0, self.MINUTES_IN_DAY, amount)
+            seconds = np.random.randint(0, self.SECONDS_IN_MINUTE, amount)
+            for i in range(amount):
+                hour, minute = self.minutes_to_time(hm[i])
+                second = seconds[i]
+                times.append(datetime(year, month, day, hour, minute, second))
+            times.sort()
+            return times
+        elif type == 'sms':
+            pass
+        elif type == 'mms':
+            pass
+        elif type == 'internet':
+            pass
+        else:
+            raise Exception
