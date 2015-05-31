@@ -1,5 +1,6 @@
 {
   "Individual agreement 1": {
+    "income_rating": 1,
     "accounts": ["Single smartphone with small activity 1"]
   }
 }

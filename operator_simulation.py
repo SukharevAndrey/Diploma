@@ -1,5 +1,5 @@
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 import sqlalchemy as db
@@ -7,22 +7,33 @@ from sqlalchemy import create_engine, and_, or_
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
-from entities.customer import Device, Agreement, CustomerAgreement, CalculationMethod, Account
-from entities.location import Location, Country, Region, Place
-from entities.operator import PhoneNumber, MobileOperator
-from entities.payment import Balance, Bill, Cost, ThirdPartyCollection, Cash, Payment
-from entities.service import ServiceLog, DeviceService, Service, Packet, Request, Tariff
+from entities.customer import *
+from entities.location import *
+from entities.operator import *
+from entities.payment import *
+from entities.service import *
 
 from generator import Distribution, MobileOperatorGenerator, TimeLineGenerator
-from random_data import random_individual
+from random_data import *
 from tools import file_to_json
 
 # TODO: Proper session handling
 # TODO: Decimal service amount
 
-POOL_SIZE = 20
-USER_GROUPS_FILE = 'data/customer_clusters.json'
+POOL_SIZE = 100
+
+USER_GROUPS_FILE = 'data/clusters/customer_clusters.json'
+AGREEMENTS_FILE = 'data/clusters/agreement_clusters.json'
+ACCOUNTS_FILE = 'data/clusters/account_clusters.json'
+DEVICES_FILE = 'data/clusters/device_clusters.json'
 DISTRIBUTIONS_FILE = 'data/distributions.json'
+
+user_groups_info = file_to_json(USER_GROUPS_FILE)
+agreements_info = file_to_json(AGREEMENTS_FILE)
+accounts_info = file_to_json(ACCOUNTS_FILE)
+devices_info = file_to_json(DEVICES_FILE)
+distributions_info = file_to_json(DISTRIBUTIONS_FILE)
+
 
 class MobileOperatorSimulator:
     def __init__(self, metadata):
@@ -43,32 +54,32 @@ class MobileOperatorSimulator:
     def generate_schema(self, engine):
         self.metadata.create_all(engine)
 
-    def generate_customers(self):
+    def generate_customers(self, simulation_date):
         self.db1_engine.echo = False
-        # user_groups_info = file_to_json(USER_GROUPS_FILE)
-        # distributions_info = file_to_json(DISTRIBUTIONS_FILE)
-        # for group_info in user_groups_info:
-        #     group_name = group_info['group_name']
-        #     group_size = group_info['group_size']
-        #     customer_type = group_info['customer_type']
-        #     age_distribution_name = group_info['ages']
-        #     age_distribution = None
-        #     ages_max_values = distributions_info['age']['max_values']
-        #     for distribution_info in distributions_info['age']['distributions']:
-        #         if distributions_info['name'] == age_distribution_name:
-        #             age_distribution = Distribution(ages_max_values, distributions_info['ages'])
-        #             break
-        #
-        #     for i in range(group_size):
-        #         c = SimulatedCustomer(self.db1_session, self.system, verbose=True)
-        #         self.customers.append(c)
-        c = SimulatedCustomer(self.db1_session, self.system, verbose=True)
-        c.simulate_day()
 
-    def begin_simulation(self):
-        self.generate_customers()
+        for group_name in user_groups_info:
+            group_info = user_groups_info[group_name]
+            size = group_info['size']
+            customer_type = group_info['customer_type']
+            age_distribution = Distribution(info=distributions_info['age'][group_info['ages']])
+            age = int(age_distribution.get_value())
+
+            for i in range(size):
+                if customer_type == 'individual':
+                    customer = random_individual(simulation_date, age)
+                else:
+                    customer = None
+                    raise NotImplementedError('organizations are not supported yet')
+
+                c = SimulatedCustomer(customer, group_info['agreements'], self.db1_session, self.system, verbose=True)
+                c.generate_all_hierarchy(simulation_date)
+                self.customers.append(c)
+
+    def simulate_day(self, simulation_date):
+        print('Simulating users activity on', simulation_date)
+        self.generate_customers(simulation_date)
         for customer in self.customers:
-            customer.simulate_day()
+            customer.simulate_day(simulation_date)
 
     def initial_fill(self):
         gen = MobileOperatorGenerator(verbose=True)
@@ -90,7 +101,8 @@ class MobileOperatorSystem:
         # TODO: Also check due date
         balance = self.session.query(Balance).\
             join(Device, Device.id == Balance.device_id).\
-            filter(and_(Balance.type == calc_to_type[calc_method.type],
+            filter(and_(Balance.device_id == device.id,
+                        Balance.type == calc_to_type[calc_method.type],
                         Balance.due_date.is_(None))).one()
         return balance
 
@@ -122,10 +134,10 @@ class MobileOperatorSystem:
         print('Handling payment')
 
         balance = self.get_active_balance(device)
-        print('Replenishing %s balance at %f' % (balance.type, payment.amount))
+        print('Replenishing %s balance at %f'%(balance.type, payment.amount))
         payment.balance = balance
         balance.amount += payment.amount
-        print('Current balance: %f' % balance.amount)
+        print('Current balance: %f'%balance.amount)
 
         # TODO: Implement bonuses charging
         # TODO: Pay unpaid bills (credit only?)
@@ -147,7 +159,7 @@ class MobileOperatorSystem:
         else:
             # TODO: Charge activation sum if latest tariff change was less than month ago
             # TODO: Handle charging subscription cost for current period
-            print('Writing bill: need to pay %f' % service.activation_cost)
+            print('Writing bill: need to pay %f'%service.activation_cost)
             bill = Bill(date_created=connection_date, service_log=log, debt=service.activation_cost)
             log.bill = bill
             self.handle_bill(bill)
@@ -183,7 +195,7 @@ class MobileOperatorSystem:
         try:
             phone_number = self.session.query(PhoneNumber).filter_by(area_code=phone_info['code'],
                                                                      number=phone_info['number']).one()
-            print('Phone number is already registered in base and belongs to operator %s %s' %
+            print('Phone number is already registered in base and belongs to operator %s %s'%
                   (phone_number.mobile_operator.name, phone_number.mobile_operator.country.iso3_code))
         except NoResultFound:
             print('Phone number is not registered in base')
@@ -229,11 +241,11 @@ class MobileOperatorSystem:
         device_service = bill.service_log.device_service
         service = device_service.service
         device = device_service.device
-        print('Handling bill for service %s. Need to pay: %s' % (service.name, bill.debt))
+        print('Handling bill for service %s. Need to pay: %s'%(service.name, bill.debt))
         balance = self.get_active_balance(device)
-        print('Debiting %s RUB from %s balance with balance %s. New balance: %s' % (bill.debt, balance.type,
-                                                                                    balance.amount,
-                                                                                    balance.amount-bill.debt))
+        print('Debiting %s RUB from %s balance with balance %s. New balance: %s'%(bill.debt, balance.type,
+                                                                                  balance.amount,
+                                                                                  balance.amount-bill.debt))
         balance.amount -= bill.debt
         bill.paid = bill.debt
         bill.debt = 0
@@ -274,7 +286,7 @@ class MobileOperatorSystem:
                 print('Units left in packet: %d, unpaid units: %d' % (packet_service_info.packet_left,
                                                                       unpaid_service_amount))
 
-            # TODO: Block services with packet_left == 0?
+                # TODO: Block services with packet_left == 0?
 
         if unpaid_service_amount > 0:
             if service.name == 'internet' and packet_services:
@@ -315,7 +327,7 @@ class MobileOperatorSystem:
 
         # If device already has a tariff
         if device.tariff:
-            print("The device already has tariff '%s', disconnecting it first" % tariff.name)
+            print("The device already has tariff '%s', disconnecting it first"%tariff.name)
             for service in tariff.attached_services:
                 self.deactivate_service(device, service, connection_date, commit=False)
 
@@ -403,24 +415,79 @@ class MobileOperatorSystem:
         return '916', '0000000'
 
 
-class SimulatedDevice:
-    def __init__(self, session, operator_system, device_info, verbose=False):
-        self.session = session
-        self.system = operator_system
-        self.device_info = device_info
-        self.verbose = verbose
-
-
 class SimulatedCustomer:
-    def __init__(self, session, operator_system, group_info=None, verbose=False):
+    def __init__(self, customer, agreement_cluster_names, session, operator_system, verbose=False):
+        print('Registering customer')
+
         self.session = session
         self.system = operator_system
-        self.customer = random_individual()
-        self.group_info = group_info
+        self.customer = customer
+        self.agreement_cluster_names = agreement_cluster_names
         self.verbose = verbose
+
+        self.devices = []
 
         session.add(self.customer)
         session.commit()
+
+    def generate_all_hierarchy(self, simulation_date):
+        print('Generating agreements')
+        for agreement_cluster_name in self.agreement_cluster_names:
+            agreement_cluster_info = agreements_info[agreement_cluster_name]
+            agreement_info = {
+                'date': simulation_date,
+                'income_rating': agreement_cluster_info['income_rating']
+            }
+            agreement = self.sign_agreement(agreement_info)
+            account_cluster_names = agreement_cluster_info['accounts']
+            print('Generating accounts')
+            for account_cluster_name in account_cluster_names:
+                account_cluster_info = accounts_info[account_cluster_name]
+                probabilistic = account_cluster_info['probabilistic']
+                account_info = {
+                    'date': simulation_date,
+                    'calc_method': account_cluster_info['calculation_method'],
+                    'trust_category': account_cluster_info['trust_category'],
+                    'credit_limit': account_cluster_info['credit_limit']
+                }
+                account = self.register_account(agreement, account_info)
+
+                if not probabilistic:  # fixed device clusters
+                    device_cluster_names = account_cluster_info['devices']
+                    for device_cluster_name in device_cluster_names:
+                        device_cluster_info = devices_info[device_cluster_name]
+
+                        initial_tariff_names = []
+                        percentages = []
+                        for tariff_info in device_cluster_info['initial_tariffs']:
+                            initial_tariff_names.append(tariff_info['name'])
+                            percentages.append(tariff_info['percentage'])
+
+                        initial_tariffs_info = {
+                            'max_values': len(initial_tariff_names),
+                            'values': initial_tariff_names,
+                            'probabilities': percentages
+                        }
+
+                        tariff_distribution = Distribution(info=initial_tariffs_info)
+                        initial_tariff_name = tariff_distribution.get_value()
+
+                        device_info = {
+                            'date': simulation_date,
+                            'initial_tariff': initial_tariff_name,
+                            'IMEI': random_IMEI(),
+                            'type': device_cluster_info['type'],
+                            'operator': {  # TODO: From account cluster
+                                'name': 'MTS',
+                                'country': 'Russia',
+                                'region': 'Moskva'
+                            }
+                        }
+
+                        device = self.add_device(account, device_info)
+                        self.devices.append(SimulatedDevice(device, device_cluster_info, self.session, self.system))
+                else:
+                    raise NotImplementedError
 
     def sign_agreement(self, agreement_info):
         print('Signing agreement: ', agreement_info)
@@ -440,7 +507,9 @@ class SimulatedCustomer:
         calc_method = self.session.query(CalculationMethod).\
             filter_by(type=account_info['calc_method']).one()
         account = Account(date_from=registration_date,
-                          calc_method=calc_method)
+                          calc_method=calc_method,
+                          trust_category=account_info['trust_category'],
+                          credit_limit=account_info['credit_limit'])
         agreement.accounts.append(account)
         self.session.commit()
         return account
@@ -486,7 +555,20 @@ class SimulatedCustomer:
         self.session.commit()
         return device
 
-    def set_device_location(self, device, location_info):
+    def simulate_day(self, simulation_day):
+        for device in self.devices:
+            device.simulate_day(simulation_day)
+
+
+class SimulatedDevice:
+    def __init__(self, device_entity, behavior_info, session, operator_system, verbose=False):
+        self.session = session
+        self.system = operator_system
+        self.device = device_entity
+        self.behavior_info = behavior_info
+        self.verbose = verbose
+
+    def set_device_location(self, location_info):
         country_name, region_name, place_name = None, None, None
         country_name = location_info['country']
         if 'region' in location_info:
@@ -496,9 +578,9 @@ class SimulatedCustomer:
 
         location_date = location_info['date']
 
-        print('Changing location to: Country = %s, Region = %s, Place = %s' % (country_name, region_name, place_name))
-        if device.locations:
-            latest_location = self.session.query(Location).filter_by(device=device, date_to=None).one()
+        print('Changing location to: Country = %s, Region = %s, Place = %s'%(country_name, region_name, place_name))
+        if self.device.locations:
+            latest_location = self.session.query(Location).filter_by(device=self.device, date_to=None).one()
             latest_location.date_to = location_date
 
         region, place = None, None
@@ -510,11 +592,11 @@ class SimulatedCustomer:
             place = self.session.query(Place).filter_by(region=region, name=place_name).one()
 
         new_location = Location(date_from=location_date, country=country, region=region, place=place)
-        device.locations.append(new_location)
+        self.device.locations.append(new_location)
 
         self.session.commit()
 
-    def use_service(self, device, service_info, amount=1):
+    def use_service(self, service_info, amount=1):
         # if self.system.can_into_service(device):
         #     print('Device can use service')
         # else:
@@ -531,7 +613,7 @@ class SimulatedCustomer:
 
         device_service = self.session.query(DeviceService).\
             join(Service, and_(DeviceService.service_id == Service.id,
-                               DeviceService.device_id == device.id,
+                               DeviceService.device_id == self.device.id,
                                DeviceService.is_activated,
                                Service.name == service_info['name'])).one()
 
@@ -544,32 +626,32 @@ class SimulatedCustomer:
         self.session.commit()
         self.system.handle_used_service(log)
 
-    def make_call(self, device, call_info):
+    def make_call(self, call_info):
         print('Making call to phone number %s' % (call_info['phone_number']['code'] +
                                                   ' ' + call_info['phone_number']['number']))
         # TODO: Save original call duration
-        self.use_service(device, call_info, self.system.round_call_duration(call_info['minutes'],
-                                                                            call_info['seconds']))
+        self.use_service(call_info, self.system.round_call_duration(call_info['minutes'],
+                                                                    call_info['seconds']))
 
-    def send_sms(self, device, sms_info):
+    def send_sms(self, sms_info):
         print('Sending sms to phone number %s' % (sms_info['phone_number']['code'] +
                                                   ' ' + sms_info['phone_number']['number']))
-        self.use_service(device, sms_info, 1)
+        self.use_service(sms_info, 1)
 
-    def send_mms(self, device, mms_info):
+    def send_mms(self, mms_info):
         print('Sending sms to phone number %s' % (mms_info['phone_number']['code'] +
                                                   ' ' + mms_info['phone_number']['number']))
-        self.use_service(device, mms_info, 1)
+        self.use_service(mms_info, 1)
 
-    def use_internet(self, device, session_info):
+    def use_internet(self, session_info):
         print('Using internet: ', session_info)
-        self.use_service(device, session_info, self.system.round_internet_session(session_info['megabytes'],
-                                                                                  session_info['kilobytes']))
+        self.use_service(session_info, self.system.round_internet_session(session_info['megabytes'],
+                                                                          session_info['kilobytes']))
 
-    def ussd_request(self, device, request_info):
+    def ussd_request(self, request_info):
         print('Making request: ', request_info)
 
-        regional_operator = device.phone_number.mobile_operator
+        regional_operator = self.device.phone_number.mobile_operator
         request_date = request_info['date']
 
         if request_info['service_type'] == 'service':
@@ -579,7 +661,7 @@ class SimulatedCustomer:
             except NoResultFound:
                 service = self.session.query(Service).filter_by(activation_code=request_info['code']).one()
             request = Request(date_created=request_date, type=request_info['type'],
-                              device=device, service=service)
+                              device=self.device, service=service)
         else:
             try:
                 tariff = self.session.query(Tariff).\
@@ -587,13 +669,13 @@ class SimulatedCustomer:
             except NoResultFound:
                 tariff = self.session.query(Tariff).filter_by(activation_code=request_info['code']).one()
             request = Request(date_created=request_date, type=request_info['type'],
-                              device=device, tariff=tariff)
+                              device=self.device, tariff=tariff)
 
         self.session.add(request)
         self.session.commit()
         self.system.handle_request(request)
 
-    def make_payment(self, device, payment_info):
+    def make_payment(self, payment_info):
         print('Making payment: ', payment_info)
         if payment_info['method'] == 'third_party':
             name = payment_info['name']
@@ -609,31 +691,9 @@ class SimulatedCustomer:
 
         self.session.add(payment)
         self.session.commit()
-        self.system.handle_payment(device, payment)
+        self.system.handle_payment(self.device, payment)
 
-    def simulate_day(self):
-        agreement_info = {
-            'date': datetime(2015, 5, 21, 0, 0, 0),
-        }
-        account_info = {
-            'date': datetime(2015, 5, 22, 0, 0, 0),
-            'calc_method': 'advance'
-        }
-        device_info = {
-            'date': datetime(2015, 5, 23, 0, 0, 0),
-            'type': 'smartphone',
-            'IMEI': '123456789012345',
-            'initial_tariff': 'Smart mini',
-            'operator': {
-                'name': 'MTS',
-                'country': 'Russia',
-                'region': 'Moskva'
-            },
-            'phone_number': {
-                'code': '916',
-                'number': '9876543'
-            }
-        }
+    def simulate_day(self, simulation_day):
         tariff_info = {
             'date': datetime(2015, 5, 26, 9, 0, 0),
             'code': '*100*1#',  # smart mini
@@ -703,33 +763,22 @@ class SimulatedCustomer:
             'country': 'Russia',
             'region': 'Brjanskaja',
         }
-        agreement = self.sign_agreement(agreement_info)
-        self.sign_agreement(agreement_info)
-        self.sign_agreement(agreement_info)
-        account = self.register_account(agreement, account_info)
-        device = self.add_device(account, device_info)
-        self.set_device_location(device, location1_info)
-        self.make_payment(device, payment_info)
-        self.ussd_request(device, tariff_info)  # connecting tariff
+        self.set_device_location(location1_info)
+        self.make_payment(payment_info)
+        self.ussd_request(tariff_info)  # connecting tariff
         # self.ussd_request(device, tariff_info)  # connecting it again
-        self.ussd_request(device, service_info)  # connecting BIT
-        self.ussd_request(device, balance_request_info)
+        self.ussd_request(service_info)  # connecting BIT
+        self.ussd_request(balance_request_info)
         # for i in range(51):
         #     self.send_sms(device, sms_info)
-        self.send_sms(device, sms_info)
-        self.make_call(device, call_info)
-        self.use_internet(device, internet_session_info)
-        self.use_internet(device, internet_session_info)
-        self.set_device_location(device, location2_info)
-        self.ussd_request(device, tariff_info)  # connecting tariff again
-        self.ussd_request(device, tariff_info)  # connecting tariff again
-        # for location in device.locations:
-        #     print(location.country.name, location.region.name, location.date_from, location.date_to)
-        # location = self.system.get_device_location(device, datetime(2015, 5, 26, 12, 0, 0))
-        # print(location.country.name, location.region.name)
-        # location = self.system.get_device_location(device, datetime.now())
-        # print(location.country.name, location.region.name)
-        # gen = TimeLineGenerator(self, device)
+        self.send_sms(sms_info)
+        self.make_call(call_info)
+        self.use_internet(internet_session_info)
+        self.use_internet(internet_session_info)
+        self.set_device_location(location2_info)
+        self.ussd_request(tariff_info)  # connecting tariff again
+        self.ussd_request(tariff_info)  # connecting tariff again
+        # gen = TimeLineGenerator(self, self.device)
         # date = (2015, 5, 30)
         # actions = gen.generate_timeline(date)
         # for action in actions:

@@ -337,13 +337,21 @@ class MobileOperatorGenerator:
         self.generate_services(session)
         self.generate_tariffs(session)
 
+
 class Distribution:
-    def __init__(self, values_count, probabilities):
-        self.values_count = values_count
-        self.values = [i for i in range(1, values_count+1)]
-        self.p = np.array(probabilities)
-        if len(probabilities) < values_count:
-            self.p = np.concatenate((self.p, np.zeros(values_count-len(probabilities))))
+    def __init__(self, info):
+        self.values_count = info['max_values']
+        if 'values' not in info:
+            self.values = [i for i in range(1, self.values_count+1)]
+        else:
+            self.values = info['values']
+        if 'probabilities' in info:
+            self.p = np.array(info['probabilities'])
+        else:
+            self.p = np.ones(self.values_count)
+
+        if len(self.p) < self.values_count:
+            self.p = np.concatenate((self.p, np.zeros(self.values_count-len(self.p))))
 
         self.normalize()
 
@@ -353,6 +361,7 @@ class Distribution:
 
     def get_value(self):
         return np.random.choice(self.values, p=self.p)
+
 
 class TimeLineGenerator:
     MINUTES_IN_DAY = 1440

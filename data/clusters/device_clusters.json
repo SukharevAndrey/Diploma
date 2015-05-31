@@ -1,134 +1,129 @@
 {
   "Smartphone with small activity 1": {
+    "type": "smartphone",
     "initial_tariffs": [
       {
         "name": "Smart mini",
-        "percentage": 60
+        "percentage": 60.0
       },
       {
         "name": "Super MTS",
-        "percentage": 40
+        "percentage": 40.0
       }
     ],
-    "services": [
-      {
-        "name": "Call",
-        "months_activity": [
-          {
-            "month": "January",
-            "amount": 30,
-            "duration": "Short calls distribution 1",
-            "month_days_activity": "Month call day distribution 1",
-            "week_activity": "Week call distribution 1"
-          },
-          {
-            "month": "February",
-            "amount": 30,
-            "duration": "Short calls distribution 1",
-            "month_days_activity": "Month call day distribution 1",
-            "week_activity": "Week call distribution 1"
-          },
-          {
-            "month": "March",
-            "amount": 30,
-            "duration": "Short calls distribution 1",
-            "month_days_activity": "Month call day distribution 1",
-            "week_activity": "Week call distribution 1"
-          },
-          {
-            "month": "April",
-            "amount": 30,
-            "duration": "Short calls distribution 1",
-            "month_days_activity": "Month call day distribution 1",
-            "week_activity": "Week call distribution 1"
-          },
-          {
-            "month": "May",
-            "amount": 30,
-            "duration": "Short calls distribution 1",
-            "month_days_activity": "Month call day distribution 1",
-            "week_activity": "Week call distribution 1"
-          },
-          {
-            "month": "June",
-            "amount": 30,
-            "duration": "Short calls distribution 1",
-            "month_days_activity": "Month call day distribution 1",
-            "week_activity": "Week call distribution 1"
-          },
-          {
-            "month": "July",
-            "amount": 30,
-            "duration": "Short calls distribution 1",
-            "month_days_activity": "Month call day distribution 1",
-            "week_activity": "Week call distribution 1"
-          },
-          {
-            "month": "August",
-            "amount": 30,
-            "duration": "Short calls distribution 1",
-            "month_days_activity": "Month call day distribution 1",
-            "week_activity": "Week call distribution 1"
-          },
-          {
-            "month": "September",
-            "amount": 30,
-            "duration": "Short calls distribution 1",
-            "month_days_activity": "Month call day distribution 1",
-            "week_activity": "Week call distribution 1"
-          },
-          {
-            "month": "October",
-            "amount": 30,
-            "duration": "Short calls distribution 1",
-            "month_days_activity": "Month call day distribution 1",
-            "week_activity": "Week call distribution 1"
-          },
-          {
-            "month": "November",
-            "amount": 30,
-            "duration": "Short calls distribution 1",
-            "month_days_activity": "Month call day distribution 1",
-            "week_activity": "Week call distribution 1"
-          },
-          {
-            "month": "December",
-            "amount": 30,
-            "duration": "Short calls distribution 1",
-            "month_days_activity": "Month call day distribution 1",
-            "week_activity": "Week call distribution 1"
-          }
-        ],
-        "special_days_activity": [
-          {
-            "name": "BIRTH_DAY",
-            "day_activity": "Birthday call time distribution 1"
-          },
-          {
-            "name": "NEW_YEAR",
-            "day_activity": "New year call time distribution 1"
-          },
-          {
-            "name": "PERIOD_END",
-            "day_activity": "Period end call time distribution 1"
-          }
-        ]
-      },
-      {
-        "name": "SMS",
-        "months_activity": [],
-        "special_days_activity": []
-      },
-      {
-        "name": "MMS",
-        "months_activity": [],
-        "special_days_activity": []
-      },
-      {
-        "name": "Internet",
-        "months_activity": [],
-        "special_days_activity": []
-      }
-    ]
+    "Call": {
+      "months_activity": [
+        {
+          "month": "January",
+          "amount": 30,
+          "duration": "Short calls distribution 1",
+          "month_days_activity": "Month call day distribution 1",
+          "week_activity": "Week call distribution 1"
+        },
+        {
+          "month": "February",
+          "amount": 30,
+          "duration": "Short calls distribution 1",
+          "month_days_activity": "Month call day distribution 1",
+          "week_activity": "Week call distribution 1"
+        },
+        {
+          "month": "March",
+          "amount": 30,
+          "duration": "Short calls distribution 1",
+          "month_days_activity": "Month call day distribution 1",
+          "week_activity": "Week call distribution 1"
+        },
+        {
+          "month": "April",
+          "amount": 30,
+          "duration": "Short calls distribution 1",
+          "month_days_activity": "Month call day distribution 1",
+          "week_activity": "Week call distribution 1"
+        },
+        {
+          "month": "May",
+          "amount": 30,
+          "duration": "Short calls distribution 1",
+          "month_days_activity": "Month call day distribution 1",
+          "week_activity": "Week call distribution 1"
+        },
+        {
+          "month": "June",
+          "amount": 30,
+          "duration": "Short calls distribution 1",
+          "month_days_activity": "Month call day distribution 1",
+          "week_activity": "Week call distribution 1"
+        },
+        {
+          "month": "July",
+          "amount": 30,
+          "duration": "Short calls distribution 1",
+          "month_days_activity": "Month call day distribution 1",
+          "week_activity": "Week call distribution 1"
+        },
+        {
+          "month": "August",
+          "amount": 30,
+          "duration": "Short calls distribution 1",
+          "month_days_activity": "Month call day distribution 1",
+          "week_activity": "Week call distribution 1"
+        },
+        {
+          "month": "September",
+          "amount": 30,
+          "duration": "Short calls distribution 1",
+          "month_days_activity": "Month call day distribution 1",
+          "week_activity": "Week call distribution 1"
+        },
+        {
+          "month": "October",
+          "amount": 30,
+          "duration": "Short calls distribution 1",
+          "month_days_activity": "Month call day distribution 1",
+          "week_activity": "Week call distribution 1"
+        },
+        {
+          "month": "November",
+          "amount": 30,
+          "duration": "Short calls distribution 1",
+          "month_days_activity": "Month call day distribution 1",
+          "week_activity": "Week call distribution 1"
+        },
+        {
+          "month": "December",
+          "amount": 30,
+          "duration": "Short calls distribution 1",
+          "month_days_activity": "Month call day distribution 1",
+          "week_activity": "Week call distribution 1"
+        }
+      ],
+      "special_days_activity": [
+        {
+          "name": "BIRTH_DAY",
+          "day_activity": "Birthday call time distribution 1"
+        },
+        {
+          "name": "NEW_YEAR",
+          "day_activity": "New year call time distribution 1"
+        },
+        {
+          "name": "PERIOD_END",
+          "day_activity": "Period end call time distribution 1"
+        }
+      ]
+    },
+    "SMS": {
+      "months_activity": [],
+      "special_days_activity": []
+    },
+    "MMS": {
+      "months_activity": [],
+      "special_days_activity": []
+    },
+    "Internet": {
+      "months_activity": [],
+      "special_days_activity": []
+    }
   }
 }

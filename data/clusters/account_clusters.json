@@ -1,5 +1,5 @@
 {
-  "Single smartphone with small activity": {
+  "Single smartphone with small activity 1": {
     "calculation_method": "advance",
     "credit_limit": 800.0,
     "trust_category": 4,
@@ -13,7 +13,7 @@
             "percentage": 70
           },
           {
-            "name": "Leningranskaja",
+            "name": "Leningradskaja",
             "percentage": 25
           },
           {
@@ -30,7 +30,7 @@
     "probabilistic": false,
     "devices": ["Smartphone with small activity 1"]
   },
-  "Smartphone and tablet with small activity": {
+  "Smartphone and tablet with small activity 1": {
     "calculation_method": "advance",
     "credit_limit": 800.0,
     "trust_category": 4,

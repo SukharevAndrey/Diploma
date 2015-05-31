@@ -1,98 +1,77 @@
 {
   "age": {
-    "max_values": 100,
-    "distributions": [
-      {
-        "name": "Age distribution 1",
-        "ages": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 30, 10, 10]
-      }
-    ]
+    "Age distribution 1": {
+      "max_values": 100,
+      "probabilities": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 30, 10, 10]
+    }
   },
   "duration": {
-    "max_values": 120,
-    "distributions": [
-      {
-        "name": "Short calls distribution 1",
-        "duration": [60, 15, 10, 5, 5, 3, 2]
-      }
-    ]
+    "Short calls distribution 1": {
+      "max_values": 120,
+      "probabilities": [60, 15, 10, 5, 5, 3, 2]
+    }
   },
   "month": {
-    "max_values": 31,
-    "distributions": [
-      {
-        "name": "Month call day distribution 1",
-        "days": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 50]
-      }
-    ]
+    "Month call day distribution 1": {
+      "max_values": 31,
+      "probabilities": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 50]
+    }
   },
   "week": {
-    "distributions": [
-      {
-        "name": "Week call distribution 1",
-        "day_distributions": [
-          {
-            "day": "Monday",
-            "distribution": "Monday call time distribution 1"
-          },
-          {
-            "day": "Tuesday",
-            "distribution": "Weekday call time distribution 1"
-          },
-          {
-            "day": "Wednesday",
-            "distribution": "Weekday call time distribution 1"
-          },
-          {
-            "day": "Thursday",
-            "distribution": "Weekday call time distribution 1"
-          },
-          {
-            "day": "Friday",
-            "distribution": "Friday call time distribution 1"
-          },
-          {
-            "day": "Saturday",
-            "distribution": "Weekend call time distribution 1"
-          },
-          {
-            "day": "Sunday",
-            "distribution": "Weekend call time distribution 1"
-          }
-        ]
-      }
-    ]
+    "Week call distribution 1": {
+      "day_distributions": [
+        {
+          "day": "Monday",
+          "distribution": "Monday call time distribution 1"
+        },
+        {
+          "day": "Tuesday",
+          "distribution": "Weekday call time distribution 1"
+        },
+        {
+          "day": "Wednesday",
+          "distribution": "Weekday call time distribution 1"
+        },
+        {
+          "day": "Thursday",
+          "distribution": "Weekday call time distribution 1"
+        },
+        {
+          "day": "Friday",
+          "distribution": "Friday call time distribution 1"
+        },
+        {
+          "day": "Saturday",
+          "distribution": "Weekend call time distribution 1"
+        },
+        {
+          "day": "Sunday",
+          "distribution": "Weekend call time distribution 1"
+        }
+      ]
+    }
   },
   "day": {
-    "distributions": [
-      {
-        "name": "Monday call time distribution 1",
-        "day_minutes": []
-      },
-      {
-        "name": "Weekday call time distribution 1",
-        "day_minutes": []
-      },
-      {
-        "name": "Friday call time distribution 1",
-        "day_minutes": []
-      },
-      {
-        "name": "Weekend call time distribution 1",
-        "day_minutes": []
-      },
-      {
-        "name": "Birthday call time distribution 1",
-        "day_minutes": []
-      },
-      {
-        "name": "New year call time distribution 1",
-        "day_minutes": []
-      },
-      {
-        "name": "Period end call time distribution 1",
-        "day_minutes": []
-      }
-    ]
+    "Monday call time distribution 1": {
+      "day_minutes": []
+    },
+    "Weekday call time distribution 1": {
+      "day_minutes": []
+    },
+    "Friday call time distribution 1": {
+      "day_minutes": []
+    },
+    "Weekend call time distribution 1": {
+      "day_minutes": []
+    },
+    "Birthday call time distribution 1": {
+      "day_minutes": []
+    },
+    "New year call time distribution 1": {
+      "day_minutes": []
+    },
+    "Period end call time distribution 1": {
+      "day_minutes": []
+    }
   }
 }
