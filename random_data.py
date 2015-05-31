@@ -57,14 +57,3 @@ def random_individual():
 
 def random_IMEI():
     return ''.join(map(str, [random.randint(0, 9) for i in range(15)]))
-
-def random_device():
-    imei = random_IMEI()
-    while imei in used_IMEI:
-        imei = random_IMEI()
-
-    device_type = random.choice(['phone', 'smartphone', 'tablet', 'modem'])
-
-    d = Device(IMEI=imei,
-               type=device_type)
-    return d

@@ -1,0 +1,8 @@
+{
+  "Group 1": {
+    "size": 2,
+    "customer_type": "individual",
+    "ages": "Age distribution 1",
+    "agreements": ["Individual agreement 1"]
+  }
+}

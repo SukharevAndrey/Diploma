@@ -103,3 +103,37 @@ class Internet(DeviceAction):
 
     def __repr__(self):
         return '%s - Internet usage. Used %s mb, %s kb'%(self.start_date.time(), self.megabytes, self.kilobytes)
+
+
+class SMS(DeviceAction):
+    def __init__(self, customer, device, start_date):
+        super().__init__(customer, device, start_date)
+
+    def to_dict_info(self):
+        return {}
+
+    def perform(self):
+        super().perform()
+
+
+class MMS(DeviceAction):
+    def __init__(self, customer, device, start_date):
+        super().__init__(customer, device, start_date)
+
+    def to_dict_info(self):
+        return {}
+
+    def perform(self):
+        super().perform()
+
+
+class TariffChange(DeviceAction):
+    def __init__(self, customer, device, start_date, new_tariff):
+        super().__init__(customer, device, start_date)
+        self.new_tariff = new_tariff
+
+    def to_dict_info(self):
+        return {}
+
+    def perform(self):
+        super().perform()

@@ -1,0 +1,101 @@
+{
+  "Single smartphone with small activity": {
+    "calculation_method": "advance",
+    "credit_limit": 800.0,
+    "trust_category": 4,
+    "home_countries": [
+      {
+        "name": "Russia",
+        "percentage": 95,
+        "home_regions": [
+          {
+            "name": "Moskva",
+            "percentage": 70
+          },
+          {
+            "name": "Leningranskaja",
+            "percentage": 25
+          },
+          {
+            "name": "Brjanskaja",
+            "percentage": 5
+          }
+        ]
+      },
+      {
+        "name": "Ukraine",
+        "percentage": 5
+      }
+    ],
+    "probabilistic": false,
+    "devices": ["Smartphone with small activity 1"]
+  },
+  "Smartphone and tablet with small activity": {
+    "calculation_method": "advance",
+    "credit_limit": 800.0,
+    "trust_category": 4,
+    "home_countries": [
+      {
+        "name": "Russia",
+        "percentage": 95,
+        "home_regions": [
+          {
+            "name": "Moskva",
+            "percentage": 70
+          },
+          {
+            "name": "Leningranskaja",
+            "percentage": 25
+          },
+          {
+            "name": "Brjanskaja",
+            "percentage": 5
+          }
+        ]
+      },
+      {
+        "name": "Ukraine",
+        "percentage": 5
+      }
+    ],
+    "probabilistic": false,
+    "devices": ["Smartphone with small activity 1", "Tablet with small activity 1"]
+  },
+  "Small company account 1": {
+    "calculation_method": "credit",
+    "credit_limit": 10000.0,
+    "trust_category": 5,
+    "home_countries": [
+      {
+        "name": "Russia",
+        "percentage": 100,
+        "home_regions": [
+          {
+            "name": "Moskva",
+            "percentage": 70
+          },
+          {
+            "name": "Leningranskaja",
+            "percentage": 25
+          },
+          {
+            "name": "Brjanskaja",
+            "percentage": 5
+          }
+        ]
+      }
+    ],
+    "probabilistic": true,
+    "devices_amount": 10,
+    "devices": [
+      {
+        "device_cluster": "Smartphone with medium activity",
+        "probability": 80
+      },
+      {
+        "device_cluster": "Phone with high activity",
+        "probability": 20
+      }
+    ]
+  }
+}

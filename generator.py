@@ -337,12 +337,36 @@ class MobileOperatorGenerator:
         self.generate_services(session)
         self.generate_tariffs(session)
 
+class Distribution:
+    def __init__(self, values_count, probabilities):
+        self.values_count = values_count
+        self.values = [i for i in range(1, values_count+1)]
+        self.p = np.array(probabilities)
+        if len(probabilities) < values_count:
+            self.p = np.concatenate((self.p, np.zeros(values_count-len(probabilities))))
+
+        self.normalize()
+
+    def normalize(self):
+        sum_p = np.sum(self.p)
+        self.p /= sum_p
+
+    def get_value(self):
+        return np.random.choice(self.values, p=self.p)
 
 class TimeLineGenerator:
     MINUTES_IN_DAY = 1440
     HOURS_IN_DAY = 24
     MINUTES_IN_HOUR = 60
     SECONDS_IN_MINUTE = 60
+
+    DISTRIBUTIONS_FILE = 'data/distributions.json'
+
+    months = {
+        'January': 1, 'February': 2, 'March': 3, 'April': 4,
+        'May': 5, 'June': 6, 'July': 7, 'August': 8,
+        'September': 9, 'October': 10, 'November': 11, 'December': 12
+    }
 
     def __init__(self, customer, device):
         self.customer = customer
@@ -355,12 +379,12 @@ class TimeLineGenerator:
         return self.generate_calls(date, 10)
 
     def generate_calls(self, date, amount):
-        start_times = self.get_start_times(type='outgoing_call', date=date, amount=amount)
+        start_times = self.get_start_times(date=date, amount=amount)
         calls = []
         for i in range(amount-1):
             start_time = start_times[i]
             next_start_time = start_times[i+1]
-            delta = next_start_time - start_time
+            delta = next_start_time-start_time
             call = Call(self.customer, self.device, start_time, delta)
             self.gen_call_duration(call)
             calls.append(call)
@@ -377,23 +401,14 @@ class TimeLineGenerator:
                 continue
             return
 
-    def get_start_times(self, type, date, amount):
+    def get_start_times(self, date, amount, can_overlap=False):
         year, month, day = date
-        if type == 'outgoing_call':
-            times = []
-            hm = np.random.randint(0, self.MINUTES_IN_DAY, amount)
-            seconds = np.random.randint(0, self.SECONDS_IN_MINUTE, amount)
-            for i in range(amount):
-                hour, minute = self.minutes_to_time(hm[i])
-                second = seconds[i]
-                times.append(datetime(year, month, day, hour, minute, second))
-            times.sort()
-            return times
-        elif type == 'sms':
-            pass
-        elif type == 'mms':
-            pass
-        elif type == 'internet':
-            pass
-        else:
-            raise Exception
+        times = []
+        hm = np.random.randint(0, self.MINUTES_IN_DAY, amount)
+        seconds = np.random.randint(0, self.SECONDS_IN_MINUTE, amount)
+        for i in range(amount):
+            hour, minute = self.minutes_to_time(hm[i])
+            second = seconds[i]
+            times.append(datetime(year, month, day, hour, minute, second))
+        times.sort()
+        return times
