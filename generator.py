@@ -237,6 +237,7 @@ class MobileOperatorGenerator:
                     if 'countries' in service_info:
                         # We have specified countries with own pricing
                         for country_info in service_info['countries']:
+                            # TODO: Optimize country queries
                             country_name = country_info['name']
                             country = session.query(Country).filter_by(name=country_name).one()
 
@@ -245,6 +246,7 @@ class MobileOperatorGenerator:
                                     operator_name = operator_info['name']
 
                                     optimized = True
+                                    # TODO: Remove unoptimized version
                                     if 'regions' in operator_info:
                                         if not optimized:
                                             for region_info in operator_info['regions']:

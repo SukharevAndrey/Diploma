@@ -44,8 +44,8 @@ class MobileOperatorSimulator:
         self.generate_schema(self.db1_engine)
         # self.generate_schema(self.db2_engine)
 
-        self.db1_session = scoped_session(sessionmaker(bind=self.db1_engine))
-        # self.db2_session = scoped_session(sessionmaker(bind=self.db2_engine))
+        self.db1_session = sessionmaker(bind=self.db1_engine)()
+        # self.db2_session = sessionmaker(bind=self.db2_engine)()
 
         self.system = MobileOperatorSystem(self.db1_session)
 

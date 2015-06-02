@@ -9,7 +9,7 @@ class Balance(Base):
         db.CheckConstraint("type IN ('main', 'credit', 'discount')"),
     )
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, index=True)
     device_id = db.Column(db.Integer, db.ForeignKey('device.id'))
 
     date_created = db.Column(db.DateTime, default=db.func.now())
@@ -25,7 +25,7 @@ class Balance(Base):
 class Bill(Base):
     __tablename__ = 'bill'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, index=True)
     service_log_id = db.Column(db.Integer, db.ForeignKey('serviceLog.id'))
     balance_id = db.Column(db.Integer, db.ForeignKey('balance.id'))
 
@@ -41,7 +41,7 @@ class Bill(Base):
 class Payment(Base):
     __tablename__ = 'payment'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, index=True)
     balance_id = db.Column(db.Integer, db.ForeignKey('balance.id'))
     method_id = db.Column(db.Integer, db.ForeignKey('paymentMethod.id'))
 
@@ -58,7 +58,7 @@ class PaymentMethod(Base):
         'polymorphic_on': 'type'
     }
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, index=True)
     payment_id = db.Column(db.Integer, db.ForeignKey('payment.id'))
 
     type = db.Column(db.String)
@@ -72,7 +72,7 @@ class CreditCard(PaymentMethod):
         'polymorphic_identity': 'credit_card'
     }
 
-    id = db.Column(db.Integer, db.ForeignKey('paymentMethod.id'), primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey('paymentMethod.id'), primary_key=True, index=True)
     number = db.Column(db.String, nullable=False, unique=True)
     name_on_card = db.Column(db.String, nullable=False)
     expiration_date = db.Column(db.Date, nullable=False)
@@ -100,7 +100,7 @@ class ThirdPartyCollection(PaymentMethod):
 class Cost(Base):
     __tablename__ = 'cost'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, index=True)
     service_id = db.Column(db.Integer, db.ForeignKey('service.id'))
     operator_from_id = db.Column(db.Integer, db.ForeignKey('mobileOperator.id'))
     operator_to_id = db.Column(db.Integer, db.ForeignKey('mobileOperator.id'))
@@ -112,10 +112,3 @@ class Cost(Base):
     operator_to = relationship('MobileOperator', foreign_keys=[operator_to_id], uselist=False)
     # services = relationship('Service', secondary='serviceCost')
     service = relationship('Service', uselist=False)
-
-
-# class ServiceCost(Base):
-#     __tablename__ = 'serviceCost'
-#
-#     service_id = db.Column(db.Integer, db.ForeignKey('service.id'), primary_key=True)
-#     cost_id = db.Column(db.Integer, db.ForeignKey('cost.id'), primary_key=True)

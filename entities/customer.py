@@ -9,7 +9,7 @@ class Customer(Base):
         'polymorphic_on': 'type'
     }
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, index=True)
     geographic_address_id = db.Column(db.Integer, db.ForeignKey('geographicAddress.id'))
 
     type = db.Column(db.String)
@@ -24,7 +24,7 @@ class Customer(Base):
 class CreditProfile(Base):
     __tablename__ = 'creditProfile'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, index=True)
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'))
 
     date_created = db.Column(db.DateTime, default=db.func.now())
@@ -52,7 +52,7 @@ class IndividualInfo(Base):
         db.CheckConstraint("marital_status IN ('single', 'married')"),
     )
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, index=True)
 
     first_name = db.Column(db.String, nullable=False)
     second_name = db.Column(db.String)
@@ -72,7 +72,7 @@ class Organization(Customer):
         'polymorphic_identity': 'organization'
     }
 
-    id = db.Column(db.Integer, db.ForeignKey('customer.id'), primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey('customer.id'), primary_key=True, index=True)
     vat_id = db.Column(db.String, nullable=False, unique=True)
     name = db.Column(db.String, nullable=False)
     branding_name = db.Column(db.String)
@@ -81,7 +81,7 @@ class Organization(Customer):
 class Agreement(Base):
     __tablename__ = 'agreement'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, index=True)
     destination = db.Column(db.String, nullable=False)
     latest_update = db.Column(db.Date, default=db.func.now())
 
@@ -92,7 +92,7 @@ class Agreement(Base):
 class TermOrCondition(Base):
     __tablename__ = 'termOrCondition'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, index=True)
     description = db.Column(db.String)
 
     agreements = relationship('Agreement',
@@ -108,7 +108,7 @@ class AgreementTermOrCondition(Base):
 class CustomerAgreement(Base):
     __tablename__ = 'customerAgreement'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, index=True)
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'))
     agreement_id = db.Column(db.Integer, db.ForeignKey('agreement.id'))
 
@@ -127,7 +127,7 @@ class CalculationMethod(Base):
         db.CheckConstraint("type IN ('advance', 'credit')"),
     )
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, index=True)
     type = db.Column(db.String, default='advance')
 
     accounts = relationship('Account')
@@ -136,7 +136,7 @@ class CalculationMethod(Base):
 class Account(Base):
     __tablename__ = 'account'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, index=True)
     agreement_id = db.Column(db.Integer, db.ForeignKey('customerAgreement.id'))
     calculation_method_id = db.Column(db.Integer, db.ForeignKey('calculationMethod.id'))
 
@@ -158,7 +158,7 @@ class Device(Base):
         db.CheckConstraint("type IN ('phone', 'smartphone', 'tablet', 'modem')"),
     )
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, index=True)
     phone_number_id = db.Column(db.Integer, db.ForeignKey('phoneNumber.id'))
     tariff_id = db.Column(db.Integer, db.ForeignKey('tariff.id'))
     account_id = db.Column(db.Integer, db.ForeignKey('account.id'))

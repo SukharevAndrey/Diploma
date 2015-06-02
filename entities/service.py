@@ -82,7 +82,7 @@ class DeviceService(Base):
 class ServiceLog(Base):
     __tablename__ = 'serviceLog'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, index=True)
     device_service_id = db.Column(db.Integer, db.ForeignKey('deviceService.id'))
     recipient_phone_number_id = db.Column(db.Integer, db.ForeignKey('phoneNumber.id'))
     recipient_location_id = db.Column(db.Integer, db.ForeignKey('location.id'))
@@ -103,7 +103,7 @@ class Request(Base):
 
     # TODO: Implicit, explicit
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, index=True)
     device_id = db.Column(db.Integer, db.ForeignKey('device.id'))
     service_id = db.Column(db.Integer, db.ForeignKey('service.id'))
     tariff_id = db.Column(db.Integer, db.ForeignKey('tariff.id'))
