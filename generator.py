@@ -1,15 +1,18 @@
 from datetime import datetime, timedelta
+import json
 
 import numpy as np
 
 from transliterate import translit
 
+from sqlalchemy import and_
 from actions import Call, IntersectionError
 from entities.customer import *
 from entities.location import *
 from entities.operator import *
 from entities.service import *
 from entities.payment import *
+
 from tools import file_to_json
 from random_data import *
 from preprocessor import TariffPreprocessor
@@ -133,6 +136,8 @@ class MobileOperatorGenerator:
         for o_info in operators_info:
             operator_name = o_info['name']
             operator_countries = o_info['countries']
+
+            # TODO: Don't generate regions if operator doesn't have them
             for country_name in operator_countries:
                 if country_name == 'Russia':
                     regions = session.query(Region).filter_by(country=russia).all()
@@ -239,18 +244,38 @@ class MobileOperatorGenerator:
                                 for operator_info in country_info['operators']:
                                     operator_name = operator_info['name']
 
+                                    optimized = True
                                     if 'regions' in operator_info:
-                                        for region_info in operator_info['regions']:
-                                            region_name = region_info['name']
-                                            use_cost = region_info['cost']
-                                            region = session.query(Region).\
-                                                filter_by(name=region_name, country=country).one()
-                                            local_operator = session.query(MobileOperator).\
-                                                filter_by(name=operator_name, country=country, region=region).one()
-                                            cost = Cost(use_cost=use_cost,
-                                                        operator_from=regional_operator,
-                                                        operator_to=local_operator)
-                                            service.costs.append(cost)
+                                        if not optimized:
+                                            for region_info in operator_info['regions']:
+                                                region_name = region_info['name']
+                                                use_cost = region_info['cost']
+                                                region = session.query(Region).\
+                                                    filter_by(name=region_name, country=country).one()
+                                                local_operator = session.query(MobileOperator).\
+                                                    filter_by(name=operator_name, country=country, region=region).one()
+                                                cost = Cost(use_cost=use_cost,
+                                                            operator_from=regional_operator,
+                                                            operator_to=local_operator)
+                                                service.costs.append(cost)
+                                        else:
+                                            local_operators = session.query(MobileOperator).\
+                                                filter_by(name=operator_name, country=country).all()
+                                            regions = session.query(Region).filter_by(country=country).all()
+                                            region_name_cost = {}
+                                            for region_info in operator_info['regions']:
+                                                region_name = region_info['name']
+                                                use_cost = region_info['cost']
+                                                region_name_cost[region_name] = use_cost
+                                            region_cost = {}
+                                            for region in regions:
+                                                region_cost[region] = region_name_cost[region.name]
+                                            for local_operator in local_operators:
+                                                use_cost = region_cost[local_operator.region]
+                                                cost = Cost(use_cost=use_cost,
+                                                            operator_from=regional_operator,
+                                                            operator_to=local_operator)
+                                                service.costs.append(cost)
                                     else:
                                         # TODO: Generalize?
                                         use_cost = operator_info['cost']
