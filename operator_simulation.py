@@ -1,10 +1,10 @@
 from collections import deque
 from datetime import datetime, timedelta
 from decimal import Decimal
+from time import time
 
-import sqlalchemy as db
 from sqlalchemy import create_engine, and_, or_
-from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
 from entities.customer import *
@@ -22,6 +22,7 @@ from tools import file_to_json
 
 POOL_SIZE = 100
 
+# TODO: Store it somewhere, where it can be imported
 USER_GROUPS_FILE = 'data/clusters/customer_clusters.json'
 AGREEMENTS_FILE = 'data/clusters/agreement_clusters.json'
 ACCOUNTS_FILE = 'data/clusters/account_clusters.json'
@@ -309,7 +310,7 @@ class MobileOperatorSystem:
                                                                   unpaid_service_amount,
                                                                   cost.use_cost))
                 bill = Bill(service_log=service_log,
-                            date=service_log.use_date,
+                            date_created=service_log.use_date,
                             debt=cost.use_cost*service_log.amount)
                 service_log.bill = bill
                 self.session.add(bill)
@@ -341,7 +342,7 @@ class MobileOperatorSystem:
 
         self.session.commit()
 
-    def connect_service(self, device, service, connection_date=db.func.now(), ability_check=True, commit=True):
+    def connect_service(self, device, service, connection_date, ability_check=True, commit=True):
         print('Connecting service: ', service.name)
 
         if ability_check:
@@ -485,7 +486,7 @@ class SimulatedCustomer:
                         }
 
                         device = self.add_device(account, device_info)
-                        self.devices.append(SimulatedDevice(device, device_cluster_info, self.session, self.system))
+                        self.devices.append(SimulatedDevice(self, device, device_cluster_info, self.session, self.system))
                 else:
                     raise NotImplementedError
 
@@ -561,12 +562,15 @@ class SimulatedCustomer:
 
 
 class SimulatedDevice:
-    def __init__(self, device_entity, behavior_info, session, operator_system, verbose=False):
+    def __init__(self, device_customer, device_entity, behavior_info, session, operator_system, verbose=False):
         self.session = session
         self.system = operator_system
+        self.customer = device_customer
         self.device = device_entity
         self.behavior_info = behavior_info
         self.verbose = verbose
+
+        print(behavior_info)
 
     def set_device_location(self, location_info):
         country_name, region_name, place_name = None, None, None
@@ -700,86 +704,92 @@ class SimulatedDevice:
             'type': 'activation',
             'service_type': 'tariff'
         }
-        service_info = {
-            'date': datetime(2015, 5, 26, 14, 0, 0),
-            'code': '*252#',  # BIT
-            'type': 'activation',
-            'service_type': 'service'
-        }
+        # service_info = {
+        #     'date': datetime(2015, 5, 26, 14, 0, 0),
+        #     'code': '*252#',  # BIT
+        #     'type': 'activation',
+        #     'service_type': 'service'
+        # }
         payment_info = {
             'date': datetime(2015, 5, 26, 11, 0, 0),
             'amount': 100.0,
             'method': 'third_party',
             'name': 'QIWI'
         }
-        balance_request_info = {
-            'date': datetime(2015, 5, 26, 13, 0, 0),
-            'code': '*100#',  # balance request
-            'type': 'status',
-            'service_type': 'service'
-        }
-        sms_info = {
-            'date': datetime(2015, 5, 26, 12, 1, 0),
-            'name': 'sms',
-            'text': 'Lorem ipsum',
-            'operator': {
-                'name': 'MTS',
-                'country': 'Russia',
-                'region': 'Moskva'
-            },
-            'phone_number': {
-                'code': '916',
-                'number': '1234567',
-            }
-        }
-        call_info = {
-            'date': datetime(2015, 5, 26, 12, 0, 0),
-            'name': 'outgoing_call',
-            'minutes': 5,
-            'seconds': 12,
-            'operator': {
-                'name': 'MTS',
-                'country': 'Russia',
-                'region': 'Moskva'
-            },
-            'phone_number': {
-                'code': '916',
-                'number': '7654321',
-            }
-        }
-        internet_session_info = {
-            'date': datetime(2015, 5, 26, 16, 0, 0),
-            'name': 'internet',
-            'megabytes': 50,
-            'kilobytes': 21
-        }
-        location1_info = {
-            'date': datetime(2015, 5, 26, 0, 0, 0),
-            'country': 'Russia',
-            'region': 'Moskva',
-        }
-        location2_info = {
-            'date': datetime(2015, 5, 27, 0, 0, 0),
-            'country': 'Russia',
-            'region': 'Brjanskaja',
-        }
-        self.set_device_location(location1_info)
-        self.make_payment(payment_info)
-        self.ussd_request(tariff_info)  # connecting tariff
-        # self.ussd_request(device, tariff_info)  # connecting it again
-        self.ussd_request(service_info)  # connecting BIT
-        self.ussd_request(balance_request_info)
+        # balance_request_info = {
+        #     'date': datetime(2015, 5, 26, 13, 0, 0),
+        #     'code': '*100#',  # balance request
+        #     'type': 'status',
+        #     'service_type': 'service'
+        # }
+        # sms_info = {
+        #     'date': datetime(2015, 5, 26, 12, 1, 0),
+        #     'name': 'sms',
+        #     'text': 'Lorem ipsum',
+        #     'operator': {
+        #         'name': 'MTS',
+        #         'country': 'Russia',
+        #         'region': 'Moskva'
+        #     },
+        #     'phone_number': {
+        #         'code': '916',
+        #         'number': '1234567',
+        #     }
+        # }
+        # call_info = {
+        #     'date': datetime(2015, 5, 26, 12, 0, 0),
+        #     'name': 'outgoing_call',
+        #     'minutes': 5,
+        #     'seconds': 12,
+        #     'operator': {
+        #         'name': 'MTS',
+        #         'country': 'Russia',
+        #         'region': 'Moskva'
+        #     },
+        #     'phone_number': {
+        #         'code': '916',
+        #         'number': '7654321',
+        #     }
+        # }
+        # internet_session_info = {
+        #     'date': datetime(2015, 5, 26, 16, 0, 0),
+        #     'name': 'internet',
+        #     'megabytes': 50,
+        #     'kilobytes': 21
+        # }
+        # location1_info = {
+        #     'date': datetime(2015, 5, 26, 0, 0, 0),
+        #     'country': 'Russia',
+        #     'region': 'Moskva',
+        # }
+        # location2_info = {
+        #     'date': datetime(2015, 5, 27, 0, 0, 0),
+        #     'country': 'Russia',
+        #     'region': 'Brjanskaja',
+        # }
+        # start_time = time()
+        # self.set_device_location(location1_info)
+        # self.make_payment(payment_info)
+        # self.ussd_request(tariff_info)  # connecting tariff
+        # # self.ussd_request(device, tariff_info)  # connecting it again
+        # self.ussd_request(service_info)  # connecting BIT
+        # self.ussd_request(balance_request_info)
         # for i in range(51):
-        #     self.send_sms(device, sms_info)
-        self.send_sms(sms_info)
-        self.make_call(call_info)
-        self.use_internet(internet_session_info)
-        self.use_internet(internet_session_info)
-        self.set_device_location(location2_info)
-        self.ussd_request(tariff_info)  # connecting tariff again
-        self.ussd_request(tariff_info)  # connecting tariff again
-        # gen = TimeLineGenerator(self, self.device)
-        # date = (2015, 5, 30)
-        # actions = gen.generate_timeline(date)
-        # for action in actions:
-        #     action.perform()
+        #     self.send_sms(sms_info)
+        # self.send_sms(sms_info)
+        # self.make_call(call_info)
+        # self.use_internet(internet_session_info)
+        # self.use_internet(internet_session_info)
+        # self.set_device_location(location2_info)
+        # self.ussd_request(tariff_info)  # connecting tariff again
+        # self.ussd_request(tariff_info)  # connecting tariff again
+        # end_time = time()
+        # print('It took %f sec to imitate behavior' % (end_time-start_time))
+        self.make_payment(payment_info)
+        self.ussd_request(tariff_info)
+        gen = TimeLineGenerator(self.customer, self)
+        date = (2015, 6, 2)
+        actions = gen.generate_timeline(date)
+        for action in actions:
+            print(action)
+            action.perform()

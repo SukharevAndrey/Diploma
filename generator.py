@@ -6,7 +6,7 @@ import numpy as np
 from transliterate import translit
 
 from sqlalchemy import and_
-from actions import Call, IntersectionError
+from actions import *
 from entities.customer import *
 from entities.location import *
 from entities.operator import *
@@ -372,10 +372,11 @@ class Distribution:
             self.values = [i for i in range(1, self.values_count+1)]
         else:
             self.values = info['values']
+        # TODO: float32 instead of float64
         if 'probabilities' in info:
-            self.p = np.array(info['probabilities'])
+            self.p = np.array(info['probabilities'], dtype=np.float64)
         else:
-            self.p = np.ones(self.values_count)
+            self.p = np.ones(self.values_count, dtype=np.float64)
 
         if len(self.p) < self.values_count:
             self.p = np.concatenate((self.p, np.zeros(self.values_count-len(self.p))))
@@ -383,12 +384,15 @@ class Distribution:
         self.normalize()
 
     def normalize(self):
+        # TODO: Handle situation when sum is not 1 (due to float error)
         sum_p = np.sum(self.p)
         self.p /= sum_p
 
     def get_value(self):
         return np.random.choice(self.values, p=self.p)
 
+DISTRIBUTIONS_FILE = 'data/distributions.json'
+distributions_info = file_to_json(DISTRIBUTIONS_FILE)
 
 class TimeLineGenerator:
     MINUTES_IN_DAY = 1440
@@ -396,35 +400,89 @@ class TimeLineGenerator:
     MINUTES_IN_HOUR = 60
     SECONDS_IN_MINUTE = 60
 
-    DISTRIBUTIONS_FILE = 'data/distributions.json'
-
-    months = {
-        'January': 1, 'February': 2, 'March': 3, 'April': 4,
-        'May': 5, 'June': 6, 'July': 7, 'August': 8,
-        'September': 9, 'October': 10, 'November': 11, 'December': 12
-    }
-
     def __init__(self, customer, device):
-        self.customer = customer
-        self.device = device
+        self.sim_customer = customer
+        self.sim_device = device
+        self.distributions = {}
+
+    def get_distributions(self):
+
+        sms_info = self.sim_device.behavior_info['SMS']
+        sms_period_activity = sms_info['period_activity']
+        mms_info = self.sim_device.behavior_info['MMS']
+        mms_period_activity = mms_info['period_activity']
+        internet_info = self.sim_device.behavior_info['Internet']
+        internet_period_activity = internet_info['period_activity']
 
     def minutes_to_time(self, minute):
         return divmod(minute, self.MINUTES_IN_HOUR)
 
     def generate_timeline(self, date):
-        return self.generate_calls(date, 10)
+        actions = []
+        actions.extend(self.generate_calls(date))
+        actions.extend(self.generate_sms(date, 10))
+        actions.extend(self.generate_mms(date, 10))
+        actions.extend(self.generate_internet(date, 10))
 
-    def generate_calls(self, date, amount):
-        start_times = self.get_start_times(date=date, amount=amount)
+        actions.sort(key=lambda action: action.start_date)
+        return actions
+
+    def generate_calls(self, date):
+        print('Generating call actions')
+
+        calls_info = self.sim_device.behavior_info['Call']
+        call_period_activity = calls_info['period_activity']
+
+        avg_calls = call_period_activity['amount']
+        max_deviation = call_period_activity['max_deviation']
+
+        total_period_calls = np.random.randint(max(0, avg_calls-max_deviation), avg_calls+max_deviation)
+        days_distribution = Distribution(info=distributions_info['month'][call_period_activity['days_activity']])
+
+        # TODO: Calculate day in period from DeviceService info
+        period_day = 29
+        call_period_days = [days_distribution.get_value() for _ in range(total_period_calls)]
+
+        # TODO: Generalize for multiple days
+        amount = len(list(filter(lambda day: day == period_day, call_period_days)))
+
+        # TODO: May overlap if conference
+        start_times = self.get_start_times(date=date, amount=amount, sort=True, can_overlap=False)
         calls = []
         for i in range(amount-1):
             start_time = start_times[i]
             next_start_time = start_times[i+1]
             delta = next_start_time-start_time
-            call = Call(self.customer, self.device, start_time, delta)
+            call = Call(self.sim_device, start_time, delta)
             self.gen_call_duration(call)
             calls.append(call)
+        # Latest call has not limitations
+        call = Call(self.sim_device, start_times[-1], None)
+        self.gen_call_duration(call)
+        calls.append(call)
         return calls
+
+    def generate_sms(self, date, amount):
+        print('Generating SMS actions')
+        start_times = self.get_start_times(date=date, amount=amount)
+        messages = []
+        for i in range(amount):
+            sms = SMS(self.sim_device, start_times[i])
+            messages.append(sms)
+        return messages
+
+    def generate_mms(self, date, amount):
+        print('Generating MMS actions')
+        start_times = self.get_start_times(date=date, amount=amount)
+        messages = []
+        for i in range(amount):
+            mms = MMS(self.sim_device, start_times[i])
+            messages.append(mms)
+        return messages
+
+    def generate_internet(self, date, amount):
+        print('Generating internet actions')
+        return []
 
     def gen_call_duration(self, call):
         while True:
@@ -437,7 +495,7 @@ class TimeLineGenerator:
                 continue
             return
 
-    def get_start_times(self, date, amount, can_overlap=False):
+    def get_start_times(self, date, amount, sort=False, can_overlap=False):
         year, month, day = date
         times = []
         hm = np.random.randint(0, self.MINUTES_IN_DAY, amount)
@@ -446,5 +504,6 @@ class TimeLineGenerator:
             hour, minute = self.minutes_to_time(hm[i])
             second = seconds[i]
             times.append(datetime(year, month, day, hour, minute, second))
-        times.sort()
+        if sort:
+            times.sort()
         return times

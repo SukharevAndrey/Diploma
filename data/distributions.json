@@ -12,13 +12,13 @@
     }
   },
   "month": {
-    "Month call day distribution 1": {
-      "max_values": 31,
-      "probabilities": [50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50]
+    "Period call day distribution 1": {
+      "max_values": 30,
+      "probabilities": [30, 20, 10, 10, 10, 10, 20, 30, 20, 20, 20, 10, 10, 10, 10, 20, 30, 20, 20, 20, 10, 10, 10, 10, 20, 30, 20, 20, 50, 60]
     }
   },
   "week": {
-    "Week call distribution 1": {
+    "Week call time distribution 1": {
       "monday": {
         "distribution": "Monday call time distribution 1"
       },

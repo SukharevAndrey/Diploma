@@ -6,8 +6,7 @@ class IntersectionError(Exception):
 
 
 class Action(metaclass=ABCMeta):
-    def __init__(self, customer, start_date):
-        self.customer = customer
+    def __init__(self, start_date):
         self.start_date = start_date
 
     @abstractmethod
@@ -16,22 +15,24 @@ class Action(metaclass=ABCMeta):
 
     @abstractmethod
     def perform(self):
-        print('Performing action')
+        pass
+
+
+class CustomerAction(Action):
+    def __init__(self, customer, start_date):
+        super().__init__(start_date)
+        self.customer = customer
 
 
 class DeviceAction(Action):
-    def __init__(self, customer, device, start_date):
-        super().__init__(customer, start_date)
-        self._device = device
-
-    @property
-    def device(self):
-        return self._device
+    def __init__(self, device, start_date):
+        super().__init__(start_date)
+        self.device = device
 
 
 class Call(DeviceAction):
-    def __init__(self, customer, device, start_date, maximum_duration):
-        super().__init__(customer, device, start_date)
+    def __init__(self, device, start_date, maximum_duration):
+        super().__init__(device, start_date)
         self._duration = None
         self.end_date = None
         self.maximum_duration = maximum_duration
@@ -42,7 +43,7 @@ class Call(DeviceAction):
 
     @duration.setter
     def duration(self, duration):
-        if duration < self.maximum_duration:
+        if not self.maximum_duration or duration < self.maximum_duration:
             self._duration = duration
             self.end_date = self.start_date+duration
         else:
@@ -72,17 +73,16 @@ class Call(DeviceAction):
         return call_info
 
     def perform(self):
-        super().perform()
         call_info = self.to_dict_info()
-        self.customer.make_call(self.device, call_info)
+        self.device.make_call(call_info)
 
     def __repr__(self):
-        return '%s - Outgoing call, duration: %s'%(self.start_date.time(), self.duration)
+        return '%s - Outgoing call, duration: %s' % (self.start_date.time(), self.duration)
 
 
 class Internet(DeviceAction):
-    def __init__(self, customer, device, start_date, end_date=None):
-        super().__init__(customer, device, start_date)
+    def __init__(self, device, start_date, end_date=None):
+        super().__init__(device, start_date)
         self.end_date = end_date
         self._megabytes = 0
         self._kilobytes = 0
@@ -99,41 +99,49 @@ class Internet(DeviceAction):
         return {}
 
     def perform(self):
-        super().perform()
+        pass
 
     def __repr__(self):
-        return '%s - Internet usage. Used %s mb, %s kb'%(self.start_date.time(), self.megabytes, self.kilobytes)
+        return '%s - Internet usage. Used %s mb, %s kb' % (self.start_date.time(), self.megabytes, self.kilobytes)
 
 
 class SMS(DeviceAction):
-    def __init__(self, customer, device, start_date):
-        super().__init__(customer, device, start_date)
+    def __init__(self, device, start_date, recipient_info=None):
+        super().__init__(device, start_date)
+        self.recipient = recipient_info
 
     def to_dict_info(self):
         return {}
 
     def perform(self):
-        super().perform()
+        pass
+
+    def __repr__(self):
+        return '%s - SMS Message. Sent to %s' % (self.start_date.time(), self.recipient)
 
 
 class MMS(DeviceAction):
-    def __init__(self, customer, device, start_date):
-        super().__init__(customer, device, start_date)
+    def __init__(self, device, start_date, recipient_info=None):
+        super().__init__(device, start_date)
+        self.recipient = recipient_info
 
     def to_dict_info(self):
         return {}
 
     def perform(self):
-        super().perform()
+        pass
+
+    def __repr__(self):
+        return '%s - MMS Message. Sent to %s' % (self.start_date.time(), self.recipient)
 
 
 class TariffChange(DeviceAction):
-    def __init__(self, customer, device, start_date, new_tariff):
-        super().__init__(customer, device, start_date)
+    def __init__(self, device, start_date, new_tariff):
+        super().__init__(device, start_date)
         self.new_tariff = new_tariff
 
     def to_dict_info(self):
         return {}
 
     def perform(self):
-        super().perform()
+        pass
