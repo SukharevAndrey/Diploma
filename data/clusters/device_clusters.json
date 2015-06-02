@@ -12,6 +12,11 @@
       }
     ],
     "Call": {
+      "recipients_location": {
+        "HOME_REGION": 95.0,
+        "HOME_COUNTRY": 5.0,
+        "ROUMING": 0.0
+      },
       "months_activity": [
         {
           "month": "January",

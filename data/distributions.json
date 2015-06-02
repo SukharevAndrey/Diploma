@@ -14,41 +14,32 @@
   "month": {
     "Month call day distribution 1": {
       "max_values": 31,
-      "probabilities": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 50]
+      "probabilities": [50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50]
     }
   },
   "week": {
     "Week call distribution 1": {
-      "day_distributions": [
-        {
-          "day": "Monday",
-          "distribution": "Monday call time distribution 1"
-        },
-        {
-          "day": "Tuesday",
-          "distribution": "Weekday call time distribution 1"
-        },
-        {
-          "day": "Wednesday",
-          "distribution": "Weekday call time distribution 1"
-        },
-        {
-          "day": "Thursday",
-          "distribution": "Weekday call time distribution 1"
-        },
-        {
-          "day": "Friday",
-          "distribution": "Friday call time distribution 1"
-        },
-        {
-          "day": "Saturday",
-          "distribution": "Weekend call time distribution 1"
-        },
-        {
-          "day": "Sunday",
-          "distribution": "Weekend call time distribution 1"
-        }
-      ]
+      "monday": {
+        "distribution": "Monday call time distribution 1"
+      },
+      "tuesday": {
+        "distribution": "Weekday call time distribution 1"
+      },
+      "wednesday": {
+        "distribution": "Weekday call time distribution 1"
+      },
+      "thursday": {
+        "distribution": "Weekday call time distribution 1"
+      },
+      "friday": {
+        "distribution": "Friday call time distribution 1"
+      },
+      "saturday": {
+        "distribution": "Weekend call time distribution 1"
+      },
+      "sunday": {
+        "distribution": "Weekend call time distribution 1"
+      }
     }
   },
   "day": {
