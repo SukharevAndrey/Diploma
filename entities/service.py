@@ -24,7 +24,6 @@ class Service(Base):
     operator = relationship('MobileOperator', uselist=False)
     tariffs = relationship('Tariff', secondary='tariffServices')
     packet = relationship('Packet', uselist=False)
-    # costs = relationship('Cost', secondary='serviceCost')
     costs = relationship('Cost')
 
 
@@ -116,45 +115,3 @@ class Request(Base):
     service = relationship('Service', foreign_keys=[service_id], uselist=False)
     tariff = relationship('Tariff', foreign_keys=[tariff_id], uselist=False)
 
-
-# class Request(Base):
-#     __tablename__ = 'request'
-#     __table_args__ = (
-#         db.CheckConstraint("type IN ('activation', 'deactivation', 'status')"),
-#     )
-#     __mapper_args__ = {
-#         'polymorphic_on': 'request_type'
-#     }
-#
-#     id = db.Column(db.Integer, primary_key=True)
-#     device_id = db.Column(db.Integer, db.ForeignKey('device.id'))
-#
-#     date = db.Column(db.DateTime, default=db.func.now())
-#     type = db.Column(db.String, default='activation')
-#     request_type = db.Column(db.String)
-#
-#     device = relationship('Device', uselist=False)
-#
-#
-# class TariffRequest(Request):
-#     __tablename__ = 'tariffRequest'
-#     __mapper_args__ = {
-#         'polymorphic_identity': 'tariff'
-#     }
-#
-#     id = db.Column(db.Integer, db.ForeignKey('request.id'), primary_key=True)
-#     tariff_id = db.Column(db.Integer, db.ForeignKey('tariff.id'))
-#
-#     tariff = relationship('Tariff', uselist=False)
-#
-#
-# class ServiceRequest(Request):
-#     __tablename__ = 'serviceRequest'
-#     __mapper_args__ = {
-#         'polymorphic_identity': 'service'
-#     }
-#
-#     id = db.Column(db.Integer, db.ForeignKey('request.id'), primary_key=True)
-#     service_id = db.Column(db.Integer, db.ForeignKey('service.id'))
-#
-#     service = relationship('Service', uselist=False)

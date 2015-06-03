@@ -388,8 +388,11 @@ class Distribution:
         sum_p = np.sum(self.p)
         self.p /= sum_p
 
-    def get_value(self, n=1):
-        return np.random.choice(self.values, size=n, p=self.p)
+    def get_value(self, n=1, return_array=True):
+        if return_array:
+            return np.random.choice(self.values, size=n, p=self.p)
+        else:
+            return np.random.choice(self.values, p=self.p)
 
 DISTRIBUTIONS_FILE = 'data/distributions.json'
 distributions_info = file_to_json(DISTRIBUTIONS_FILE)
@@ -400,9 +403,10 @@ class TimeLineGenerator:
     MINUTES_IN_HOUR = 60
     SECONDS_IN_MINUTE = 60
 
-    def __init__(self, customer, device):
+    def __init__(self, customer, device, period_start_date):
         self.sim_customer = customer
         self.sim_device = device
+        self.period_start_date = period_start_date
         self.service_info = {}
 
         self.days_distribution = {}
@@ -450,9 +454,8 @@ class TimeLineGenerator:
         actions.sort(key=lambda action: action.start_date)
         return actions
 
-    def get_day_in_period(self):
-        # TODO: Calculate day in period from DeviceService info
-        return 29
+    def get_day_in_period(self, date):
+        return (date-self.period_start_date).days+1
 
     def generate_calls(self, date):
         print('Generating call actions')
@@ -462,7 +465,8 @@ class TimeLineGenerator:
 
         total_period_calls = np.random.randint(max(0, avg_calls-max_deviation), avg_calls+max_deviation)
 
-        day_in_period = self.get_day_in_period()
+        day_in_period = self.get_day_in_period(date)
+        print('Day in period', day_in_period)
         call_period_days = self.days_distribution['call'].get_value(n=total_period_calls)
 
         # TODO: Generalize for multiple days
@@ -480,9 +484,10 @@ class TimeLineGenerator:
             self.gen_call_duration(call)
             calls.append(call)
         # Latest call has not limitations
-        call = Call(self.sim_device, start_times[-1], None)
-        self.gen_call_duration(call)
-        calls.append(call)
+        if amount > 0:
+            call = Call(self.sim_device, start_times[-1], None)
+            self.gen_call_duration(call)
+            calls.append(call)
         return calls
 
     def generate_sms(self, date):
@@ -493,7 +498,7 @@ class TimeLineGenerator:
 
         total_period_sms = np.random.randint(max(0, avg_sms-max_deviation), avg_sms+max_deviation)
 
-        day_in_period = self.get_day_in_period()
+        day_in_period = self.get_day_in_period(date)
         sms_period_days = self.days_distribution['sms'].get_value(n=total_period_sms)
 
         amount = len(list(filter(lambda day: day == day_in_period, sms_period_days)))
@@ -513,7 +518,7 @@ class TimeLineGenerator:
 
         total_period_mms = np.random.randint(max(0, avg_mms-max_deviation), avg_mms+max_deviation)
 
-        day_in_period = self.get_day_in_period()
+        day_in_period = self.get_day_in_period(date)
         mms_period_days = self.days_distribution['mms'].get_value(n=total_period_mms)
 
         amount = len(list(filter(lambda day: day == day_in_period, mms_period_days)))
@@ -541,7 +546,7 @@ class TimeLineGenerator:
             return
 
     def get_start_times(self, date, amount):
-        year, month, day = date
+        year, month, day = date.year, date.month, date.day
         times = []
         # TODO: Get from service distribution times
         hm = np.random.randint(0, self.MINUTES_IN_DAY, amount)
