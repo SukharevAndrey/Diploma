@@ -42,7 +42,7 @@
     "SMS": {
       "period_activity": {
         "amount": 5,
-        "max_deviation": 5,
+        "max_deviation": 3,
         "days_activity": "Period sms day distribution 1",
         "week_activity": "Week sms time distribution 1"
       },
@@ -62,8 +62,26 @@
       ]
     },
     "MMS": {
-      "period_activity": {},
-      "special_days_activity": []
+      "period_activity": {
+        "amount": 1,
+        "max_deviation": 1,
+        "days_activity": "Period mms day distribution 1",
+        "week_activity": "Week mms time distribution 1"
+      },
+      "special_days_activity": [
+        {
+          "name": "BIRTH_DAY",
+          "day_activity": "Birthday mms time distribution 1"
+        },
+        {
+          "name": "NEW_YEAR",
+          "day_activity": "New year mms time distribution 1"
+        },
+        {
+          "name": "NATIONAL_HOLIDAY",
+          "day_activity": "Holiday mms time distribution 1"
+        }
+      ]
     },
     "Internet": {
       "period_activity": {},

@@ -7,12 +7,20 @@
   },
   "duration": {
     "Short calls distribution 1": {
-      "max_values": 120,
+      "max_values": 20,
       "probabilities": [60, 15, 10, 5, 5, 3, 2]
     }
   },
   "month": {
     "Period call day distribution 1": {
+      "max_values": 30,
+      "probabilities": [30, 20, 10, 10, 10, 10, 20, 30, 20, 20, 20, 10, 10, 10, 10, 20, 30, 20, 20, 20, 10, 10, 10, 10, 20, 30, 20, 20, 50, 60]
+    },
+    "Period sms day distribution 1": {
+      "max_values": 30,
+      "probabilities": [30, 20, 10, 10, 10, 10, 20, 30, 20, 20, 20, 10, 10, 10, 10, 20, 30, 20, 20, 20, 10, 10, 10, 10, 20, 30, 20, 20, 50, 60]
+    },
+    "Period mms day distribution 1": {
       "max_values": 30,
       "probabilities": [30, 20, 10, 10, 10, 10, 20, 30, 20, 20, 20, 10, 10, 10, 10, 20, 30, 20, 20, 20, 10, 10, 10, 10, 20, 30, 20, 20, 50, 60]
     }

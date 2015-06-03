@@ -792,4 +792,4 @@ class SimulatedDevice:
         actions = gen.generate_timeline(date)
         for action in actions:
             print(action)
-            action.perform()
+            # action.perform()
