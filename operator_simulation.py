@@ -434,6 +434,22 @@ class MobileOperatorSystem:
 
         return service
 
+    def get_tariff_period(self, device):
+        # TODO: Use subquery
+        tariff_name = self.session.query(Tariff.name).join(Device, and_(Device.tariff_id == Tariff.id,
+                                                                        Device.id == device.id)).one().name
+
+        # TODO: Check date (it should be usable within simulation date)
+        tariff_device_service = self.session.query(DeviceService).\
+            join(Service, and_(DeviceService.service_id == Service.id)).\
+            filter(and_(Service.name == tariff_name,
+                        DeviceService.device_id == device.id,
+                        DeviceService.is_activated)).one()
+
+        period_start = tariff_device_service.date_from.date()
+        #date_to = date(tariff_device_service.date_to)
+        return period_start
+
     def get_free_phone_number(self):
         print('Getting free phone number')
         # TODO: Normal generation
@@ -515,7 +531,8 @@ class SimulatedCustomer:
                         }
 
                         device = self.add_device(account, device_info)
-                        self.devices.append(SimulatedDevice(self, device, device_cluster_info, self.session, self.system))
+                        self.devices.append(SimulatedDevice(self, device, device_cluster_info,
+                                                            self.session, self.system))
                 else:
                     raise NotImplementedError
 
@@ -578,8 +595,6 @@ class SimulatedCustomer:
                               type='credit',
                               amount=self.system.initial_balance)
         device.balances.append(balance)
-
-        self.session.flush()  # TODO: Needed?
 
         initial_tariff_name = device_info['initial_tariff']
         print('Should connect tariff %s' % initial_tariff_name)
@@ -812,26 +827,15 @@ class SimulatedDevice:
         # self.ussd_request(tariff_info)  # connecting tariff again
         # end_time = time()
         # print('It took %f sec to imitate behavior' % (end_time-start_time))
-        self.make_payment(payment_info)
+        #print('Simulation begins!')
+        #self.make_payment(payment_info)
         #self.ussd_request(tariff_info)
 
-        # TODO: Use subquery
-        tariff_name = self.session.query(Tariff.name).join(Device, and_(Device.tariff_id == Tariff.id,
-                                                                        Device.id == self.device.id)).one().name
-
-        # TODO: Check date (it should be usable within simulation date)
-        tariff_device_service = self.session.query(DeviceService).\
-            join(Service, and_(DeviceService.service_id == Service.id)).\
-            filter(and_(Service.name == tariff_name,
-                        DeviceService.device_id == self.device.id,
-                        DeviceService.is_activated)).one()
-
-        period_start = tariff_device_service.date_from.date()
-        #date_to = date(tariff_device_service.date_to)
+        period_start = self.system.get_tariff_period(self.device)
 
         start_time = time()
         gen = TimeLineGenerator(self.customer, self, period_start)
-        sim_date = date(2015, 6, 3)
+        sim_date = date(2015, 6, 4)  # TODO: Handle what if earlier then tariff is connected
         actions = gen.generate_timeline(sim_date)
         for action in actions:
             print(action)

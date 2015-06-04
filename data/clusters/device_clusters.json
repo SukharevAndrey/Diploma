@@ -11,6 +11,9 @@
         "percentage": 40.0
       }
     ],
+    "initial_services": {
+
+    },
     "recipients_location": {
       "HOME_REGION": 95.0,
       "HOME_COUNTRY": 5.0,
@@ -86,6 +89,16 @@
     "Internet": {
       "period_activity": {},
       "special_days_activity": []
+    },
+    "Other services": {
+      "Balance request": {
+        "activation_code": "*100#",
+        "period_activity": {
+          "amount": 3,
+          "max_deviation": 1,
+          "days_activity": "Balance check day distribution 1"
+        }
+      }
     }
   }
 }

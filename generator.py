@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import json
+from collections import Counter
 
 import numpy as np
 
@@ -449,28 +450,31 @@ class TimeLineGenerator:
         actions.extend(self.generate_calls(date))
         actions.extend(self.generate_sms(date))
         actions.extend(self.generate_mms(date))
-        actions.extend(self.generate_internet(date, 2))
+        actions.extend(self.generate_internet(date))
 
         actions.sort(key=lambda action: action.start_date)
         return actions
 
     def get_day_in_period(self, date):
-        return (date-self.period_start_date).days+1
+        # TODO: Handle negative diff
+        return (date-self.period_start_date).days + 1
+
+    def get_service_amount_for_period(self, service_name):
+        period_activity = self.service_info[service_name]['period_activity']
+        avg_amount = period_activity['amount']
+        max_deviation = period_activity['max_deviation']
+
+        total_period_service = np.random.randint(max(0, avg_amount-max_deviation), avg_amount+max_deviation)
+        period_usage_days = self.days_distribution[service_name].get_value(n=total_period_service)
+
+        return Counter(period_usage_days)
 
     def generate_calls(self, date):
         print('Generating call actions')
 
-        avg_calls = self.service_info['call']['period_activity']['amount']
-        max_deviation = self.service_info['call']['period_activity']['max_deviation']
-
-        total_period_calls = np.random.randint(max(0, avg_calls-max_deviation), avg_calls+max_deviation)
-
+        call_days = self.get_service_amount_for_period('call')
         day_in_period = self.get_day_in_period(date)
-        print('Day in period', day_in_period)
-        call_period_days = self.days_distribution['call'].get_value(n=total_period_calls)
-
-        # TODO: Generalize for multiple days
-        amount = len(list(filter(lambda day: day == day_in_period, call_period_days)))
+        amount = call_days[day_in_period]
 
         # TODO: May overlap if conference
         start_times = self.get_start_times(date=date, amount=amount)
@@ -493,15 +497,9 @@ class TimeLineGenerator:
     def generate_sms(self, date):
         print('Generating SMS actions')
 
-        avg_sms = self.service_info['sms']['period_activity']['amount']
-        max_deviation = self.service_info['sms']['period_activity']['max_deviation']
-
-        total_period_sms = np.random.randint(max(0, avg_sms-max_deviation), avg_sms+max_deviation)
-
+        sms_days = self.get_service_amount_for_period('sms')
         day_in_period = self.get_day_in_period(date)
-        sms_period_days = self.days_distribution['sms'].get_value(n=total_period_sms)
-
-        amount = len(list(filter(lambda day: day == day_in_period, sms_period_days)))
+        amount = sms_days[day_in_period]
 
         start_times = self.get_start_times(date=date, amount=amount)
         messages = []
@@ -513,15 +511,9 @@ class TimeLineGenerator:
     def generate_mms(self, date):
         print('Generating MMS actions')
 
-        avg_mms = self.service_info['mms']['period_activity']['amount']
-        max_deviation = self.service_info['mms']['period_activity']['max_deviation']
-
-        total_period_mms = np.random.randint(max(0, avg_mms-max_deviation), avg_mms+max_deviation)
-
+        mms_days = self.get_service_amount_for_period('mms')
         day_in_period = self.get_day_in_period(date)
-        mms_period_days = self.days_distribution['mms'].get_value(n=total_period_mms)
-
-        amount = len(list(filter(lambda day: day == day_in_period, mms_period_days)))
+        amount = mms_days[day_in_period]
 
         start_times = self.get_start_times(date=date, amount=amount)
         messages = []
@@ -530,7 +522,7 @@ class TimeLineGenerator:
             messages.append(mms)
         return messages
 
-    def generate_internet(self, date, amount):
+    def generate_internet(self, date):
         print('Generating internet actions')
         return []
 

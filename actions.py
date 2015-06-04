@@ -111,10 +111,25 @@ class SMS(DeviceAction):
         self.recipient = recipient_info
 
     def to_dict_info(self):
-        return {}
+        sms_info = {
+            'date': self.start_date,
+            'name': 'sms',
+            'text': 'Lorem ipsum',
+            'operator': {
+                'name': 'MTS',
+                'country': 'Russia',
+                'region': 'Moskva'
+            },
+            'phone_number': {
+                'code': '916',
+                'number': '1234567',
+            }
+        }
+        return sms_info
 
     def perform(self):
-        pass
+        sms_info = self.to_dict_info()
+        self.device.send_sms(sms_info)
 
     def __repr__(self):
         return '%s - SMS Message. Sent to %s' % (self.start_date.time(), self.recipient)
