@@ -1,7 +1,7 @@
 {
   "Smartphone with small activity 1": {
     "type": "smartphone",
-    "initial_tariffs": [
+    "Initial tariffs": [
       {
         "name": "Smart mini",
         "percentage": 60.0
@@ -11,92 +11,109 @@
         "percentage": 40.0
       }
     ],
-    "initial_services": {
+    "Initial services": {
 
     },
-    "recipients_location": {
+    "Recipients location": {
       "HOME_REGION": 95.0,
       "HOME_COUNTRY": 5.0,
       "ROAMING": 0.0
     },
-    "Call": {
-      "period_activity": {
-        "amount": 30,
-        "max_deviation": 7,
-        "duration": "Short calls distribution 1",
-        "days_activity": "Period call day distribution 1",
-        "week_activity": "Week call time distribution 1"
+    "Basic services": {
+      "Call": {
+        "has_recipient": true,
+        "period_activity": {
+          "amount": 30,
+          "max_deviation": 7,
+          "duration": "Short calls distribution 1",
+          "days_activity": "Period call day distribution 1",
+          "week_activity": "Week call time distribution 1"
+        },
+        "special_days_activity": [
+          {
+            "name": "BIRTH_DAY",
+            "day_activity": "Birthday call time distribution 1"
+          },
+          {
+            "name": "NEW_YEAR",
+            "day_activity": "New year call time distribution 1"
+          },
+          {
+            "name": "NATIONAL_HOLIDAY",
+            "day_activity": "Holiday call time distribution 1"
+          }
+        ]
       },
-      "special_days_activity": [
-        {
-          "name": "BIRTH_DAY",
-          "day_activity": "Birthday call time distribution 1"
+      "SMS": {
+        "has_recipient": true,
+        "period_activity": {
+          "amount": 5,
+          "max_deviation": 3,
+          "days_activity": "Period message day distribution 1",
+          "week_activity": "Week message time distribution 1"
         },
-        {
-          "name": "NEW_YEAR",
-          "day_activity": "New year call time distribution 1"
-        },
-        {
-          "name": "NATIONAL_HOLIDAY",
-          "day_activity": "Holiday call time distribution 1"
-        }
-      ]
-    },
-    "SMS": {
-      "period_activity": {
-        "amount": 5,
-        "max_deviation": 3,
-        "days_activity": "Period message day distribution 1",
-        "week_activity": "Week message time distribution 1"
+        "special_days_activity": [
+          {
+            "name": "BIRTH_DAY",
+            "day_activity": "Birthday message time distribution 1"
+          },
+          {
+            "name": "NEW_YEAR",
+            "day_activity": "New year message time distribution 1"
+          },
+          {
+            "name": "NATIONAL_HOLIDAY",
+            "day_activity": "Holiday message time distribution 1"
+          }
+        ]
       },
-      "special_days_activity": [
-        {
-          "name": "BIRTH_DAY",
-          "day_activity": "Birthday message time distribution 1"
+      "MMS": {
+        "has_recipient": true,
+        "period_activity": {
+          "amount": 1,
+          "max_deviation": 1,
+          "days_activity": "Period message day distribution 1",
+          "week_activity": "Week message time distribution 1"
         },
-        {
-          "name": "NEW_YEAR",
-          "day_activity": "New year message time distribution 1"
-        },
-        {
-          "name": "NATIONAL_HOLIDAY",
-          "day_activity": "Holiday message time distribution 1"
-        }
-      ]
-    },
-    "MMS": {
-      "period_activity": {
-        "amount": 1,
-        "max_deviation": 1,
-        "days_activity": "Period message day distribution 1",
-        "week_activity": "Week message time distribution 1"
+        "special_days_activity": [
+          {
+            "name": "BIRTH_DAY",
+            "day_activity": "Birthday message time distribution 1"
+          },
+          {
+            "name": "NEW_YEAR",
+            "day_activity": "New year message time distribution 1"
+          },
+          {
+            "name": "NATIONAL_HOLIDAY",
+            "day_activity": "Holiday message time distribution 1"
+          }
+        ]
       },
-      "special_days_activity": [
-        {
-          "name": "BIRTH_DAY",
-          "day_activity": "Birthday message time distribution 1"
-        },
-        {
-          "name": "NEW_YEAR",
-          "day_activity": "New year message time distribution 1"
-        },
-        {
-          "name": "NATIONAL_HOLIDAY",
-          "day_activity": "Holiday message time distribution 1"
-        }
-      ]
-    },
-    "Internet": {
-      "period_activity": {},
-      "special_days_activity": []
+      "Internet": {
+        "has_recipient": false,
+        "period_activity": {},
+        "special_days_activity": []
+      }
     },
     "Other services": {
       "Balance request": {
         "activation_code": "*100#",
+        "has_recipient": false,
         "period_activity": {
           "amount": 3,
-          "max_deviation": 1,
+          "max_deviation": 2,
           "days_activity": "Balance check day distribution 1"
+        }
+      }
+    },
+    "Other activity": {
+      "Tariff changing": {
+        "tariffs": ["Smart mini", "Super MTS", "Red Energy"],
+        "period_activity": {
+          "amount": 1,
+          "max_deviation": 1,
+          "upper_limit": 1
         }
       }
     }

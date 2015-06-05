@@ -374,7 +374,7 @@ class Distribution:
         else:
             self.values = info['values']
         # TODO: float32 instead of float64
-        if 'probabilities' in info:
+        if 'probabilities' in info and info['probabilities']:
             self.p = np.array(info['probabilities'], dtype=np.float64)
         else:
             self.p = np.ones(self.values_count, dtype=np.float64)
@@ -404,6 +404,11 @@ class TimeLineGenerator:
     MINUTES_IN_HOUR = 60
     SECONDS_IN_MINUTE = 60
 
+    action_match = {
+        'Call': Call, 'SMS': SMS, 'MMS': MMS, 'Internet': Internet,
+        'Tariff changing': TariffChange
+    }
+
     def __init__(self, customer, device, period_start_date):
         self.sim_customer = customer
         self.sim_device = device
@@ -416,31 +421,30 @@ class TimeLineGenerator:
         self.generate_distributions()
 
     def generate_distributions(self):
-        calls_info = self.sim_device.behavior_info['Call']
-        self.service_info['call'] = calls_info
-        call_activity = calls_info['period_activity']
+        basic_services_info = self.sim_device.behavior_info['Basic services']
+        other_services_info = self.sim_device.behavior_info['Other services']
 
-        day_distribution_info = distributions_info['month'][call_activity['days_activity']]
-        self.days_distribution['call'] = Distribution(info=day_distribution_info)
-        dur_distribution_info = distributions_info['duration'][call_activity['duration']]
-        self.duration_distribution['call'] = Distribution(info=dur_distribution_info)
+        for service_name in basic_services_info:
+            if service_name == 'Internet':
+                continue
+            service_info = basic_services_info[service_name]
+            self.service_info[service_name] = service_info
+            service_activity = service_info['period_activity']
+            day_distribution_info = distributions_info['month'][service_activity['days_activity']]
+            self.days_distribution[service_name] = Distribution(info=day_distribution_info)
+            if 'duration' in service_activity:
+                dur_distribution_info = distributions_info['duration'][service_activity['duration']]
+                self.duration_distribution[service_name] = Distribution(info=dur_distribution_info)
 
-        sms_info = self.sim_device.behavior_info['SMS']
-        self.service_info['sms'] = sms_info
-        sms_activity = sms_info['period_activity']
+        for service_name in other_services_info:
+            # Writing service info
+            service_info = other_services_info[service_name]
+            self.service_info[service_name] = service_info
 
-        day_distribution_info = distributions_info['month'][sms_activity['days_activity']]
-        self.days_distribution['sms'] = Distribution(info=day_distribution_info)
-
-        mms_info = self.sim_device.behavior_info['MMS']
-        self.service_info['mms'] = mms_info
-        mms_activity = mms_info['period_activity']
-
-        day_distribution_info = distributions_info['month'][mms_activity['days_activity']]
-        self.days_distribution['mms'] = Distribution(info=day_distribution_info)
-
-        internet_info = self.sim_device.behavior_info['Internet']
-        internet_activity = internet_info['period_activity']
+            # Creating distribution
+            service_activity = service_info['period_activity']
+            day_distribution_info = distributions_info['month'][service_activity['days_activity']]
+            self.days_distribution[service_name] = Distribution(info=day_distribution_info)
 
     def minutes_to_time(self, minute):
         return divmod(minute, self.MINUTES_IN_HOUR)
@@ -451,6 +455,7 @@ class TimeLineGenerator:
         actions.extend(self.generate_sms(date))
         actions.extend(self.generate_mms(date))
         actions.extend(self.generate_internet(date))
+        actions.extend(self.generate_other_services(date))
 
         actions.sort(key=lambda action: action.start_date)
         return actions
@@ -472,7 +477,7 @@ class TimeLineGenerator:
     def generate_calls(self, date):
         print('Generating call actions')
 
-        call_days = self.get_service_amount_for_period('call')
+        call_days = self.get_service_amount_for_period('Call')
         day_in_period = self.get_day_in_period(date)
         amount = call_days[day_in_period]
 
@@ -497,7 +502,7 @@ class TimeLineGenerator:
     def generate_sms(self, date):
         print('Generating SMS actions')
 
-        sms_days = self.get_service_amount_for_period('sms')
+        sms_days = self.get_service_amount_for_period('SMS')
         day_in_period = self.get_day_in_period(date)
         amount = sms_days[day_in_period]
 
@@ -511,7 +516,7 @@ class TimeLineGenerator:
     def generate_mms(self, date):
         print('Generating MMS actions')
 
-        mms_days = self.get_service_amount_for_period('mms')
+        mms_days = self.get_service_amount_for_period('MMS')
         day_in_period = self.get_day_in_period(date)
         amount = mms_days[day_in_period]
 
@@ -526,9 +531,31 @@ class TimeLineGenerator:
         print('Generating internet actions')
         return []
 
+    def generate_other_services(self, date):
+        # print('Generating other services')
+
+        service_usages = []
+
+        for service_name in self.service_info:
+            if service_name not in {'Call', 'SMS', 'MMS', 'Internet'}:
+                print('Generating %s actions' % service_name)
+                info = self.service_info[service_name]
+                activation_code = info['activation_code']
+
+                service_days = self.get_service_amount_for_period(service_name)
+                day_in_period = self.get_day_in_period(date)
+                amount = service_days[day_in_period]
+
+                start_times = self.get_start_times(date=date, amount=amount)
+                for i in range(amount):
+                    service = OneTimeService(self.sim_device, start_times[i], service_name, activation_code)
+                    service_usages.append(service)
+
+        return service_usages
+
     def gen_call_duration(self, call):
         while True:
-            duration_minutes = int(self.duration_distribution['call'].get_value())
+            duration_minutes = int(self.duration_distribution['Call'].get_value())
             duration_seconds = np.random.randint(0, 59)
             duration = timedelta(minutes=duration_minutes, seconds=duration_seconds)
             try:

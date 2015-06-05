@@ -505,7 +505,7 @@ class SimulatedCustomer:
 
                         initial_tariff_names = []
                         percentages = []
-                        for tariff_info in device_cluster_info['initial_tariffs']:
+                        for tariff_info in device_cluster_info['Initial tariffs']:
                             initial_tariff_names.append(tariff_info['name'])
                             percentages.append(tariff_info['percentage'])
 
@@ -835,7 +835,7 @@ class SimulatedDevice:
 
         start_time = time()
         gen = TimeLineGenerator(self.customer, self, period_start)
-        sim_date = date(2015, 6, 4)  # TODO: Handle what if earlier then tariff is connected
+        sim_date = date(2015, 6, 5)  # TODO: Handle what if earlier then tariff is connected
         actions = gen.generate_timeline(sim_date)
         for action in actions:
             print(action)

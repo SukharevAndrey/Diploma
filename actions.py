@@ -135,6 +135,24 @@ class SMS(DeviceAction):
         return '%s - SMS Message. Sent to %s' % (self.start_date.time(), self.recipient)
 
 
+class OneTimeService(DeviceAction):
+    def __init__(self, device, start_date, service_name, activation_code):
+        super().__init__(device, start_date)
+        self.activation_code = activation_code
+        self.service_name = service_name
+
+    def to_dict_info(self):
+        return {}
+
+    def perform(self):
+        service_info = self.to_dict_info()
+        self.device.ussd_request(service_info)
+
+    def __repr__(self):
+        return '%s - USSD request. Service: %s, code: %s' % (self.start_date.time(),
+                                                             self.service_name, self.activation_code)
+
+
 class MMS(DeviceAction):
     def __init__(self, device, start_date, recipient_info=None):
         super().__init__(device, start_date)
