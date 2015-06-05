@@ -13,9 +13,10 @@ from entities.operator import *
 from entities.payment import *
 from entities.service import *
 
-from generator import Distribution, MobileOperatorGenerator, TimeLineGenerator
+from generator import MobileOperatorGenerator, TimeLineGenerator
+from distribution import Distribution
 from random_data import *
-from tools import file_to_json
+from tools import file_to_json, distribution_from_list
 
 # TODO: Proper session handling
 # TODO: Decimal service amount
@@ -160,7 +161,6 @@ class MobileOperatorSystem:
             print('Activation is free')
         else:
             # TODO: Charge activation sum if latest tariff change was less than month ago
-            # TODO: Do not charge anything if it is initial tariff/service
             # TODO: Handle charging subscription cost for current period
             print('Writing bill: need to pay %f' % service.activation_cost)
             bill = Bill(date_created=connection_date, service_log=log, debt=service.activation_cost)
@@ -194,11 +194,21 @@ class MobileOperatorSystem:
                               Packet.type == service_name)).\
             filter(DeviceService.is_activated).all()
 
+    def get_regional_operator(self, operator_info):
+        country = self.session.query(Country).filter_by(name=operator_info['country']).one()
+        if 'region' in operator_info:
+            region = self.session.query(Region).filter_by(country=country, name=operator_info['region']).one()
+        else:
+            region = None
+        operator = self.session.query(MobileOperator).filter_by(name=operator_info['name'],
+                                                                country=country, region=region).one()
+        return operator
+
     def get_phone_number(self, operator_info, phone_info):
         try:
             phone_number = self.session.query(PhoneNumber).filter_by(area_code=phone_info['code'],
                                                                      number=phone_info['number']).one()
-            print('Phone number is already registered in base and belongs to operator %s %s'%
+            print('Phone number is already registered in base and belongs to operator %s %s' %
                   (phone_number.mobile_operator.name, phone_number.mobile_operator.country.iso3_code))
         except NoResultFound:
             print('Phone number is not registered in base')
@@ -206,16 +216,9 @@ class MobileOperatorSystem:
         return phone_number
 
     def register_phone_number(self, operator_info, phone_info, commit=True):
-        print('Registering phone number')
-        country = self.session.query(Country).filter_by(name=operator_info['country']).one()
-        try:
-            region = self.session.query(Region).filter_by(name=operator_info['region'],
-                                                          country=country).one()
-        except NoResultFound:
-            region = None
-        regional_operator = self.session.query(MobileOperator).filter_by(name=operator_info['name'],
-                                                                         country=country,
-                                                                         region=region).one()
+        print('Registering phone number %s of operator %s' % (phone_info, operator_info))
+
+        regional_operator = self.get_regional_operator(operator_info)
         phone_number = PhoneNumber(area_code=phone_info['code'],
                                    number=phone_info['number'],
                                    mobile_operator=regional_operator)
@@ -373,7 +376,7 @@ class MobileOperatorSystem:
 
     def activate_service(self, device, service, date, commit=True):
         # TODO: Date?
-        print('Activating service: ', service.name)
+        print('Activating service:', service.name)
         self.session.query(DeviceService).\
             filter_by(device=device, service=service, is_activated=False).\
             update({'is_activated': True},
@@ -384,7 +387,7 @@ class MobileOperatorSystem:
 
     def deactivate_service(self, device, service, date, commit=True):
         # TODO: Date?
-        print('Deactivating service: ', service.name)
+        print('Deactivating service:', service.name)
         self.session.query(DeviceService).\
             filter_by(device=device, service=service, is_activated=True).\
             update({'is_activated': False,
@@ -395,7 +398,7 @@ class MobileOperatorSystem:
 
     def block_service(self, device, service, date, commit=True):
         # TODO: Date?
-        print('Blocking service: ', service.name)
+        print('Blocking service:', service.name)
         self.session.query(DeviceService).\
             filter_by(device=device, service=service, is_blocked=False).\
             update({'is_blocked': True},
@@ -405,7 +408,7 @@ class MobileOperatorSystem:
 
     def unlock_service(self, device, service, date, commit=True):
         # TODO: Date?
-        print('Blocking service: ', service.name)
+        print('Blocking service:', service.name)
         self.session.query(DeviceService).\
             filter_by(device=device, service=service, is_blocked=True).\
             update({'is_blocked': False},
@@ -478,23 +481,7 @@ class SimulatedCustomer:
         session.add(self.customer)
         session.commit()
 
-    def get_distribution_from_list(self, records_info):
-        record_names = []
-        record_percentages = []
-        for record_info in records_info:
-            record_name = record_info['name']
-            record_names.append(record_name)
 
-            record_percentage = record_info['percentage']
-            record_percentages.append(record_percentage)
-
-        dist_info = {
-            'max_values': len(record_names),
-            'values': record_names,
-            'probabilities': record_percentages
-        }
-
-        return Distribution(info=dist_info)
 
     def generate_all_hierarchy(self, simulation_date):
         print('Generating agreements')
@@ -520,13 +507,13 @@ class SimulatedCustomer:
 
                 # Generating country distributions
                 home_locations_info = account_cluster_info['home_locations']
-                countries_distribution = self.get_distribution_from_list(home_locations_info)
+                countries_distribution = distribution_from_list(home_locations_info)
                 regions_distribution = {}
 
                 for country_info in home_locations_info:
                     country_name = country_info['name']
                     if 'regions' in country_info:
-                        regions_distribution[country_name] = self.get_distribution_from_list(country_info['regions'])
+                        regions_distribution[country_name] = distribution_from_list(country_info['regions'])
 
                 # Getting home location
                 home_country = countries_distribution.get_value(return_array=False)
@@ -539,7 +526,7 @@ class SimulatedCustomer:
                     for device_cluster_name in device_cluster_names:
                         device_cluster_info = devices_info[device_cluster_name]
 
-                        tariff_distribution = self.get_distribution_from_list(device_cluster_info['Initial tariffs'])
+                        tariff_distribution = distribution_from_list(device_cluster_info['Initial tariffs'])
                         initial_tariff_name = tariff_distribution.get_value(return_array=False)
 
                         device_info = {
@@ -558,7 +545,7 @@ class SimulatedCustomer:
                         self.devices.append(SimulatedDevice(self, device, device_cluster_info,
                                                             self.session, self.system))
                 else:
-                    raise NotImplementedError
+                    raise NotImplementedError('probabilistic device generation is not yet supported')
 
     def sign_agreement(self, agreement_info):
         print('Signing agreement: ', agreement_info)

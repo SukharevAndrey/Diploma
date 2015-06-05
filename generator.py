@@ -1,19 +1,16 @@
-from datetime import datetime, timedelta
-import json
+from datetime import datetime
 from collections import Counter
 
 import numpy as np
-
 from transliterate import translit
 
-from sqlalchemy import and_
 from actions import *
+from distribution import Distribution
 from entities.customer import *
 from entities.location import *
 from entities.operator import *
 from entities.service import *
 from entities.payment import *
-
 from tools import file_to_json
 from random_data import *
 from preprocessor import TariffPreprocessor
@@ -163,7 +160,9 @@ class MobileOperatorGenerator:
             name = s_info['name']
             activation_code = s_info['activation_code']
             if 'activation_cost' in s_info:
-                activation_cost = s_info['activation_cost']  # TODO: Handle this
+                activation_cost = s_info['activation_cost']
+            else:
+                activation_cost = 0
             is_periodic = s_info['is_periodic']
             if 'regional_versions' in s_info:
                 for version in s_info['regional_versions']:
@@ -181,7 +180,8 @@ class MobileOperatorGenerator:
                                 use_cost=use_cost,
                                 subscription_cost=subscription_cost)
                     service = Service(name=name, operator=regional_operator,
-                                      activation_code=activation_code, costs=[cost])
+                                      activation_code=activation_code,
+                                      activation_cost=activation_cost, costs=[cost])
 
                     if 'packet' in version:
                         packet_info = version['packet']
@@ -247,28 +247,20 @@ class MobileOperatorGenerator:
                                     operator_name = operator_info['name']
 
                                     if 'regions' in operator_info:
-                                        # for region_info in operator_info['regions']:
-                                        #     region_name = region_info['name']
-                                        #     use_cost = region_info['cost']
-                                        #     region = session.query(Region).\
-                                        #         filter_by(name=region_name, country=country).one()
-                                        #     local_operator = session.query(MobileOperator).\
-                                        #         filter_by(name=operator_name, country=country, region=region).one()
-                                        #     cost = Cost(use_cost=use_cost,
-                                        #                 operator_from=regional_operator,
-                                        #                 operator_to=local_operator)
-                                        #     service.costs.append(cost)
                                         local_operators = session.query(MobileOperator).\
                                             filter_by(name=operator_name, country=country).all()
                                         regions = session.query(Region).filter_by(country=country).all()
+
                                         region_name_cost = {}
                                         for region_info in operator_info['regions']:
                                             region_name = region_info['name']
                                             use_cost = region_info['cost']
                                             region_name_cost[region_name] = use_cost
+
                                         region_cost = {}
                                         for region in regions:
                                             region_cost[region] = region_name_cost[region.name]
+
                                         for local_operator in local_operators:
                                             use_cost = region_cost[local_operator.region]
                                             cost = Cost(use_cost=use_cost,
@@ -276,7 +268,6 @@ class MobileOperatorGenerator:
                                                         operator_to=local_operator)
                                             service.costs.append(cost)
                                     else:
-                                        # TODO: Generalize?
                                         use_cost = operator_info['cost']
                                         # Setting cost to all regional operators with that name
                                         operators = session.query(MobileOperator).\
@@ -362,39 +353,11 @@ class MobileOperatorGenerator:
         self.generate_tariffs(session)
 
 
-class Distribution:
-    def __init__(self, info):
-        self.values_count = info['max_values']
-        if 'values' not in info:
-            self.values = [i for i in range(1, self.values_count+1)]
-        else:
-            self.values = info['values']
-        # TODO: float32 instead of float64
-        if 'probabilities' in info and info['probabilities']:
-            self.p = np.array(info['probabilities'], dtype=np.float64)
-        else:
-            self.p = np.ones(self.values_count, dtype=np.float64)
-
-        if len(self.p) < self.values_count:
-            self.p = np.concatenate((self.p, np.zeros(self.values_count-len(self.p))))
-
-        self.normalize()
-
-    def normalize(self):
-        # TODO: Handle situation when sum is not 1 (due to float error)
-        sum_p = np.sum(self.p)
-        self.p /= sum_p
-
-    def get_value(self, n=1, return_array=True):
-        if return_array:
-            return np.random.choice(self.values, size=n, p=self.p)
-        else:
-            return np.random.choice(self.values, p=self.p)
-
 DISTRIBUTIONS_FILE = 'data/distributions.json'
 distributions_info = file_to_json(DISTRIBUTIONS_FILE)
 
 class TimeLineGenerator:
+    PERIOD_DURATION = 30
     MINUTES_IN_DAY = 1440
     HOURS_IN_DAY = 24
     MINUTES_IN_HOUR = 60
@@ -421,8 +384,6 @@ class TimeLineGenerator:
         other_services_info = self.sim_device.behavior_info['Other services']
 
         for service_name in basic_services_info:
-            if service_name == 'Internet':
-                continue
             service_info = basic_services_info[service_name]
             self.service_info[service_name] = service_info
             service_activity = service_info['period_activity']
@@ -446,19 +407,12 @@ class TimeLineGenerator:
         return divmod(minute, self.MINUTES_IN_HOUR)
 
     def generate_timeline(self, date):
-        actions = []
-        actions.extend(self.generate_calls(date))
-        actions.extend(self.generate_sms(date))
-        actions.extend(self.generate_mms(date))
-        actions.extend(self.generate_internet(date))
-        actions.extend(self.generate_other_services(date))
-
+        actions = self.generate_basic_services(date)
         actions.sort(key=lambda action: action.start_date)
         return actions
 
     def get_day_in_period(self, date):
-        # TODO: Handle negative diff
-        return (date-self.period_start_date).days + 1
+        return (date-self.period_start_date).days % self.PERIOD_DURATION + 1
 
     def get_service_amount_for_period(self, service_name):
         period_activity = self.service_info[service_name]['period_activity']
@@ -470,66 +424,45 @@ class TimeLineGenerator:
 
         return Counter(period_usage_days)
 
-    def generate_calls(self, date):
-        print('Generating call actions')
+    def generate_basic_services(self, date):
+        all_service_usages = []
 
-        call_days = self.get_service_amount_for_period('Call')
-        day_in_period = self.get_day_in_period(date)
-        amount = call_days[day_in_period]
+        for service_name in {'Call', 'SMS', 'MMS', 'Internet'}:
+            print('Generating %s actions' % service_name)
+            service_usages = []
 
-        # TODO: May overlap if conference
-        start_times = self.get_start_times(date=date, amount=amount)
-        start_times.sort()
-        calls = []
-        for i in range(amount-1):
-            start_time = start_times[i]
-            next_start_time = start_times[i+1]
-            delta = next_start_time-start_time
-            call = Call(self.sim_device, start_time, delta)
-            self.gen_call_duration(call)
-            calls.append(call)
-        # Latest call has not limitations
-        if amount > 0:
-            call = Call(self.sim_device, start_times[-1], None)
-            self.gen_call_duration(call)
-            calls.append(call)
-        return calls
+            service_days = self.get_service_amount_for_period(service_name)
+            day_in_period = self.get_day_in_period(date)
+            amount = service_days[day_in_period]
 
-    def generate_sms(self, date):
-        print('Generating SMS actions')
+            start_times = self.get_start_times(date=date, amount=amount)
+            action_entity = self.action_match[service_name]
+            if service_name == 'Call':
+                start_times.sort()
+                deltas = [start_times[i+1]-start_times[i] for i in range(amount-1)] + [None]
 
-        sms_days = self.get_service_amount_for_period('SMS')
-        day_in_period = self.get_day_in_period(date)
-        amount = sms_days[day_in_period]
+            if service_name in ('Call', 'Internet'):
+                duration_distribution = self.duration_distribution[service_name]
 
-        start_times = self.get_start_times(date=date, amount=amount)
-        messages = []
-        for i in range(amount):
-            sms = SMS(self.sim_device, start_times[i])
-            messages.append(sms)
-        return messages
+            for i in range(amount):
+                if service_name == 'Call':
+                    # TODO: May overlap if conference
+                    service = action_entity(self.sim_device, start_times[i], deltas[i], can_overlap=False)
+                    service.generate_duration(duration_distribution)
+                    service.recipient_info = None
+                elif service_name == 'Internet':
+                    service = action_entity(self.sim_device, start_times[i])
+                    service.generate_service_usage(duration_distribution)
+                else:
+                    service = action_entity(self.sim_device, start_times[i])
+                    service.recipient_info = None
 
-    def generate_mms(self, date):
-        print('Generating MMS actions')
+                service_usages.append(service)
 
-        mms_days = self.get_service_amount_for_period('MMS')
-        day_in_period = self.get_day_in_period(date)
-        amount = mms_days[day_in_period]
-
-        start_times = self.get_start_times(date=date, amount=amount)
-        messages = []
-        for i in range(amount):
-            mms = MMS(self.sim_device, start_times[i])
-            messages.append(mms)
-        return messages
-
-    def generate_internet(self, date):
-        print('Generating internet actions')
-        return []
+            all_service_usages.extend(service_usages)
+        return all_service_usages
 
     def generate_other_services(self, date):
-        # print('Generating other services')
-
         service_usages = []
 
         for service_name in self.service_info:
@@ -548,17 +481,6 @@ class TimeLineGenerator:
                     service_usages.append(service)
 
         return service_usages
-
-    def gen_call_duration(self, call):
-        while True:
-            duration_minutes = int(self.duration_distribution['Call'].get_value())
-            duration_seconds = np.random.randint(0, 59)
-            duration = timedelta(minutes=duration_minutes, seconds=duration_seconds)
-            try:
-                call.duration = duration
-            except IntersectionError:
-                continue
-            return
 
     def get_start_times(self, date, amount):
         year, month, day = date.year, date.month, date.day

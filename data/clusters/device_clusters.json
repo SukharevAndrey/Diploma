@@ -68,6 +68,7 @@
         "period_activity": {
           "amount": 30,
           "max_deviation": 5,
+          "duration": "Small internet usage distribution 1",
           "days_activity": "Period internet day distribution 1",
           "week_activity": "Week internet time distribution 1"
         },

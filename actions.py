@@ -1,7 +1,8 @@
 from abc import ABCMeta, abstractmethod
+import random
+from datetime import timedelta
 
-
-class IntersectionError(Exception):
+class OverlapError(Exception):
     pass
 
 
@@ -31,11 +32,13 @@ class DeviceAction(Action):
 
 
 class Call(DeviceAction):
-    def __init__(self, device, start_date, maximum_duration):
+    def __init__(self, device, start_date, maximum_duration, can_overlap=False):
         super().__init__(device, start_date)
         self._duration = None
         self.end_date = None
         self.maximum_duration = maximum_duration
+        self.recipient_info = None
+        self.can_overlap = can_overlap
 
     @property
     def duration(self):
@@ -43,11 +46,26 @@ class Call(DeviceAction):
 
     @duration.setter
     def duration(self, duration):
-        if not self.maximum_duration or duration < self.maximum_duration:
+        if self.can_overlap:
             self._duration = duration
-            self.end_date = self.start_date+duration
         else:
-            raise IntersectionError('call intersects with next one')
+            if not self.maximum_duration or duration < self.maximum_duration:
+                self._duration = duration
+                self.end_date = self.start_date+duration
+            else:
+                raise OverlapError('call intersects with next one')
+
+    def generate_duration(self, distribution):
+        for i in range(1000):
+            duration_minutes = int(distribution.get_value())
+            duration_seconds = random.randint(0, 59)
+            duration = timedelta(minutes=duration_minutes, seconds=duration_seconds)
+            try:
+                self.duration = duration
+            except OverlapError:
+                continue
+            return
+        raise Exception("can't generate call duration")
 
     def get_call_duration(self):
         raw_seconds = self.duration.seconds
@@ -77,23 +95,18 @@ class Call(DeviceAction):
         self.device.make_call(call_info)
 
     def __repr__(self):
-        return '%s - Outgoing call, duration: %s' % (self.start_date.time(), self.duration)
+        return '%s - Outgoing call to %s, duration: %s' % (self.start_date.time(), self.recipient_info, self.duration)
 
 
 class Internet(DeviceAction):
-    def __init__(self, device, start_date, end_date=None):
+    def __init__(self, device, start_date):
         super().__init__(device, start_date)
-        self.end_date = end_date
-        self._megabytes = 0
-        self._kilobytes = 0
+        self.megabytes = 0
+        self.kilobytes = 0
 
-    @property
-    def megabytes(self):
-        return self._megabytes
-
-    @property
-    def kilobytes(self):
-        return self._kilobytes
+    def generate_service_usage(self, distribution):
+        self.megabytes = distribution.get_value(return_array=False)
+        self.kilobytes = random.randint(0, 1023)
 
     def to_dict_info(self):
         return {}
