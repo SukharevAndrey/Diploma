@@ -29,20 +29,11 @@
           "days_activity": "Period call day distribution 1",
           "week_activity": "Week call time distribution 1"
         },
-        "special_days_activity": [
-          {
-            "name": "BIRTH_DAY",
-            "day_activity": "Birthday call time distribution 1"
-          },
-          {
-            "name": "NEW_YEAR",
-            "day_activity": "New year call time distribution 1"
-          },
-          {
-            "name": "NATIONAL_HOLIDAY",
-            "day_activity": "Holiday call time distribution 1"
-          }
-        ]
+        "special_days_activity": {
+          "Birth day": "Birthday call time distribution 1",
+          "New year": "New year call time distribution 1",
+          "National holiday": "Holiday call time distribution 1"
+        }
       },
       "SMS": {
         "has_recipient": true,
@@ -52,20 +43,11 @@
           "days_activity": "Period message day distribution 1",
           "week_activity": "Week message time distribution 1"
         },
-        "special_days_activity": [
-          {
-            "name": "BIRTH_DAY",
-            "day_activity": "Birthday message time distribution 1"
-          },
-          {
-            "name": "NEW_YEAR",
-            "day_activity": "New year message time distribution 1"
-          },
-          {
-            "name": "NATIONAL_HOLIDAY",
-            "day_activity": "Holiday message time distribution 1"
-          }
-        ]
+        "special_days_activity": {
+          "Birth day": "Birthday message time distribution 1",
+          "New year": "New year message time distribution 1",
+          "National holiday": "Holiday message time distribution 1"
+        }
       },
       "MMS": {
         "has_recipient": true,
@@ -75,25 +57,25 @@
           "days_activity": "Period message day distribution 1",
           "week_activity": "Week message time distribution 1"
         },
-        "special_days_activity": [
-          {
-            "name": "BIRTH_DAY",
-            "day_activity": "Birthday message time distribution 1"
-          },
-          {
-            "name": "NEW_YEAR",
-            "day_activity": "New year message time distribution 1"
-          },
-          {
-            "name": "NATIONAL_HOLIDAY",
-            "day_activity": "Holiday message time distribution 1"
-          }
-        ]
+        "special_days_activity": {
+          "Birth day": "Birthday message time distribution 1",
+          "New year": "New year message time distribution 1",
+          "National holiday": "Holiday message time distribution 1"
+        }
       },
       "Internet": {
         "has_recipient": false,
-        "period_activity": {},
-        "special_days_activity": []
+        "period_activity": {
+          "amount": 30,
+          "max_deviation": 5,
+          "days_activity": "Period internet day distribution 1",
+          "week_activity": "Week internet time distribution 1"
+        },
+        "special_days_activity": {
+          "Birth day": "Birthday internet time distribution 1",
+          "New year": "New year internet time distribution 1",
+          "National holiday": "Holiday internet time distribution 1"
+        }
       }
     },
     "Other services": {

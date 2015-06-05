@@ -3,28 +3,28 @@
     "calculation_method": "advance",
     "credit_limit": 800.0,
     "trust_category": 4,
-    "home_countries": [
+    "home_locations": [
       {
         "name": "Russia",
-        "percentage": 95,
-        "home_regions": [
+        "percentage": 95.0,
+        "regions": [
           {
             "name": "Moskva",
-            "percentage": 70
+            "percentage": 70.0
           },
           {
             "name": "Leningradskaja",
-            "percentage": 25
+            "percentage": 25.0
           },
           {
             "name": "Brjanskaja",
-            "percentage": 5
+            "percentage": 5.0
           }
         ]
       },
       {
         "name": "Ukraine",
-        "percentage": 5
+        "percentage": 5.0
       }
     ],
     "probabilistic": false,

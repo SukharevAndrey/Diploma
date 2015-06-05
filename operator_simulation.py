@@ -208,9 +208,11 @@ class MobileOperatorSystem:
     def register_phone_number(self, operator_info, phone_info, commit=True):
         print('Registering phone number')
         country = self.session.query(Country).filter_by(name=operator_info['country']).one()
-        # TODO: Handle situation when region is None
-        region = self.session.query(Region).filter_by(name=operator_info['region'],
-                                                      country=country).one()
+        try:
+            region = self.session.query(Region).filter_by(name=operator_info['region'],
+                                                          country=country).one()
+        except NoResultFound:
+            region = None
         regional_operator = self.session.query(MobileOperator).filter_by(name=operator_info['name'],
                                                                          country=country,
                                                                          region=region).one()
@@ -244,11 +246,11 @@ class MobileOperatorSystem:
         device_service = bill.service_log.device_service
         service = device_service.service
         device = device_service.device
-        print('Handling bill for service %s. Need to pay: %s'%(service.name, bill.debt))
+        print('Handling bill for service %s. Need to pay: %s' % (service.name, bill.debt))
         balance = self.get_active_balance(device)
-        print('Debiting %s RUB from %s balance with balance %s. New balance: %s'%(bill.debt, balance.type,
-                                                                                  balance.amount,
-                                                                                  balance.amount-bill.debt))
+        print('Debiting %s RUB from %s balance with balance %s. New balance: %s' % (bill.debt, balance.type,
+                                                                                    balance.amount,
+                                                                                    balance.amount-bill.debt))
         balance.amount -= bill.debt
         bill.paid = bill.debt
         bill.debt = 0
@@ -476,6 +478,24 @@ class SimulatedCustomer:
         session.add(self.customer)
         session.commit()
 
+    def get_distribution_from_list(self, records_info):
+        record_names = []
+        record_percentages = []
+        for record_info in records_info:
+            record_name = record_info['name']
+            record_names.append(record_name)
+
+            record_percentage = record_info['percentage']
+            record_percentages.append(record_percentage)
+
+        dist_info = {
+            'max_values': len(record_names),
+            'values': record_names,
+            'probabilities': record_percentages
+        }
+
+        return Distribution(info=dist_info)
+
     def generate_all_hierarchy(self, simulation_date):
         print('Generating agreements')
         for agreement_cluster_name in self.agreement_cluster_names:
@@ -498,24 +518,28 @@ class SimulatedCustomer:
                 }
                 account = self.register_account(agreement, account_info)
 
+                # Generating country distributions
+                home_locations_info = account_cluster_info['home_locations']
+                countries_distribution = self.get_distribution_from_list(home_locations_info)
+                regions_distribution = {}
+
+                for country_info in home_locations_info:
+                    country_name = country_info['name']
+                    if 'regions' in country_info:
+                        regions_distribution[country_name] = self.get_distribution_from_list(country_info['regions'])
+
+                # Getting home location
+                home_country = countries_distribution.get_value(return_array=False)
+                home_region = None
+                if home_country in regions_distribution:
+                    home_region = regions_distribution[home_country].get_value(return_array=False)
+
                 if not probabilistic:  # fixed device clusters
                     device_cluster_names = account_cluster_info['devices']
                     for device_cluster_name in device_cluster_names:
                         device_cluster_info = devices_info[device_cluster_name]
 
-                        initial_tariff_names = []
-                        percentages = []
-                        for tariff_info in device_cluster_info['Initial tariffs']:
-                            initial_tariff_names.append(tariff_info['name'])
-                            percentages.append(tariff_info['percentage'])
-
-                        initial_tariffs_info = {
-                            'max_values': len(initial_tariff_names),
-                            'values': initial_tariff_names,
-                            'probabilities': percentages
-                        }
-
-                        tariff_distribution = Distribution(info=initial_tariffs_info)
+                        tariff_distribution = self.get_distribution_from_list(device_cluster_info['Initial tariffs'])
                         initial_tariff_name = tariff_distribution.get_value(return_array=False)
 
                         device_info = {
@@ -523,10 +547,10 @@ class SimulatedCustomer:
                             'initial_tariff': initial_tariff_name,
                             'IMEI': random_IMEI(),
                             'type': device_cluster_info['type'],
-                            'operator': {  # TODO: From account cluster
+                            'operator': {
                                 'name': 'MTS',
-                                'country': 'Russia',
-                                'region': 'Moskva'
+                                'country': home_country,
+                                'region': home_region
                             }
                         }
 
