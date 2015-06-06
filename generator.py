@@ -134,14 +134,15 @@ class MobileOperatorGenerator:
         for o_info in operators_info:
             operator_name = o_info['name']
             operator_countries = o_info['countries']
+            has_regions = o_info['has_regions']
 
-            # TODO: Don't generate regions if operator doesn't have them
             for country_name in operator_countries:
                 if country_name == 'Russia':
-                    regions = session.query(Region).filter_by(country=russia).all()
-                    for region in regions:
-                        operator = MobileOperator(name=operator_name, country=russia, region=region)
-                        session.add(operator)
+                    if has_regions:
+                        regions = session.query(Region).filter_by(country=russia).all()
+                        for region in regions:
+                            operator = MobileOperator(name=operator_name, country=russia, region=region)
+                            session.add(operator)
                 else:
                     country = session.query(Country).filter_by(name=country_name).one()
                     operator = MobileOperator(name=operator_name, country=country)
@@ -333,13 +334,38 @@ class MobileOperatorGenerator:
         self.print_status('Generating payment methods...')
         cash = Cash()
 
-        # TODO: All third party payments from jsom
+        # TODO: All third party payments from json
         qiwi = ThirdPartyCollection(name='QIWI')
         yandex = ThirdPartyCollection(name='Yandex.Money')
         webmoney = ThirdPartyCollection(name='WebMoney')
 
         session.add_all([cash, qiwi, yandex, webmoney])
         session.commit()
+        self.print_status('Done')
+
+    def generate_fake_phone_numbers(self, session):
+        self.print_status('Generating fake phone numbers for each operator')
+
+        mobile_operators = session.query(MobileOperator).all()
+        n = len(mobile_operators)
+        print('There are %d mobile operators' % n)
+
+        customers_amount = 10
+        area_code = 999
+        next_number = 0
+
+        for operator in mobile_operators:
+            phone_numbers = []
+
+            for i in range(customers_amount):
+                phone_number = PhoneNumber(mobile_operator_id=operator.id,
+                                           area_code=area_code, number=str(next_number).zfill(7))
+                phone_numbers.append(phone_number)
+                next_number += 1
+
+            session.bulk_save_objects(phone_numbers)
+        session.commit()
+
         self.print_status('Done')
 
     def generate_static_data(self, session):
@@ -351,6 +377,7 @@ class MobileOperatorGenerator:
         self.generate_mobile_operators(session)
         self.generate_services(session)
         self.generate_tariffs(session)
+        self.generate_fake_phone_numbers(session)
 
 
 DISTRIBUTIONS_FILE = 'data/distributions.json'
@@ -364,9 +391,11 @@ class TimeLineGenerator:
     SECONDS_IN_MINUTE = 60
 
     action_match = {
-        'Call': Call, 'SMS': SMS, 'MMS': MMS, 'Internet': Internet,
-        'Tariff changing': TariffChange
+        'Call': Call, 'SMS': SMS, 'MMS': MMS, 'Internet': Internet
     }
+
+    basic_services = {'Call', 'Internet', 'SMS', 'MMS'}
+    other_activities = {'Payment', 'Traveling', 'Tariff changing'}
 
     def __init__(self, customer, device, period_start_date):
         self.sim_customer = customer
@@ -377,11 +406,25 @@ class TimeLineGenerator:
         self.days_distribution = {}
         self.duration_distribution = {}
 
-        self.generate_distributions()
+        self.parse_activity()
 
-    def generate_distributions(self):
+    def get_start_times(self, date, amount):
+        year, month, day = date.year, date.month, date.day
+        times = []
+        # TODO: Get from service distribution times
+        hm = np.random.randint(0, self.MINUTES_IN_DAY, amount)
+        seconds = np.random.randint(0, self.SECONDS_IN_MINUTE, amount)
+        for i in range(amount):
+            hour, minute = self.minutes_to_time(hm[i])
+            second = seconds[i]
+            times.append(datetime(year, month, day, hour, minute, second))
+
+        return times
+
+    def parse_activity(self):
         basic_services_info = self.sim_device.behavior_info['Basic services']
         other_services_info = self.sim_device.behavior_info['Other services']
+        other_activity_info = self.sim_device.behavior_info['Other activity']
 
         for service_name in basic_services_info:
             service_info = basic_services_info[service_name]
@@ -403,11 +446,24 @@ class TimeLineGenerator:
             day_distribution_info = distributions_info['month'][service_activity['days_activity']]
             self.days_distribution[service_name] = Distribution(info=day_distribution_info)
 
+        for activity_name in other_activity_info:
+            activity_info = other_activity_info[activity_name]
+            self.service_info[activity_name] = activity_info
+
+            period_activity = activity_info['period_activity']
+            day_distribution_info = distributions_info['month'][period_activity['days_activity']]
+            self.days_distribution[activity_name] = Distribution(info=day_distribution_info)
+
     def minutes_to_time(self, minute):
         return divmod(minute, self.MINUTES_IN_HOUR)
 
     def generate_timeline(self, date):
-        actions = self.generate_basic_services(date)
+        actions = []
+        actions.extend(self.generate_basic_services(date))
+        actions.extend(self.generate_other_services(date))
+        actions.extend(self.generate_tariff_changes(date))
+        actions.extend(self.generate_location_changes(date))
+
         actions.sort(key=lambda action: action.start_date)
         return actions
 
@@ -432,6 +488,7 @@ class TimeLineGenerator:
             service_usages = []
 
             service_days = self.get_service_amount_for_period(service_name)
+            # print(service_days)
             day_in_period = self.get_day_in_period(date)
             amount = service_days[day_in_period]
 
@@ -466,31 +523,52 @@ class TimeLineGenerator:
         service_usages = []
 
         for service_name in self.service_info:
-            if service_name not in {'Call', 'SMS', 'MMS', 'Internet'}:
+            if service_name not in (self.basic_services | self.other_activities):
                 print('Generating %s actions' % service_name)
                 info = self.service_info[service_name]
                 activation_code = info['activation_code']
+                usage_type = info['type']
 
                 service_days = self.get_service_amount_for_period(service_name)
+                # print(service_days)
                 day_in_period = self.get_day_in_period(date)
                 amount = service_days[day_in_period]
 
                 start_times = self.get_start_times(date=date, amount=amount)
                 for i in range(amount):
-                    service = OneTimeService(self.sim_device, start_times[i], service_name, activation_code)
+                    service = OneTimeService(self.sim_device, start_times[i], service_name,
+                                             activation_code, usage_type)
                     service_usages.append(service)
 
         return service_usages
 
-    def get_start_times(self, date, amount):
-        year, month, day = date.year, date.month, date.day
-        times = []
-        # TODO: Get from service distribution times
-        hm = np.random.randint(0, self.MINUTES_IN_DAY, amount)
-        seconds = np.random.randint(0, self.SECONDS_IN_MINUTE, amount)
-        for i in range(amount):
-            hour, minute = self.minutes_to_time(hm[i])
-            second = seconds[i]
-            times.append(datetime(year, month, day, hour, minute, second))
+    def generate_tariff_changes(self, date):
+        print('Generating tariff changes')
+        tariff_changes = []
 
-        return times
+        info = self.service_info['Tariff changing']
+        potential_tariffs = info['tariffs']
+
+        change_days = self.get_service_amount_for_period('Tariff changing')
+        # print(change_days)
+        day_in_period = self.get_day_in_period(date)
+        amount = change_days[day_in_period]
+
+        start_times = self.get_start_times(date=date, amount=amount)
+        new_tariffs = [random.choice(potential_tariffs) for _ in range(amount)]
+        smart_mini_info = {'name': 'Smart mini', 'code': '*100*1#'}
+        for i in range(amount):
+            tariff_info = new_tariffs[i]
+            # FIXME: Delete after adding other tariffs
+            if tariff_info['name'] != 'Smart mini':
+                tariff_info = smart_mini_info
+            change = TariffChange(self.sim_device, start_times[i], tariff_info['code'], tariff_info['name'])
+            tariff_changes.append(change)
+
+        return tariff_changes
+
+    def generate_location_changes(self, date):
+        print('Generating location changes')
+        location_changes = []
+
+        return location_changes

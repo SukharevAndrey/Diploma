@@ -17,7 +17,8 @@
     "Recipients location": {
       "HOME_REGION": 95.0,
       "HOME_COUNTRY": 5.0,
-      "ROAMING": 0.0
+      "CIS_COUNTRIES": 0.0,
+      "REST_COUNTRIES": 0.0
     },
     "Basic services": {
       "Call": {
@@ -82,6 +83,7 @@
     "Other services": {
       "Balance request": {
         "activation_code": "*100#",
+        "type": "status",
         "has_recipient": false,
         "period_activity": {
           "amount": 3,
@@ -92,11 +94,49 @@
     },
     "Other activity": {
       "Tariff changing": {
-        "tariffs": ["Smart mini", "Super MTS", "Red Energy"],
+        "tariffs": [
+          {
+            "name": "Smart mini",
+            "code": "*100*1#"
+          },
+          {
+            "name": "Super MTS",
+            "code": ""
+          },
+          {
+            "name": "Red Energy",
+            "code": ""
+          }
+        ],
         "period_activity": {
-          "amount": 1,
+          "amount": 20,
           "max_deviation": 1,
-          "upper_limit": 1
+          "upper_limit": 1,
+          "days_activity": "Tariff change day distribution 1"
+        }
+      },
+      "Traveling": {
+        "locations": {
+          "HOME_COUNTRY_REGION": 99.0,
+          "CIS_COUNTRY": 0.0,
+          "EUROPE_COUNTRY": 0.0,
+          "REST_COUNTRIES": 0.0
+        },
+        "period_activity": {
+          "amount": 0,
+          "max_deviation": 1,
+          "days_activity": "Uniform day distribution"
+        }
+      },
+      "Payment": {
+        "method": {
+          "type": "third_party",
+          "provider": "QIWI"
+        },
+        "period_activity": {
+          "amount": 2,
+          "max_deviation": 2,
+          "days_activity": "Payment day distribution 1"
         }
       }
     }

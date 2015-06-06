@@ -31,6 +31,18 @@
     "Balance check day distribution 1": {
       "max_values": 30,
       "probabilities": []
+    },
+    "Tariff change day distribution 1": {
+      "max_values": 30,
+      "probabilities": [8, 4, 5, 4, 5, 4, 9, 10, 9, 8, 7, 6, 5, 5, 5, 7, 5, 8, 7, 5, 5, 5, 3, 7, 10, 10, 11, 15, 20, 21]
+    },
+    "Payment day distribution 1": {
+      "max_values": 30,
+      "probabilities": [8, 4, 5, 4, 5, 4, 9, 10, 9, 8, 7, 6, 5, 5, 5, 7, 5, 8, 7, 5, 5, 5, 3, 7, 10, 10, 11, 15, 20, 21]
+    },
+    "Uniform day distribution": {
+      "max_values": 30,
+      "probabilities": []
     }
   },
   "week": {

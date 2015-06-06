@@ -56,7 +56,7 @@ class Call(DeviceAction):
                 raise OverlapError('call intersects with next one')
 
     def generate_duration(self, distribution):
-        for i in range(1000):
+        for i in range(10):
             duration_minutes = int(distribution.get_value())
             duration_seconds = random.randint(0, 59)
             duration = timedelta(minutes=duration_minutes, seconds=duration_seconds)
@@ -65,7 +65,8 @@ class Call(DeviceAction):
             except OverlapError:
                 continue
             return
-        raise Exception("can't generate call duration")
+        # fail safe
+        self.duration = timedelta(minutes=0, seconds=1)
 
     def get_call_duration(self):
         raw_seconds = self.duration.seconds
@@ -105,14 +106,18 @@ class Internet(DeviceAction):
         self.kilobytes = 0
 
     def generate_service_usage(self, distribution):
-        self.megabytes = distribution.get_value(return_array=False)
+        self.megabytes = int(distribution.get_value(return_array=False))
         self.kilobytes = random.randint(0, 1023)
 
     def to_dict_info(self):
-        return {}
+        return {'date': self.start_date,
+                'name': 'internet',
+                'megabytes': self.megabytes,
+                'kilobytes': self.kilobytes}
 
     def perform(self):
-        pass
+        session_info = self.to_dict_info()
+        self.device.use_internet(session_info)
 
     def __repr__(self):
         return '%s - Internet usage. Used %s mb, %s kb' % (self.start_date.time(), self.megabytes, self.kilobytes)
@@ -149,13 +154,17 @@ class SMS(DeviceAction):
 
 
 class OneTimeService(DeviceAction):
-    def __init__(self, device, start_date, service_name, activation_code):
+    def __init__(self, device, start_date, service_name, activation_code, type):
         super().__init__(device, start_date)
         self.activation_code = activation_code
         self.service_name = service_name
+        self.type = type
 
     def to_dict_info(self):
-        return {}
+        return {'date': self.start_date,
+                'code': self.activation_code,
+                'type': self.type,
+                'service_type': 'service'}
 
     def perform(self):
         service_info = self.to_dict_info()
@@ -182,12 +191,20 @@ class MMS(DeviceAction):
 
 
 class TariffChange(DeviceAction):
-    def __init__(self, device, start_date, new_tariff):
+    def __init__(self, device, start_date, tariff_code, tariff_name):
         super().__init__(device, start_date)
-        self.new_tariff = new_tariff
+        self.tariff_code = tariff_code
+        self.tariff_name = tariff_name
 
     def to_dict_info(self):
-        return {}
+        return {'date': self.start_date,
+                'code': self.tariff_code,
+                'type': 'activation',
+                'service_type': 'tariff'}
 
     def perform(self):
-        pass
+        tariff_info = self.to_dict_info()
+        self.device.ussd_request(tariff_info)
+
+    def __repr__(self):
+        return '%s - Changing tariff to %s' % (self.start_date.time(), self.tariff_name)

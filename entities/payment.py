@@ -17,6 +17,7 @@ class Balance(Base):
     type = db.Column(db.String, default='main')
     amount = db.Column(db.Numeric, default=0)
 
+    # TODO: Multiple devices
     device = relationship('Device', uselist=False)
     payments = relationship('Payment')
     paid_bills = relationship('Bill')

@@ -93,6 +93,7 @@ class MobileOperatorSystem:
     def __init__(self, session):
         self.session = session
         self.initial_balance = 200.0
+        self.next_free_number = 0
 
     def get_active_balance(self, device):
         calc_method = device.account.calc_method
@@ -196,7 +197,7 @@ class MobileOperatorSystem:
 
     def get_regional_operator(self, operator_info):
         country = self.session.query(Country).filter_by(name=operator_info['country']).one()
-        if 'region' in operator_info:
+        if 'region' in operator_info and operator_info['region'] is not None:
             region = self.session.query(Region).filter_by(country=country, name=operator_info['region']).one()
         else:
             region = None
@@ -333,12 +334,16 @@ class MobileOperatorSystem:
             print('The device has unpaid services. Connecting tariff is impossible')
             return
 
+        # TODO: Query optimization
         # If device already has a tariff
         if device.tariff:
-            print("The device already has tariff '%s', disconnecting it first" % tariff.name)
-            self.deactivate_service(device, tariff, connection_date, commit=False)
-            for service in tariff.attached_services:
-                self.deactivate_service(device, service, connection_date, commit=False)
+            if device.tariff.name == tariff.name:
+                print('The device has the same tariff')
+            else:
+                print("The device already has tariff '%s', disconnecting it first" % tariff.name)
+                self.deactivate_service(device, tariff, connection_date, commit=False)
+                for service in tariff.attached_services:
+                    self.deactivate_service(device, service, connection_date, commit=False)
 
         device.tariff = tariff
         # Connecting tariff as a service
@@ -457,13 +462,8 @@ class MobileOperatorSystem:
 
     def get_free_phone_number(self):
         print('Getting free phone number')
-        # TODO: Normal generation
-        # TODO: Handling country and region
-        # for area_code in ['916']:
-        #     for number in range(9999999):
-        #         print('yielding', area_code, str(number).zfill(7))
-        #         yield area_code, str(number).zfill(7)
-        return '916', '0000000'
+        self.next_free_number += 1
+        return '916', str(self.next_free_number).zfill(7)
 
 
 class SimulatedCustomer:
@@ -480,8 +480,6 @@ class SimulatedCustomer:
 
         session.add(self.customer)
         session.commit()
-
-
 
     def generate_all_hierarchy(self, simulation_date):
         print('Generating agreements')
@@ -540,6 +538,8 @@ class SimulatedCustomer:
                                 'region': home_region
                             }
                         }
+
+                        # TODO: Initial services
 
                         device = self.add_device(account, device_info)
                         self.devices.append(SimulatedDevice(self, device, device_cluster_info,
@@ -846,10 +846,10 @@ class SimulatedDevice:
 
         start_time = time()
         gen = TimeLineGenerator(self.customer, self, period_start)
-        sim_date = date(2015, 6, 5)  # TODO: Handle what if earlier then tariff is connected
+        sim_date = date(2015, 6, 6)  # TODO: Handle what if earlier then tariff is connected
         actions = gen.generate_timeline(sim_date)
         for action in actions:
             print(action)
-            # action.perform()
+            action.perform()
         end_time = time()
         print('It took %f seconds to complete' % (end_time-start_time))
