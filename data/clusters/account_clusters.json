@@ -6,7 +6,7 @@
     "home_locations": [
       {
         "name": "Russia",
-        "percentage": 95.0,
+        "percentage": 100.0,
         "regions": [
           {
             "name": "Moskva",
@@ -21,10 +21,6 @@
             "percentage": 5.0
           }
         ]
-      },
-      {
-        "name": "Ukraine",
-        "percentage": 5.0
       }
     ],
     "probabilistic": false,

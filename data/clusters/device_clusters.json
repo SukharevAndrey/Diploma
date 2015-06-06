@@ -116,12 +116,24 @@
         }
       },
       "Traveling": {
-        "locations": {
-          "HOME_COUNTRY_REGION": 99.0,
-          "CIS_COUNTRY": 0.0,
-          "EUROPE_COUNTRY": 0.0,
-          "REST_COUNTRIES": 0.0
-        },
+        "destinations": [
+          {
+            "name": "HOME_COUNTRY_REGION",
+            "percentage": 99.0
+          },
+          {
+            "name": "CIS_COUNTRY",
+            "percentage": 1.0
+          },
+          {
+            "name": "EUROPE_COUNTRY",
+            "percentage": 0.0
+          },
+          {
+            "name": "REST_COUNTRIES",
+            "percentage": 0.0
+          }
+        ],
         "period_activity": {
           "amount": 0,
           "max_deviation": 1,

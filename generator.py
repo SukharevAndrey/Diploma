@@ -11,7 +11,7 @@ from entities.location import *
 from entities.operator import *
 from entities.service import *
 from entities.payment import *
-from tools import file_to_json
+from tools import file_to_json, distribution_from_list
 from random_data import *
 from preprocessor import TariffPreprocessor
 
@@ -390,6 +390,8 @@ class TimeLineGenerator:
     MINUTES_IN_HOUR = 60
     SECONDS_IN_MINUTE = 60
 
+    russian_regions = ['Moskva', 'Brjanskaja', 'Leningradskaja']  # TODO: Full regions list
+
     action_match = {
         'Call': Call, 'SMS': SMS, 'MMS': MMS, 'Internet': Internet
     }
@@ -488,7 +490,6 @@ class TimeLineGenerator:
             service_usages = []
 
             service_days = self.get_service_amount_for_period(service_name)
-            # print(service_days)
             day_in_period = self.get_day_in_period(date)
             amount = service_days[day_in_period]
 
@@ -501,18 +502,28 @@ class TimeLineGenerator:
             if service_name in ('Call', 'Internet'):
                 duration_distribution = self.duration_distribution[service_name]
 
+            recipient_info = {'operator': {  # TODO: Real generation
+                'name': 'MTS',
+                'country': 'Russia',
+                'region': 'Moskva'
+            },
+                'phone_number': {
+                    'code': '916',
+                    'number': '7654321',
+                }}
+
             for i in range(amount):
                 if service_name == 'Call':
                     # TODO: May overlap if conference
                     service = action_entity(self.sim_device, start_times[i], deltas[i], can_overlap=False)
                     service.generate_duration(duration_distribution)
-                    service.recipient_info = None
+                    service.recipient_info = recipient_info
                 elif service_name == 'Internet':
                     service = action_entity(self.sim_device, start_times[i])
                     service.generate_service_usage(duration_distribution)
                 else:
                     service = action_entity(self.sim_device, start_times[i])
-                    service.recipient_info = None
+                    service.recipient_info = recipient_info
 
                 service_usages.append(service)
 
@@ -550,7 +561,6 @@ class TimeLineGenerator:
         potential_tariffs = info['tariffs']
 
         change_days = self.get_service_amount_for_period('Tariff changing')
-        # print(change_days)
         day_in_period = self.get_day_in_period(date)
         amount = change_days[day_in_period]
 
@@ -567,8 +577,37 @@ class TimeLineGenerator:
 
         return tariff_changes
 
+    def get_location(self, macro):
+        # TODO: Full country lists
+        home_location = self.sim_device.home_region
+        if macro == 'HOME_COUNTRY_REGION':
+            if home_location['country'] == 'Russia':
+                return {'country': 'Russia', 'region': random.choice(self.russian_regions)}
+            else:
+                return {'country': home_location['country'], 'region': 'None'}
+        elif macro == 'CIS_COUNTRY':
+            return {'country': 'Ukraine', 'region': None}
+        elif macro == 'EUROPE_COUNTRY':
+            return {'country': 'Germany', 'region': None}
+        else:
+            return {'country': 'United States', 'region': None}
+
     def generate_location_changes(self, date):
         print('Generating location changes')
         location_changes = []
+
+        info = self.service_info['Traveling']
+        destinations = info['destinations']
+
+        travel_days = self.get_service_amount_for_period('Traveling')
+        day_in_period = self.get_day_in_period(date)
+        amount = travel_days[day_in_period]
+
+        start_times = self.get_start_times(date=date, amount=amount)
+        dest_distribution = distribution_from_list(destinations)
+        new_location_macroses = dest_distribution.get_value(n=amount)
+        for i in range(amount):
+            change = LocationChange(self.sim_device, start_times[i], self.get_location(new_location_macroses[i]))
+            location_changes.append(change)
 
         return location_changes

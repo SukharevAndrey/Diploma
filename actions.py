@@ -79,15 +79,8 @@ class Call(DeviceAction):
             'name': 'outgoing_call',
             'minutes': dur_minutes,
             'seconds': dur_seconds,
-            'operator': {
-                'name': 'MTS',
-                'country': 'Russia',
-                'region': 'Moskva'
-            },
-            'phone_number': {
-                'code': '916',
-                'number': '7654321',
-            }
+            'operator': self.recipient_info['operator'],
+            'phone_number': self.recipient_info['phone_number']
         }
         return call_info
 
@@ -96,7 +89,8 @@ class Call(DeviceAction):
         self.device.make_call(call_info)
 
     def __repr__(self):
-        return '%s - Outgoing call to %s, duration: %s' % (self.start_date.time(), self.recipient_info, self.duration)
+        return '%s - Outgoing call to %s, duration: %s' % (self.start_date.time(),
+                                                           self.recipient_info['operator'], self.duration)
 
 
 class Internet(DeviceAction):
@@ -126,22 +120,15 @@ class Internet(DeviceAction):
 class SMS(DeviceAction):
     def __init__(self, device, start_date, recipient_info=None):
         super().__init__(device, start_date)
-        self.recipient = recipient_info
+        self.recipient_info = recipient_info
 
     def to_dict_info(self):
         sms_info = {
             'date': self.start_date,
             'name': 'sms',
             'text': 'Lorem ipsum',
-            'operator': {
-                'name': 'MTS',
-                'country': 'Russia',
-                'region': 'Moskva'
-            },
-            'phone_number': {
-                'code': '916',
-                'number': '1234567',
-            }
+            'operator': self.recipient_info['operator'],
+            'phone_number': self.recipient_info['phone_number']
         }
         return sms_info
 
@@ -150,7 +137,7 @@ class SMS(DeviceAction):
         self.device.send_sms(sms_info)
 
     def __repr__(self):
-        return '%s - SMS Message. Sent to %s' % (self.start_date.time(), self.recipient)
+        return '%s - SMS Message. Sent to %s' % (self.start_date.time(), self.recipient_info['operator'])
 
 
 class OneTimeService(DeviceAction):
@@ -208,3 +195,22 @@ class TariffChange(DeviceAction):
 
     def __repr__(self):
         return '%s - Changing tariff to %s' % (self.start_date.time(), self.tariff_name)
+
+
+class LocationChange(DeviceAction):
+    def __init__(self, device, start_date, new_location):
+        super().__init__(device, start_date)
+        self.new_location = new_location
+
+    def to_dict_info(self):
+        return {'date': self.start_date,
+                'country': self.new_location['country'],
+                'region': self.new_location['region']}
+
+    def perform(self):
+        location_info = self.to_dict_info()
+        self.device.set_device_location(location_info)
+
+    def __repr__(self):
+        return '%s - Changing location to %s %s' % (self.start_date.time(),
+                                                    self.new_location['country'], self.new_location['region'])

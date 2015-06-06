@@ -539,10 +539,12 @@ class SimulatedCustomer:
                             }
                         }
 
+                        home_region = {'country': home_country, 'region': home_region}
+
                         # TODO: Initial services
 
                         device = self.add_device(account, device_info)
-                        self.devices.append(SimulatedDevice(self, device, device_cluster_info,
+                        self.devices.append(SimulatedDevice(self, device, device_cluster_info, home_region,
                                                             self.session, self.system))
                 else:
                     raise NotImplementedError('probabilistic device generation is not yet supported')
@@ -624,15 +626,15 @@ class SimulatedCustomer:
 
 
 class SimulatedDevice:
-    def __init__(self, device_customer, device_entity, behavior_info, session, operator_system, verbose=False):
+    def __init__(self, device_customer, device_entity, behavior_info, home_region,
+                 session, operator_system, verbose=False):
         self.session = session
         self.system = operator_system
         self.customer = device_customer
         self.device = device_entity
         self.behavior_info = behavior_info
+        self.home_region = home_region
         self.verbose = verbose
-
-        print(behavior_info)
 
     def set_device_location(self, location_info):
         country_name, region_name, place_name = None, None, None
@@ -751,105 +753,20 @@ class SimulatedDevice:
         self.system.handle_payment(self.device, payment)
 
     def simulate_day(self, simulation_day):
-        tariff_info = {
-            'date': datetime(2015, 5, 26, 9, 0, 0),
-            'code': '*100*1#',  # smart mini
-            'type': 'activation',
-            'service_type': 'tariff'
-        }
-        # service_info = {
-        #     'date': datetime(2015, 5, 26, 14, 0, 0),
-        #     'code': '*252#',  # BIT
-        #     'type': 'activation',
-        #     'service_type': 'service'
-        # }
         payment_info = {
             'date': datetime(2015, 5, 26, 11, 0, 0),
             'amount': 100.0,
             'method': 'third_party',
             'name': 'QIWI'
         }
-        # balance_request_info = {
-        #     'date': datetime(2015, 5, 26, 13, 0, 0),
-        #     'code': '*100#',  # balance request
-        #     'type': 'status',
-        #     'service_type': 'service'
-        # }
-        # sms_info = {
-        #     'date': datetime(2015, 5, 26, 12, 1, 0),
-        #     'name': 'sms',
-        #     'text': 'Lorem ipsum',
-        #     'operator': {
-        #         'name': 'MTS',
-        #         'country': 'Russia',
-        #         'region': 'Moskva'
-        #     },
-        #     'phone_number': {
-        #         'code': '916',
-        #         'number': '1234567',
-        #     }
-        # }
-        # call_info = {
-        #     'date': datetime(2015, 5, 26, 12, 0, 0),
-        #     'name': 'outgoing_call',
-        #     'minutes': 5,
-        #     'seconds': 12,
-        #     'operator': {
-        #         'name': 'MTS',
-        #         'country': 'Russia',
-        #         'region': 'Moskva'
-        #     },
-        #     'phone_number': {
-        #         'code': '916',
-        #         'number': '7654321',
-        #     }
-        # }
-        # internet_session_info = {
-        #     'date': datetime(2015, 5, 26, 16, 0, 0),
-        #     'name': 'internet',
-        #     'megabytes': 50,
-        #     'kilobytes': 21
-        # }
-        # location1_info = {
-        #     'date': datetime(2015, 5, 26, 0, 0, 0),
-        #     'country': 'Russia',
-        #     'region': 'Moskva',
-        # }
-        # location2_info = {
-        #     'date': datetime(2015, 5, 27, 0, 0, 0),
-        #     'country': 'Russia',
-        #     'region': 'Brjanskaja',
-        # }
-        # start_time = time()
-        # self.set_device_location(location1_info)
-        # self.make_payment(payment_info)
-        # self.ussd_request(tariff_info)  # connecting tariff
-        # # self.ussd_request(device, tariff_info)  # connecting it again
-        # self.ussd_request(service_info)  # connecting BIT
-        # self.ussd_request(balance_request_info)
-        # for i in range(51):
-        #     self.send_sms(sms_info)
-        # self.send_sms(sms_info)
-        # self.make_call(call_info)
-        # self.use_internet(internet_session_info)
-        # self.use_internet(internet_session_info)
-        # self.set_device_location(location2_info)
-        # self.ussd_request(tariff_info)  # connecting tariff again
-        # self.ussd_request(tariff_info)  # connecting tariff again
-        # end_time = time()
-        # print('It took %f sec to imitate behavior' % (end_time-start_time))
-        #print('Simulation begins!')
-        #self.make_payment(payment_info)
-        #self.ussd_request(tariff_info)
 
         period_start = self.system.get_tariff_period(self.device)
 
         start_time = time()
         gen = TimeLineGenerator(self.customer, self, period_start)
-        sim_date = date(2015, 6, 6)  # TODO: Handle what if earlier then tariff is connected
-        actions = gen.generate_timeline(sim_date)
+        actions = gen.generate_timeline(simulation_day)  # TODO: Handle what if earlier then tariff is connected
         for action in actions:
             print(action)
-            action.perform()
+            # action.perform()
         end_time = time()
         print('It took %f seconds to complete' % (end_time-start_time))
