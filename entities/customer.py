@@ -12,6 +12,8 @@ class Customer(Base):
     id = db.Column(db.Integer, primary_key=True, index=True)
     geographic_address_id = db.Column(db.Integer, db.ForeignKey('geographicAddress.id'))
 
+    date_from = db.Column(db.DateTime, default=db.func.now())
+    date_to = db.Column(db.DateTime)
     type = db.Column(db.String)
     status = db.Column(db.String, default='active')
     rank = db.Column(db.Integer, default=1)
@@ -73,6 +75,7 @@ class Organization(Customer):
     }
 
     id = db.Column(db.Integer, db.ForeignKey('customer.id'), primary_key=True, index=True)
+
     vat_id = db.Column(db.String, nullable=False, unique=True)
     name = db.Column(db.String, nullable=False)
     branding_name = db.Column(db.String)

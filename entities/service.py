@@ -17,9 +17,11 @@ class Service(Base):
     type = db.Column(db.String)
     description = db.Column(db.String)
     in_archive = db.Column(db.Boolean, default=False)
+
     activation_code = db.Column(db.String)
-    deactivation_code = db.Column(db.String)
     activation_cost = db.Column(db.Numeric, default=0)
+    deactivation_code = db.Column(db.String)
+    duration_days = db.Column(db.Integer, default=0)
 
     operator = relationship('MobileOperator', uselist=False)
     tariffs = relationship('Tariff', secondary='tariffServices')

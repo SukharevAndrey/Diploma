@@ -165,30 +165,33 @@ class MobileOperatorGenerator:
             else:
                 activation_cost = 0
             is_periodic = s_info['is_periodic']
+
+            if 'duration_days' in s_info:
+                duration_days = s_info['duration_days']
+            else:
+                duration_days = 0
+
             if 'regional_versions' in s_info:
                 for version in s_info['regional_versions']:
                     region_name = version['region_name']
                     region = session.query(Region).filter_by(name=region_name).one()
                     regional_operator = session.query(MobileOperator).\
                         filter_by(name='MTS', country=russia, region=region).one()
-                    use_cost = 0.0
-                    subscription_cost = 0.0
+
                     if is_periodic:
-                        subscription_cost = version['cost']
+                        cost = Cost(operator_from=regional_operator,
+                                    subscription_cost=version['cost'])
                     else:
-                        use_cost = version['cost']
-                    cost = Cost(operator_from=regional_operator,
-                                use_cost=use_cost,
-                                subscription_cost=subscription_cost)
+                        cost = Cost(operator_from=regional_operator,
+                                    use_cost=version['cost'])
+
                     service = Service(name=name, operator=regional_operator,
-                                      activation_code=activation_code,
+                                      activation_code=activation_code, duration_days=duration_days,
                                       activation_cost=activation_cost, costs=[cost])
 
                     if 'packet' in version:
                         packet_info = version['packet']
-                        packet_type = packet_info['type']
-                        amount = packet_info['amount']
-                        packet = Packet(type=packet_type, amount=amount)
+                        packet = Packet(type=packet_info['type'], amount=packet_info['amount'])
                         service.packet = packet
                         session.add(packet)
 
@@ -224,6 +227,7 @@ class MobileOperatorGenerator:
                 tariff = Tariff(name=tariff_name,
                                 activation_code=activation_code,
                                 activation_cost=transition_cost,
+                                duration_days=30,
                                 operator=regional_operator)
 
                 cost = Cost(operator_from=regional_operator,
@@ -298,20 +302,27 @@ class MobileOperatorGenerator:
                     tariff.attached_services.append(service)
 
                 # Adding included services such as packets
+                # TODO: Merge with services generation
                 for service_info in regional_version['services']:
                     service_name = service_info['name']
                     is_periodic = service_info['is_periodic']
                     s_cost = service_info['cost']
+                    if 'duration_days' in service_info:
+                        duration_days = service_info['duration_days']
+                    else:
+                        duration_days = 0
 
-                    service = Service(name=service_name,
-                                      operator=regional_operator)
                     if is_periodic:
                         cost = Cost(operator_from=regional_operator,
                                     use_cost=s_cost)
                     else:
                         cost = Cost(operator_from=regional_operator,
                                     subscription_cost=s_cost)
-                    service.costs.append(cost)
+
+                    service = Service(name=service_name,
+                                      operator=regional_operator,
+                                      duration_days=duration_days,
+                                      costs=[cost])
 
                     if 'packet' in service_info:
                         packet_info = service_info['packet']
@@ -332,7 +343,7 @@ class MobileOperatorGenerator:
 
     def generate_payment_methods(self, session):
         self.print_status('Generating payment methods...')
-        cash = Cash()
+        cash = Cash(name='Cash')
 
         # TODO: All third party payments from json
         qiwi = ThirdPartyCollection(name='QIWI')
@@ -465,6 +476,7 @@ class TimeLineGenerator:
         actions.extend(self.generate_other_services(date))
         actions.extend(self.generate_tariff_changes(date))
         actions.extend(self.generate_location_changes(date))
+        actions.extend(self.generate_payments(date))
 
         actions.sort(key=lambda action: action.start_date)
         return actions
@@ -577,7 +589,7 @@ class TimeLineGenerator:
 
         return tariff_changes
 
-    def get_location(self, macro):
+    def get_location_from_macro(self, macro):
         # TODO: Full country lists
         home_location = self.sim_device.home_region
         if macro == 'HOME_COUNTRY_REGION':
@@ -607,7 +619,31 @@ class TimeLineGenerator:
         dest_distribution = distribution_from_list(destinations)
         new_location_macroses = dest_distribution.get_value(n=amount)
         for i in range(amount):
-            change = LocationChange(self.sim_device, start_times[i], self.get_location(new_location_macroses[i]))
+            change = LocationChange(self.sim_device, start_times[i], self.get_location_from_macro(new_location_macroses[i]))
             location_changes.append(change)
 
         return location_changes
+
+    def generate_payments(self, date):
+        print('Generating payments')
+        payments = []
+
+        info = self.service_info['Payment']
+        methods = info['methods']
+        sums = info['sums']
+        method_distribution = distribution_from_list(methods)
+        sum_distribution = distribution_from_list(sums)
+
+        payment_days = self.get_service_amount_for_period('Payment')
+        day_in_period = self.get_day_in_period(date)
+        amount = payment_days[day_in_period]
+
+        start_times = self.get_start_times(date=date, amount=amount)
+        for i in range(amount):
+            method = method_distribution.get_value(return_array=False).copy()
+            method_name, method_type = method.popitem()
+            payment_sum = int(sum_distribution.get_value(return_array=False))  # TODO: Decimal?
+            payment = DevicePayment(self.sim_device, start_times[i], method_name, method_type, payment_sum)
+            payments.append(payment)
+
+        return payments

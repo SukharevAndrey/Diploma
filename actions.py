@@ -2,6 +2,9 @@ from abc import ABCMeta, abstractmethod
 import random
 from datetime import timedelta
 
+from status import ServiceStatus
+
+
 class OverlapError(Exception):
     pass
 
@@ -29,6 +32,30 @@ class DeviceAction(Action):
     def __init__(self, device, start_date):
         super().__init__(start_date)
         self.device = device
+
+    def handle_out_of_funds(self):
+        print('Handling out of funds situation')
+
+
+class DevicePayment(DeviceAction):
+    def __init__(self, device, start_date, method_name, method_type, payment_sum):
+        super().__init__(device, start_date)
+        self.method_name = method_name
+        self.method_type = method_type
+        self.payment_sum = payment_sum
+
+    def to_dict_info(self):
+        return {'date': self.start_date,
+                'amount': self.payment_sum,
+                'name': self.method_name,
+                'method': self.method_type}
+
+    def perform(self):
+        payment_info = self.to_dict_info()
+        self.device.make_payment(payment_info)
+
+    def __repr__(self):
+        return '%s - Making payment of sum %d using %s' % (self.start_date.time(), self.payment_sum, self.method_name)
 
 
 class Call(DeviceAction):
@@ -65,7 +92,7 @@ class Call(DeviceAction):
             except OverlapError:
                 continue
             return
-        # fail safe
+        # Fail safe - generating fail call
         self.duration = timedelta(minutes=0, seconds=1)
 
     def get_call_duration(self):
@@ -86,7 +113,9 @@ class Call(DeviceAction):
 
     def perform(self):
         call_info = self.to_dict_info()
-        self.device.make_call(call_info)
+        status = self.device.make_call(call_info)
+        if status == ServiceStatus.out_of_funds:
+            self.handle_out_of_funds()
 
     def __repr__(self):
         return '%s - Outgoing call to %s, duration: %s' % (self.start_date.time(),
@@ -111,7 +140,9 @@ class Internet(DeviceAction):
 
     def perform(self):
         session_info = self.to_dict_info()
-        self.device.use_internet(session_info)
+        status = self.device.use_internet(session_info)
+        if status == ServiceStatus.out_of_funds:
+            self.handle_out_of_funds()
 
     def __repr__(self):
         return '%s - Internet usage. Used %s mb, %s kb' % (self.start_date.time(), self.megabytes, self.kilobytes)
@@ -134,7 +165,9 @@ class SMS(DeviceAction):
 
     def perform(self):
         sms_info = self.to_dict_info()
-        self.device.send_sms(sms_info)
+        status = self.device.send_sms(sms_info)
+        if status == ServiceStatus.out_of_funds:
+            self.handle_out_of_funds()
 
     def __repr__(self):
         return '%s - SMS Message. Sent to %s' % (self.start_date.time(), self.recipient_info['operator'])
@@ -155,7 +188,9 @@ class OneTimeService(DeviceAction):
 
     def perform(self):
         service_info = self.to_dict_info()
-        self.device.ussd_request(service_info)
+        status = self.device.ussd_request(service_info)
+        if status == ServiceStatus.out_of_funds:
+            self.handle_out_of_funds()
 
     def __repr__(self):
         return '%s - USSD request. Service: %s, code: %s' % (self.start_date.time(),
@@ -171,7 +206,10 @@ class MMS(DeviceAction):
         return {}
 
     def perform(self):
-        pass
+        mms_info = self.to_dict_info()
+        status = self.device.send_sms(mms_info)
+        if status == ServiceStatus.out_of_funds:
+            self.handle_out_of_funds()
 
     def __repr__(self):
         return '%s - MMS Message. Sent to %s' % (self.start_date.time(), self.recipient)
@@ -191,7 +229,9 @@ class TariffChange(DeviceAction):
 
     def perform(self):
         tariff_info = self.to_dict_info()
-        self.device.ussd_request(tariff_info)
+        status = self.device.ussd_request(tariff_info)
+        if status == ServiceStatus.out_of_funds:
+            self.handle_out_of_funds()
 
     def __repr__(self):
         return '%s - Changing tariff to %s' % (self.start_date.time(), self.tariff_name)

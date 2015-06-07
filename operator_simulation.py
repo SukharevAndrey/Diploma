@@ -1,5 +1,5 @@
 from collections import deque
-from datetime import date, datetime, timedelta
+from datetime import datetime
 from decimal import Decimal
 from time import time
 
@@ -12,11 +12,11 @@ from entities.location import *
 from entities.operator import *
 from entities.payment import *
 from entities.service import *
-
 from generator import MobileOperatorGenerator, TimeLineGenerator
 from distribution import Distribution
 from random_data import *
 from tools import file_to_json, distribution_from_list
+from status import ServiceStatus
 
 # TODO: Proper session handling
 # TODO: Decimal service amount
@@ -70,8 +70,7 @@ class MobileOperatorSimulator:
                 if customer_type == 'individual':
                     customer = random_individual(simulation_date, age)
                 else:
-                    customer = None
-                    raise NotImplementedError('organizations are not supported yet')
+                    customer = random_organization(simulation_date)
 
                 c = SimulatedCustomer(customer, group_info['agreements'], self.db1_session, self.system, verbose=True)
                 c.generate_all_hierarchy(simulation_date)
@@ -96,6 +95,7 @@ class MobileOperatorSystem:
         self.next_free_number = 0
 
     def get_active_balance(self, device):
+        # TODO: Handle corporate users (one balance on one account?)
         calc_method = device.account.calc_method
         calc_to_type = {
             'advance': 'main',
@@ -124,14 +124,14 @@ class MobileOperatorSystem:
 
         if request.type == 'activation':
             if request.service:
-                self.connect_service(request.device, request.service, connection_date=request_date)
+                return self.connect_service(request.device, request.service, connection_date=request_date)
             elif request.tariff:
-                self.connect_tariff(request.device, request.tariff, connection_date=request_date)
+                return self.connect_tariff(request.device, request.tariff, connection_date=request_date)
         elif request.type == 'deactivation':
             raise NotImplementedError
         elif request.type == 'status':
             print('Doing nothing')
-            # TODO: Maybe send sms from system
+            return ServiceStatus.success
 
     def handle_payment(self, device, payment):
         print('Handling payment')
@@ -170,12 +170,19 @@ class MobileOperatorSystem:
 
         self.session.commit()
 
-    def can_into_service(self, device, service):
+    def can_into_service(self, device, service, usage_type='activation'):
         balance = self.get_active_balance(device)
 
         if balance.type == 'main':
-            if balance.amount > 0 and service.activation_cost <= balance.amount:
-                return True
+            # TODO: Usage cost?
+            if balance.amount > 0:
+                if usage_type == 'activation':
+                    if service.activation_cost <= balance.amount:
+                        return True
+                    else:
+                        return False
+                elif usage_type == 'usage':
+                    pass
             else:
                 return False
         else:
@@ -332,13 +339,14 @@ class MobileOperatorSystem:
             print('Device can connect tariff')
         else:
             print('The device has unpaid services. Connecting tariff is impossible')
-            return
+            return ServiceStatus.out_of_funds
 
         # TODO: Query optimization
         # If device already has a tariff
         if device.tariff:
             if device.tariff.name == tariff.name:
                 print('The device has the same tariff')
+                return ServiceStatus.fail
             else:
                 print("The device already has tariff '%s', disconnecting it first" % tariff.name)
                 self.deactivate_service(device, tariff, connection_date, commit=False)
@@ -356,6 +364,7 @@ class MobileOperatorSystem:
                                  ability_check=False, commit=False)
 
         self.session.commit()
+        return ServiceStatus.success
 
     def connect_service(self, device, service, connection_date, free_activation=False, ability_check=True, commit=True):
         print('Connecting service: ', service.name)
@@ -365,9 +374,16 @@ class MobileOperatorSystem:
                 print('Device can connect service')
             else:
                 print('The device has unpaid services. Connecting service is impossible')
-                return
+                return ServiceStatus.out_of_funds
 
-        device_service = DeviceService(device=device, service=service, date_from=connection_date)
+        service_duration = service.duration_days
+        if service_duration == 0:
+            date_to = None
+        else:
+            date_to = connection_date + timedelta(days=service_duration)
+
+        device_service = DeviceService(device=device, service=service, date_from=connection_date, date_to=date_to)
+        print('Connected service %s from %s to %s' % (service.name, connection_date, date_to))
         if service.packet:
             device_service.packet_left = service.packet.amount
         device.services.append(device_service)
@@ -457,7 +473,7 @@ class MobileOperatorSystem:
                         DeviceService.is_activated)).one()
 
         period_start = tariff_device_service.date_from.date()
-        #date_to = date(tariff_device_service.date_to)
+        # date_to = date(tariff_device_service.date_to)
         return period_start
 
     def get_free_phone_number(self):
@@ -698,23 +714,23 @@ class SimulatedDevice:
         print('Making call to phone number %s' % (call_info['phone_number']['code'] +
                                                   ' ' + call_info['phone_number']['number']))
         # TODO: Save original call duration
-        self.use_service(call_info, self.system.round_call_duration(call_info['minutes'],
-                                                                    call_info['seconds']))
+        return self.use_service(call_info, self.system.round_call_duration(call_info['minutes'],
+                                                                           call_info['seconds']))
 
     def send_sms(self, sms_info):
         print('Sending sms to phone number %s' % (sms_info['phone_number']['code'] +
                                                   ' ' + sms_info['phone_number']['number']))
-        self.use_service(sms_info, 1)
+        return self.use_service(sms_info, 1)
 
     def send_mms(self, mms_info):
         print('Sending sms to phone number %s' % (mms_info['phone_number']['code'] +
                                                   ' ' + mms_info['phone_number']['number']))
-        self.use_service(mms_info, 1)
+        return self.use_service(mms_info, amount=1)
 
     def use_internet(self, session_info):
         print('Using internet: ', session_info)
-        self.use_service(session_info, self.system.round_internet_session(session_info['megabytes'],
-                                                                          session_info['kilobytes']))
+        return self.use_service(session_info, self.system.round_internet_session(session_info['megabytes'],
+                                                                                 session_info['kilobytes']))
 
     def ussd_request(self, request_info):
         print('Making request: ', request_info)
@@ -732,7 +748,7 @@ class SimulatedDevice:
                               device=self.device, tariff=tariff)
         self.session.add(request)
         self.session.commit()
-        self.system.handle_request(request)
+        return self.system.handle_request(request)
 
     def make_payment(self, payment_info):
         print('Making payment: ', payment_info)
@@ -764,7 +780,7 @@ class SimulatedDevice:
 
         start_time = time()
         gen = TimeLineGenerator(self.customer, self, period_start)
-        actions = gen.generate_timeline(simulation_day)  # TODO: Handle what if earlier then tariff is connected
+        actions = gen.generate_timeline(simulation_day)
         for action in actions:
             print(action)
             # action.perform()

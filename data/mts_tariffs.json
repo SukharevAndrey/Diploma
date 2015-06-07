@@ -114,6 +114,7 @@
           {
             "name": "Voice Packet",
             "is_periodic": true,
+            "duration_days": 30,
             "cost": 0.0,
             "packet": {
               "type": "outgoing_call",
@@ -129,6 +130,7 @@
           {
             "name": "SMS Packet",
             "is_periodic": true,
+            "duration_days": 30,
             "cost": 0.0,
             "packet": {
               "type": "sms",
@@ -143,6 +145,7 @@
           {
             "name": "Internet Packet",
             "is_periodic": true,
+            "duration_days": 30,
             "cost": 0.0,
             "packet": {
               "type": "internet",
