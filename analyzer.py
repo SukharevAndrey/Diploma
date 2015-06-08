@@ -41,9 +41,10 @@ class ActivityAnalyzer:
         # print('X')
         # print(X)
         # estimator = DBSCAN(eps=10)
-        estimator = DBSCAN(eps=0.2)
+        estimator = DBSCAN(eps=0.3)
         estimator.fit(processed_devices)
         labels = estimator.labels_
+        print('Estimated number of clusters: %d' % len(set(labels)))
         ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=labels.astype(np.float))
         plt.show()
 

@@ -507,7 +507,7 @@ class TimeLineGenerator:
         all_service_usages = []
 
         for service_name in {'Call', 'SMS', 'MMS', 'Internet'}:
-            print('Generating %s actions' % service_name)
+            # print('Generating %s actions' % service_name)
             service_usages = []
 
             service_days = self.get_service_amount_for_period(service_name)
@@ -556,7 +556,7 @@ class TimeLineGenerator:
 
         for service_name in self.service_info:
             if service_name not in (self.basic_services | self.other_activities):
-                print('Generating %s actions' % service_name)
+                # print('Generating %s actions' % service_name)
                 info = self.service_info[service_name]
                 activation_code = info['activation_code']
                 usage_type = info['type']
@@ -575,7 +575,7 @@ class TimeLineGenerator:
         return service_usages
 
     def generate_tariff_changes(self, date):
-        print('Generating tariff changes')
+        # print('Generating tariff changes')
         tariff_changes = []
 
         info = self.service_info['Tariff changing']
@@ -614,7 +614,7 @@ class TimeLineGenerator:
             return {'country': 'United States', 'region': None}
 
     def generate_location_changes(self, date):
-        print('Generating location changes')
+        # print('Generating location changes')
         location_changes = []
 
         info = self.service_info['Traveling']
@@ -634,7 +634,7 @@ class TimeLineGenerator:
         return location_changes
 
     def generate_payments(self, date):
-        print('Generating payments')
+        # print('Generating payments')
         payments = []
 
         info = self.service_info['Payment']

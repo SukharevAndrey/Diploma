@@ -1,6 +1,7 @@
 from collections import deque
 from decimal import Decimal
 from time import time
+import logging
 
 from sqlalchemy import create_engine, and_, or_
 from sqlalchemy.orm import sessionmaker
@@ -22,8 +23,6 @@ from analyzer import ActivityAnalyzer
 # TODO: Proper session handling
 # TODO: Decimal service amount
 
-POOL_SIZE = 100
-
 # TODO: Store it somewhere, where it can be imported
 USER_GROUPS_FILE = 'data/clusters/customer_clusters.json'
 AGREEMENTS_FILE = 'data/clusters/agreement_clusters.json'
@@ -37,12 +36,14 @@ accounts_info = file_to_json(ACCOUNTS_FILE)
 devices_info = file_to_json(DEVICES_FILE)
 distributions_info = file_to_json(DISTRIBUTIONS_FILE)
 
+logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d.%m.%Y %H:%M:%S',
+                    filename='activity.log', filemode='w', level=logging.CRITICAL)
 
 class MobileOperatorSimulator:
     def __init__(self, metadata):
         self.metadata = metadata
-        self.db1_engine = create_engine('sqlite:///:memory:', pool_size=POOL_SIZE, echo=False)
-        # self.db2_engine = create_engine('sqlite:///:memory:', pool_size=POOL_SIZE, echo=False)
+        self.db1_engine = create_engine('sqlite:///:memory:', echo=False)
+        # self.db2_engine = create_engine('sqlite:///:memory:', echo=False)
 
         self.generate_schema(self.db1_engine)
         # self.generate_schema(self.db2_engine)
@@ -59,6 +60,7 @@ class MobileOperatorSimulator:
         self.metadata.create_all(engine, checkfirst=True)
 
     def generate_customers(self, simulation_date):
+        print('Generating customers')
         self.db1_engine.echo = False
 
         for group_name in user_groups_info:
@@ -79,7 +81,7 @@ class MobileOperatorSimulator:
                 self.customers.append(c)
 
     def simulate_day(self, simulation_date):
-        print('Simulating users activity on', simulation_date)
+        print('Simulating users activity on %s' % simulation_date)
         self.generate_customers(simulation_date)
         for customer in self.customers:
             customer.simulate_day(simulation_date)
@@ -128,7 +130,7 @@ class MobileOperatorSystem:
             filter(Bill.debt > 0).all()
 
     def handle_request(self, request):
-        print('Handling request')
+        logging.info('Handling request')
 
         request_date = request.date_created
 
@@ -140,17 +142,17 @@ class MobileOperatorSystem:
         elif request.type == 'deactivation':
             raise NotImplementedError
         elif request.type == 'status':
-            print('Doing nothing')
+            logging.info('Doing nothing')
             return ServiceStatus.success
 
     def handle_payment(self, device, payment):
-        print('Handling payment')
+        logging.info('Handling payment')
 
         balance = self.get_active_balance(device)
-        print('Replenishing %s balance at %f' % (balance.type, payment.amount))
+        logging.info('Replenishing %s balance at %f' % (balance.type, payment.amount))
         payment.balance = balance
         balance.amount += payment.amount
-        print('Current balance: %f' % balance.amount)
+        logging.info('Current balance: %f' % balance.amount)
 
         # TODO: Implement bonuses charging
         # TODO: Pay unpaid bills (credit only?)
@@ -158,7 +160,7 @@ class MobileOperatorSystem:
         self.session.commit()
 
     def handle_connected_service(self, service_info, free_activation=False):
-        print('Handling connected service')
+        logging.info('Handling connected service')
         # TODO: Pass date through parameter
         connection_date = service_info.date_from
         log = ServiceLog(device_service=service_info,
@@ -170,11 +172,11 @@ class MobileOperatorSystem:
         self.session.add(log)
 
         if free_activation or service.activation_cost == Decimal(0):
-            print('Activation is free')
+            logging.info('Activation is free')
         else:
             # TODO: Charge activation sum if latest tariff change was less than month ago
             # TODO: Handle charging subscription cost for current period
-            print('Writing bill: need to pay %f' % service.activation_cost)
+            logging.info('Writing bill: need to pay %f' % service.activation_cost)
             bill = Bill(date_created=connection_date, service_log=log, debt=service.activation_cost)
             log.bill = bill
             self.handle_bill(bill)
@@ -227,15 +229,15 @@ class MobileOperatorSystem:
         try:
             phone_number = self.session.query(PhoneNumber).filter_by(area_code=phone_info['code'],
                                                                      number=phone_info['number']).one()
-            print('Phone number is already registered in base and belongs to operator %s %s' %
+            logging.info('Phone number is already registered in base and belongs to operator %s %s' %
                   (phone_number.mobile_operator.name, phone_number.mobile_operator.country.iso3_code))
         except NoResultFound:
-            print('Phone number is not registered in base')
+            logging.info('Phone number is not registered in base')
             phone_number = self.register_phone_number(operator_info, phone_info, commit=False)
         return phone_number
 
     def register_phone_number(self, operator_info, phone_info, commit=True):
-        print('Registering phone number %s of operator %s' % (phone_info, operator_info))
+        logging.info('Registering phone number %s of operator %s' % (phone_info, operator_info))
 
         regional_operator = self.get_regional_operator(operator_info)
         phone_number = PhoneNumber(area_code=phone_info['code'],
@@ -268,9 +270,9 @@ class MobileOperatorSystem:
         device_service = bill.service_log.device_service
         service = device_service.service
         device = device_service.device
-        print('Handling bill for service %s. Need to pay: %s' % (service.name, bill.debt))
+        logging.info('Handling bill for service %s. Need to pay: %s' % (service.name, bill.debt))
         balance = self.get_active_balance(device)
-        print('Debiting %s RUB from %s balance with balance %s. New balance: %s' % (bill.debt, balance.type,
+        logging.info('Debiting %s RUB from %s balance with balance %s. New balance: %s' % (bill.debt, balance.type,
                                                                                     balance.amount,
                                                                                     balance.amount-bill.debt))
         balance.amount -= bill.debt
@@ -279,7 +281,7 @@ class MobileOperatorSystem:
         self.session.commit()
 
     def handle_used_service(self, service_log):
-        print('Handling used service')
+        logging.info('Handling used service')
 
         service_info = service_log.device_service
         service = service_info.service
@@ -299,7 +301,7 @@ class MobileOperatorSystem:
                         packet_charge_queue.append(packet_service)
 
             if packet_charge_queue:
-                print('We can pay it from packets')
+                logging.info('We can pay it from packets')
                 # TODO: Handle packet restrictions
 
             # While we can pay service from packets
@@ -308,9 +310,9 @@ class MobileOperatorSystem:
                 packet_charge = min(packet_service_info.packet_left, unpaid_service_amount)
                 packet_service_info.packet_left -= packet_charge
                 unpaid_service_amount -= packet_charge
-                print('Charging %d units from packet %s' % (packet_charge,
+                logging.info('Charging %d units from packet %s' % (packet_charge,
                                                             packet_service_info.service.name))
-                print('Units left in packet: %d, unpaid units: %d' % (packet_service_info.packet_left,
+                logging.info('Units left in packet: %d, unpaid units: %d' % (packet_service_info.packet_left,
                                                                       unpaid_service_amount))
 
                 # TODO: Block services with packet_left == 0?
@@ -318,7 +320,7 @@ class MobileOperatorSystem:
         if unpaid_service_amount > 0:
             if service.name == 'internet' and packet_services:
                 # It is "unlimited", so additional charge is not required
-                print('Internet is now 64 kbit/sec')
+                logging.info('Internet is now 64 kbit/sec')
             else:
                 device_operator = device.phone_number.mobile_operator
                 # TODO: Handle roaming
@@ -332,7 +334,7 @@ class MobileOperatorSystem:
                     cost = self.session.query(Cost).filter(Cost.operator_from == device_operator,
                                                            Cost.service == service).one()
 
-                print('Writing bill: need to pay %f (%d * %f)' % (unpaid_service_amount*cost.use_cost,
+                logging.info('Writing bill: need to pay %f (%d * %f)' % (unpaid_service_amount*cost.use_cost,
                                                                   unpaid_service_amount,
                                                                   cost.use_cost))
                 bill = Bill(service_log=service_log,
@@ -344,22 +346,22 @@ class MobileOperatorSystem:
                 self.handle_bill(bill)
 
     def connect_tariff(self, device, tariff, free_activation=False, connection_date=db.func.now()):
-        print('Connecting tariff: ', tariff.name)
+        logging.info('Connecting tariff: %s' % tariff.name)
 
         if free_activation or self.can_into_service(device, tariff):
-            print('Device can connect tariff')
+            logging.info('Device can connect tariff')
         else:
-            print('The device has unpaid services. Connecting tariff is impossible')
+            logging.info('The device has unpaid services. Connecting tariff is impossible')
             return ServiceStatus.out_of_funds
 
         # TODO: Query optimization
         # If device already has a tariff
         if device.tariff:
             if device.tariff.name == tariff.name:
-                print('The device has the same tariff')
+                logging.info('The device has the same tariff')
                 return ServiceStatus.fail
             else:
-                print("The device already has tariff '%s', disconnecting it first" % tariff.name)
+                logging.info("The device already has tariff '%s', disconnecting it first" % tariff.name)
                 self.deactivate_service(device, tariff, connection_date, commit=False)
                 for service in tariff.attached_services:
                     self.deactivate_service(device, service, connection_date, commit=False)
@@ -378,13 +380,13 @@ class MobileOperatorSystem:
         return ServiceStatus.success
 
     def connect_service(self, device, service, connection_date, free_activation=False, ability_check=True, commit=True):
-        print('Connecting service: ', service.name)
+        logging.info('Connecting service: %s' % service.name)
 
         if ability_check:
             if free_activation or self.can_into_service(device, service):
-                print('Device can connect service')
+                logging.info('Device can connect service')
             else:
-                print('The device has unpaid services. Connecting service is impossible')
+                logging.info('The device has unpaid services. Connecting service is impossible')
                 return ServiceStatus.out_of_funds
 
         service_duration = service.duration_days
@@ -394,7 +396,7 @@ class MobileOperatorSystem:
             date_to = connection_date + timedelta(days=service_duration)
 
         device_service = DeviceService(device=device, service=service, date_from=connection_date, date_to=date_to)
-        print('Connected service %s from %s to %s' % (service.name, connection_date, date_to))
+        logging.info('Connected service %s from %s to %s' % (service.name, connection_date, date_to))
         if service.packet:
             device_service.packet_left = service.packet.amount
         device.services.append(device_service)
@@ -408,7 +410,7 @@ class MobileOperatorSystem:
 
     def activate_service(self, device, service, date, commit=True):
         # TODO: Date?
-        print('Activating service:', service.name)
+        logging.info('Activating service: %s' % service.name)
         self.session.query(DeviceService).\
             filter_by(device=device, service=service, is_activated=False).\
             update({'is_activated': True},
@@ -419,7 +421,7 @@ class MobileOperatorSystem:
 
     def deactivate_service(self, device, service, date, commit=True):
         # TODO: Date?
-        print('Deactivating service:', service.name)
+        logging.info('Deactivating service: %s' % service.name)
         self.session.query(DeviceService).\
             filter_by(device=device, service=service, is_activated=True).\
             update({'is_activated': False,
@@ -430,7 +432,7 @@ class MobileOperatorSystem:
 
     def block_service(self, device, service, date, commit=True):
         # TODO: Date?
-        print('Blocking service:', service.name)
+        logging.info('Blocking service: %s' % service.name)
         self.session.query(DeviceService).\
             filter_by(device=device, service=service, is_blocked=False).\
             update({'is_blocked': True},
@@ -440,7 +442,7 @@ class MobileOperatorSystem:
 
     def unlock_service(self, device, service, date, commit=True):
         # TODO: Date?
-        print('Blocking service:', service.name)
+        logging.info('Blocking service: %s' % service.name)
         self.session.query(DeviceService).\
             filter_by(device=device, service=service, is_blocked=True).\
             update({'is_blocked': False},
@@ -449,7 +451,7 @@ class MobileOperatorSystem:
             self.session.commit()
 
     def get_service(self, service_type='service', operator=None, name=None, code=None):
-        print('Getting service (%s) %s (code %s)' % (service_type, name, code))
+        logging.info('Getting service (%s) %s (code %s)' % (service_type, name, code))
         if service_type == 'service':
             service_entity = Service
         else:
@@ -488,14 +490,14 @@ class MobileOperatorSystem:
         return period_start, period_end
 
     def get_free_phone_number(self):
-        print('Getting free phone number')
+        logging.info('Getting free phone number')
         self.next_free_number += 1
         return '916', str(self.next_free_number).zfill(7)
 
 
 class SimulatedCustomer:
     def __init__(self, customer, agreement_cluster_names, session, operator_system, verbose=False):
-        print('Registering customer')
+        logging.info('Registering customer')
 
         self.session = session
         self.system = operator_system
@@ -509,7 +511,7 @@ class SimulatedCustomer:
         session.commit()
 
     def generate_all_hierarchy(self, simulation_date):
-        print('Generating agreements')
+        logging.info('Generating agreements')
         for agreement_cluster_name in self.agreement_cluster_names:
             agreement_cluster_info = agreements_info[agreement_cluster_name]
             agreement_info = {
@@ -518,7 +520,7 @@ class SimulatedCustomer:
             }
             agreement = self.sign_agreement(agreement_info)
             account_cluster_names = agreement_cluster_info['accounts']
-            print('Generating accounts')
+            logging.info('Generating accounts')
             for account_cluster_name in account_cluster_names:
                 account_cluster_info = accounts_info[account_cluster_name]
                 probabilistic = account_cluster_info['probabilistic']
@@ -587,7 +589,7 @@ class SimulatedCustomer:
                     raise NotImplementedError('probabilistic device generation is not yet supported')
 
     def sign_agreement(self, agreement_info):
-        print('Signing agreement: ', agreement_info)
+        logging.info('Signing agreement: ', agreement_info)
         sign_date = agreement_info['date']
 
         agreement = self.session.query(Agreement).filter_by(destination=self.customer.type).one()
@@ -598,7 +600,7 @@ class SimulatedCustomer:
         return c_agreement
 
     def register_account(self, agreement, account_info):
-        print('Registering account: ', account_info)
+        logging.info('Registering account: ', account_info)
         registration_date = account_info['date']
 
         calc_method = self.session.query(CalculationMethod).\
@@ -612,7 +614,7 @@ class SimulatedCustomer:
         return account
 
     def add_device(self, account, device_info):
-        print('Attaching device to account: ', device_info)
+        logging.info('Attaching device to account: ', device_info)
         registration_date = device_info['date']
 
         device = Device(account=account,
@@ -649,7 +651,7 @@ class SimulatedCustomer:
         device.balances.append(balance)
 
         initial_tariff_name = device_info['initial_tariff']
-        print('Should connect tariff %s' % initial_tariff_name)
+        logging.info('Should connect tariff %s' % initial_tariff_name)
 
         initial_tariff_name = 'Smart mini'  # TODO: Delete when other tariffs will be in system
         tariff = self.system.get_service(service_type='tariff', name=initial_tariff_name, operator=home_operator)
@@ -689,7 +691,7 @@ class SimulatedDevice:
 
         location_date = location_info['date']
 
-        print('Changing location to: Country = %s, Region = %s, Place = %s'%(country_name, region_name, place_name))
+        logging.info('Changing location to: Country = %s, Region = %s, Place = %s'%(country_name, region_name, place_name))
         if self.device.locations:
             latest_location = self.session.query(Location).filter_by(device=self.device, date_to=None).one()
             latest_location.date_to = location_date
@@ -709,9 +711,9 @@ class SimulatedDevice:
 
     def use_service(self, service_info, amount=1):
         # if self.system.can_into_service(device):
-        #     print('Device can use service')
+        #     logging.info('Device can use service')
         # else:
-        #     print('The device has unpaid services. Using the service is impossible')
+        #     logging.info('The device has unpaid services. Using the service is impossible')
         #     return
 
         recipient_phone_number = None
@@ -739,29 +741,29 @@ class SimulatedDevice:
         self.system.handle_used_service(log)
 
     def make_call(self, call_info):
-        print('Making call to phone number %s' % (call_info['phone_number']['code'] +
+        logging.info('Making call to phone number %s' % (call_info['phone_number']['code'] +
                                                   ' ' + call_info['phone_number']['number']))
         # TODO: Save original call duration
         return self.use_service(call_info, self.system.round_call_duration(call_info['minutes'],
                                                                            call_info['seconds']))
 
     def send_sms(self, sms_info):
-        print('Sending sms to phone number %s' % (sms_info['phone_number']['code'] +
+        logging.info('Sending sms to phone number %s' % (sms_info['phone_number']['code'] +
                                                   ' ' + sms_info['phone_number']['number']))
         return self.use_service(sms_info, 1)
 
     def send_mms(self, mms_info):
-        print('Sending sms to phone number %s' % (mms_info['phone_number']['code'] +
+        logging.info('Sending sms to phone number %s' % (mms_info['phone_number']['code'] +
                                                   ' ' + mms_info['phone_number']['number']))
         return self.use_service(mms_info, amount=1)
 
     def use_internet(self, session_info):
-        print('Using internet: ', session_info)
+        logging.info('Using internet: ', session_info)
         return self.use_service(session_info, self.system.round_internet_session(session_info['megabytes'],
                                                                                  session_info['kilobytes']))
 
     def ussd_request(self, request_info):
-        print('Making request: ', request_info)
+        logging.info('Making request: ', request_info)
 
         regional_operator = self.device.phone_number.mobile_operator
         request_date = request_info['date']
@@ -779,7 +781,7 @@ class SimulatedDevice:
         return self.system.handle_request(request)
 
     def make_payment(self, payment_info):
-        print('Making payment: ', payment_info)
+        logging.info('Making payment: ', payment_info)
         if payment_info['method'] == 'third_party':
             name = payment_info['name']
             payment_method = self.session.query(ThirdPartyCollection).filter_by(name=name).one()
@@ -807,7 +809,7 @@ class SimulatedDevice:
         gen = TimeLineGenerator(self.customer, self, period_start)
         actions = gen.generate_timeline(simulation_day)
         for action in actions:
-            print(action)
+            logging.info(action)
             action.perform()
         # end_time = time()
-        # print('It took %f seconds to complete' % (end_time-start_time))
+        # logging.info('It took %f seconds to complete' % (end_time-start_time))
