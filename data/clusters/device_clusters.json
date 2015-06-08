@@ -12,7 +12,14 @@
       }
     ],
     "Initial services": {
-
+      "amount": 1,
+      "max_deviation": 1,
+      "services": [
+        {
+          "name": "Anti CLI",
+          "percentage": 100.0
+        }
+      ]
     },
     "Recipients location": {
       "HOME_REGION": 95.0,

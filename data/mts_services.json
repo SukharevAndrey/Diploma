@@ -98,6 +98,20 @@
     ]
   },
   {
+    "name": "Anti CLI",
+    "is_periodic": true,
+    "duration_days": 1,
+    "activation_code": "*111*46#",
+    "regional_versions": [
+      {
+        "region_name": "Moskva",
+        "activation_cost": 17.0,
+        "cost": 3.95,
+        "restrictions": []
+      }
+    ]
+  },
+  {
     "name": "Balance Request",
     "is_periodic": false,
     "activation_code": "*100#",

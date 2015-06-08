@@ -54,7 +54,7 @@ class MobileOperatorSimulator:
         self.customers = []
 
     def generate_schema(self, engine):
-        self.metadata.create_all(engine)
+        self.metadata.create_all(engine, checkfirst=True)
 
     def generate_customers(self, simulation_date):
         self.db1_engine.echo = False
@@ -86,6 +86,10 @@ class MobileOperatorSimulator:
         gen = MobileOperatorGenerator(verbose=True)
         gen.generate_static_data(self.db1_session)
         # gen.generate_static_data(self.db2_session)
+
+    def clear_all_data(self):
+        self.metadata.drop_all(self.db1_engine, checkfirst=True)
+        self.generate_schema(self.db1_engine)
 
 
 class MobileOperatorSystem:
@@ -540,12 +544,24 @@ class SimulatedCustomer:
                     for device_cluster_name in device_cluster_names:
                         device_cluster_info = devices_info[device_cluster_name]
 
+                        # Getting initial tariff name
                         tariff_distribution = distribution_from_list(device_cluster_info['Initial tariffs'])
                         initial_tariff_name = tariff_distribution.get_value(return_array=False)
+
+                        # Getting initial services amount and names
+                        initial_services_info = device_cluster_info['Initial services']['services']
+                        service_distribution = distribution_from_list(initial_services_info)
+                        avg_amount = device_cluster_info['Initial services']['amount']
+                        max_deviation = device_cluster_info['Initial services']['max_deviation']
+                        amount = random.randint(max(0, avg_amount-max_deviation), avg_amount+max_deviation)
+                        initial_services = set()
+                        for i in range(amount):
+                            initial_services.add(service_distribution.get_value(return_array=False))
 
                         device_info = {
                             'date': simulation_date,
                             'initial_tariff': initial_tariff_name,
+                            'initial_services': list(initial_services),
                             'IMEI': random_IMEI(),
                             'type': device_cluster_info['type'],
                             'operator': {
@@ -556,8 +572,6 @@ class SimulatedCustomer:
                         }
 
                         home_region = {'country': home_country, 'region': home_region}
-
-                        # TODO: Initial services
 
                         device = self.add_device(account, device_info)
                         self.devices.append(SimulatedDevice(self, device, device_cluster_info, home_region,
@@ -614,6 +628,8 @@ class SimulatedCustomer:
         phone_number = self.system.register_phone_number(operator_info, phone_number_info)
         device.phone_number = phone_number
 
+        home_operator = phone_number.mobile_operator
+
         calc_method = account.calc_method
         if calc_method.type == 'advance':
             balance = Balance(date_created=registration_date,
@@ -629,8 +645,12 @@ class SimulatedCustomer:
         print('Should connect tariff %s' % initial_tariff_name)
 
         initial_tariff_name = 'Smart mini'  # TODO: Delete when other tariffs will be in system
-        tariff = self.system.get_service(service_type='tariff', name=initial_tariff_name)
+        tariff = self.system.get_service(service_type='tariff', name=initial_tariff_name, operator=home_operator)
         self.system.connect_tariff(device, tariff, free_activation=True, connection_date=registration_date)
+
+        for initial_service_name in device_info['initial_services']:
+            service = self.system.get_service(service_type='service', name=initial_service_name, operator=home_operator)
+            self.system.connect_service(device, service, free_activation=True, connection_date=registration_date)
 
         self.session.add(device)
         self.session.commit()
