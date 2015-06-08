@@ -82,6 +82,9 @@ class DeviceService(Base):
 
 class ServiceLog(Base):
     __tablename__ = 'serviceLog'
+    __table_args__ = (
+        db.CheckConstraint("action_type IN ('usage', 'activation', 'deactivation', 'blocking', 'unlocking')"),
+    )
 
     id = db.Column(db.Integer, primary_key=True, index=True)
     device_service_id = db.Column(db.Integer, db.ForeignKey('deviceService.id'))
@@ -89,12 +92,14 @@ class ServiceLog(Base):
     recipient_location_id = db.Column(db.Integer, db.ForeignKey('location.id'))
 
     use_date = db.Column(db.DateTime, default=db.func.now())
+    action_type = db.Column(db.String, default='usage')
     amount = db.Column(db.Integer, default=1)
 
     device_service = relationship('DeviceService', uselist=False)
     recipient_location = relationship('Location', uselist=False)
     recipient_phone_number = relationship('PhoneNumber', uselist=False)
     bill = relationship('Bill', uselist=False)
+
 
 class Request(Base):
     __tablename__ = 'request'
@@ -116,4 +121,3 @@ class Request(Base):
     device = relationship('Device', uselist=False)
     service = relationship('Service', foreign_keys=[service_id], uselist=False)
     tariff = relationship('Tariff', foreign_keys=[tariff_id], uselist=False)
-

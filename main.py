@@ -8,6 +8,7 @@ def main():
     simulator = MobileOperatorSimulator(base_schema)
     simulator.initial_fill()
     simulator.simulate_day(date.today())
+    simulator.analyze_data(date.today())
 
 # def main():
 #     base_schema = Base.metadata
@@ -16,7 +17,8 @@ def main():
 #         print('Select action:')
 #         print('1. Fill database with static data')
 #         print('2. Simulate day')
-#         print('3. Clear all data')
+#         print('3. Analyze data')
+#         print('4. Clear all data')
 #         print('0. Exit')
 #         choice = input()
 #         if choice == '1':
@@ -24,6 +26,8 @@ def main():
 #         elif choice == '2':
 #             simulator.simulate_day(date.today())
 #         elif choice == '3':
+#             simulator.analyze_data(date.today())
+#         elif choice == '4':
 #             simulator.clear_all_data()
 #         elif choice == '0':
 #             return 0

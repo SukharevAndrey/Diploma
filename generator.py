@@ -489,7 +489,16 @@ class TimeLineGenerator:
         avg_amount = period_activity['amount']
         max_deviation = period_activity['max_deviation']
 
-        total_period_service = np.random.randint(max(0, avg_amount-max_deviation), avg_amount+max_deviation)
+        lower_boundary = max(0, avg_amount-max_deviation)
+        higher_boundary = avg_amount+max_deviation
+
+        if higher_boundary < lower_boundary:
+            lower_boundary, higher_boundary = higher_boundary, lower_boundary
+
+        if lower_boundary == higher_boundary:
+            total_period_service = lower_boundary
+        else:
+            total_period_service = np.random.randint(lower_boundary, higher_boundary)
         period_usage_days = self.days_distribution[service_name].get_value(n=total_period_service)
 
         return Counter(period_usage_days)

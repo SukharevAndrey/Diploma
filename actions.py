@@ -93,7 +93,7 @@ class Call(DeviceAction):
                 continue
             return
         # Fail safe - generating fail call
-        self.duration = timedelta(minutes=0, seconds=1)
+        self._duration = timedelta(minutes=0, seconds=1)
 
     def get_call_duration(self):
         raw_seconds = self.duration.seconds
@@ -200,10 +200,16 @@ class OneTimeService(DeviceAction):
 class MMS(DeviceAction):
     def __init__(self, device, start_date, recipient_info=None):
         super().__init__(device, start_date)
-        self.recipient = recipient_info
+        self.recipient_info = recipient_info
 
     def to_dict_info(self):
-        return {}
+        mms_info = {
+            'date': self.start_date,
+            'name': 'sms',
+            'operator': self.recipient_info['operator'],
+            'phone_number': self.recipient_info['phone_number']
+        }
+        return mms_info
 
     def perform(self):
         mms_info = self.to_dict_info()
@@ -212,7 +218,7 @@ class MMS(DeviceAction):
             self.handle_out_of_funds()
 
     def __repr__(self):
-        return '%s - MMS Message. Sent to %s' % (self.start_date.time(), self.recipient)
+        return '%s - MMS Message. Sent to %s' % (self.start_date.time(), self.recipient_info)
 
 
 class TariffChange(DeviceAction):

@@ -26,32 +26,55 @@
     "probabilistic": false,
     "devices": ["Smartphone with small activity 1"]
   },
+  "Single smartphone with high activity 1": {
+    "calculation_method": "advance",
+    "credit_limit": 800.0,
+    "trust_category": 5,
+    "home_locations": [
+      {
+        "name": "Russia",
+        "percentage": 100.0,
+        "regions": [
+          {
+            "name": "Moskva",
+            "percentage": 70.0
+          },
+          {
+            "name": "Leningradskaja",
+            "percentage": 25.0
+          },
+          {
+            "name": "Brjanskaja",
+            "percentage": 5.0
+          }
+        ]
+      }
+    ],
+    "probabilistic": false,
+    "devices": ["Smartphone with high activity 1"]
+  },
   "Smartphone and tablet with small activity 1": {
     "calculation_method": "advance",
     "credit_limit": 800.0,
     "trust_category": 4,
-    "home_countries": [
+    "home_locations": [
       {
         "name": "Russia",
-        "percentage": 95,
-        "home_regions": [
+        "percentage": 100.0,
+        "regions": [
           {
             "name": "Moskva",
-            "percentage": 70
+            "percentage": 70.0
           },
           {
-            "name": "Leningranskaja",
-            "percentage": 25
+            "name": "Leningradskaja",
+            "percentage": 25.0
           },
           {
             "name": "Brjanskaja",
-            "percentage": 5
+            "percentage": 5.0
           }
         ]
-      },
-      {
-        "name": "Ukraine",
-        "percentage": 5
       }
     ],
     "probabilistic": false,
@@ -61,22 +84,22 @@
     "calculation_method": "credit",
     "credit_limit": 10000.0,
     "trust_category": 5,
-    "home_countries": [
+    "home_locations": [
       {
         "name": "Russia",
-        "percentage": 100,
-        "home_regions": [
+        "percentage": 100.0,
+        "regions": [
           {
             "name": "Moskva",
-            "percentage": 70
+            "percentage": 70.0
           },
           {
-            "name": "Leningranskaja",
-            "percentage": 25
+            "name": "Leningradskaja",
+            "percentage": 25.0
           },
           {
             "name": "Brjanskaja",
-            "percentage": 5
+            "percentage": 5.0
           }
         ]
       }

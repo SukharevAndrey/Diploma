@@ -10,9 +10,17 @@
       "max_values": 20,
       "probabilities": [60, 15, 10, 5, 5, 3, 2]
     },
+    "Long calls distribution 1": {
+      "max_values": 50,
+      "probabilities": [5, 6, 7, 8, 9, 10, 20, 25, 25, 30, 50, 43, 57, 53]
+    },
     "Small internet usage distribution 1": {
       "max_values": 100,
       "probabilities": [6, 13, 2, 4, 6, 13, 2, 4, 6, 13, 2, 4, 6, 13, 2, 4]
+    },
+    "High internet usage distribution 1": {
+      "max_values": 100,
+      "probabilities": [6, 13, 2, 4, 6, 13, 2, 4, 6, 13, 2, 4, 6, 13, 2, 4, 20, 21, 23, 34, 52, 55, 43, 54, 56, 77]
     }
   },
   "month": {

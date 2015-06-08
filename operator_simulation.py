@@ -1,5 +1,4 @@
 from collections import deque
-from datetime import datetime
 from decimal import Decimal
 from time import time
 
@@ -17,6 +16,8 @@ from distribution import Distribution
 from random_data import *
 from tools import file_to_json, distribution_from_list
 from status import ServiceStatus
+
+from analyzer import ActivityAnalyzer
 
 # TODO: Proper session handling
 # TODO: Decimal service amount
@@ -50,6 +51,7 @@ class MobileOperatorSimulator:
         # self.db2_session = sessionmaker(bind=self.db2_engine)()
 
         self.system = MobileOperatorSystem(self.db1_session)
+        self.analyzer = ActivityAnalyzer(self.db1_session)
 
         self.customers = []
 
@@ -88,8 +90,12 @@ class MobileOperatorSimulator:
         # gen.generate_static_data(self.db2_session)
 
     def clear_all_data(self):
+        # FIXME: Doesn't work. Need to handle foreign keys
         self.metadata.drop_all(self.db1_engine, checkfirst=True)
         self.generate_schema(self.db1_engine)
+
+    def analyze_data(self, date):
+        self.analyzer.analyze(date)
 
 
 class MobileOperatorSystem:
@@ -157,6 +163,7 @@ class MobileOperatorSystem:
         connection_date = service_info.date_from
         log = ServiceLog(device_service=service_info,
                          use_date=connection_date,
+                         action_type='activation',
                          amount=0)
 
         service = service_info.service
@@ -477,8 +484,8 @@ class MobileOperatorSystem:
                         DeviceService.is_activated)).one()
 
         period_start = tariff_device_service.date_from.date()
-        # date_to = date(tariff_device_service.date_to)
-        return period_start
+        period_end = tariff_device_service.date_to.date()
+        return period_start, period_end
 
     def get_free_phone_number(self):
         print('Getting free phone number')
@@ -723,6 +730,7 @@ class SimulatedDevice:
 
         log = ServiceLog(device_service=device_service,
                          amount=amount,
+                         action_type='usage',
                          use_date=usage_date,
                          recipient_phone_number=recipient_phone_number)
 
@@ -788,21 +796,18 @@ class SimulatedDevice:
         self.session.commit()
         self.system.handle_payment(self.device, payment)
 
+    def simulate_period(self, date_from, date_to):
+        # TODO: Any period
+        self.simulate_day(date_from)
+
     def simulate_day(self, simulation_day):
-        payment_info = {
-            'date': datetime(2015, 5, 26, 11, 0, 0),
-            'amount': 100.0,
-            'method': 'third_party',
-            'name': 'QIWI'
-        }
+        period_start, period_end = self.system.get_tariff_period(self.device)
 
-        period_start = self.system.get_tariff_period(self.device)
-
-        start_time = time()
+        # start_time = time()
         gen = TimeLineGenerator(self.customer, self, period_start)
         actions = gen.generate_timeline(simulation_day)
         for action in actions:
             print(action)
-            # action.perform()
-        end_time = time()
-        print('It took %f seconds to complete' % (end_time-start_time))
+            action.perform()
+        # end_time = time()
+        # print('It took %f seconds to complete' % (end_time-start_time))
