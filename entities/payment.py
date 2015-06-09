@@ -6,19 +6,18 @@ from base import Base
 class Balance(Base):
     __tablename__ = 'balance'
     __table_args__ = (
-        db.CheckConstraint("type IN ('main', 'credit', 'discount')"),
+        db.CheckConstraint("type IN ('advance', 'credit', 'discount')"),
     )
 
     id = db.Column(db.Integer, primary_key=True, index=True)
-    device_id = db.Column(db.Integer, db.ForeignKey('device.id'))
+    account_id = db.Column(db.Integer, db.ForeignKey('account.id'))
 
     date_created = db.Column(db.DateTime, default=db.func.now())
     due_date = db.Column(db.DateTime)
-    type = db.Column(db.String, default='main')
+    type = db.Column(db.String, default='advance')
     amount = db.Column(db.Numeric, default=0)
 
-    # TODO: Multiple devices
-    device = relationship('Device', uselist=False)
+    account = relationship('Account', uselist=False)
     payments = relationship('Payment')
     paid_bills = relationship('Bill')
 

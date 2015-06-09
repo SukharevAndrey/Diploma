@@ -205,7 +205,7 @@ class MMS(DeviceAction):
     def to_dict_info(self):
         mms_info = {
             'date': self.start_date,
-            'name': 'sms',
+            'name': 'mms',
             'operator': self.recipient_info['operator'],
             'phone_number': self.recipient_info['phone_number']
         }
@@ -213,7 +213,7 @@ class MMS(DeviceAction):
 
     def perform(self):
         mms_info = self.to_dict_info()
-        status = self.device.send_sms(mms_info)
+        status = self.device.send_mms(mms_info)
         if status == ServiceStatus.out_of_funds:
             self.handle_out_of_funds()
 

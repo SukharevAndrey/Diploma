@@ -8,7 +8,7 @@ def main():
     simulator = MobileOperatorSimulator(base_schema)
     simulator.initial_fill()
     simulator.simulate_day(date.today())
-    simulator.analyze_data(date.today())
+    # simulator.analyze_data(date.today())
 
 # def main():
 #     base_schema = Base.metadata

@@ -150,6 +150,7 @@ class Account(Base):
     trust_category = db.Column(db.Integer, default=0)
     bill_group = db.Column(db.Integer, default=0)
 
+    balances = relationship('Balance')
     agreement = relationship('CustomerAgreement', uselist=False)
     calc_method = relationship('CalculationMethod', uselist=False)
     devices = relationship('Device')
@@ -174,7 +175,6 @@ class Device(Base):
     phone_number = relationship('PhoneNumber', uselist=False)
     tariff = relationship('Tariff', uselist=False)
 
-    balances = relationship('Balance')
     services = relationship('DeviceService')
     requests = relationship('Request')
     locations = relationship('Location')

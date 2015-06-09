@@ -293,7 +293,6 @@ class MobileOperatorGenerator:
                                     service.costs.append(cost)
                     else:
                         # We don't have specific countries
-                        # TODO: Find all operators in all countries?
                         use_cost = service_info['cost']
                         cost = Cost(use_cost=use_cost,
                                     operator_from=regional_operator)

@@ -37,7 +37,9 @@ devices_info = file_to_json(DEVICES_FILE)
 distributions_info = file_to_json(DISTRIBUTIONS_FILE)
 
 logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d.%m.%Y %H:%M:%S',
-                    filename='activity.log', filemode='w', level=logging.CRITICAL)
+                    level=logging.INFO)
+#                    filename='activity.log', filemode='w', level=logging.INFO)
+# logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 class MobileOperatorSimulator:
     def __init__(self, metadata):
@@ -107,21 +109,18 @@ class MobileOperatorSystem:
         self.next_free_number = 0
 
     def get_active_balance(self, device):
-        # TODO: Handle corporate users (one balance on one account?)
-        calc_method = device.account.calc_method
-        calc_to_type = {
-            'advance': 'main',
-            'credit': 'credit'
-        }
         # TODO: Also check due date
         balance = self.session.query(Balance).\
-            join(Device, Device.id == Balance.device_id).\
-            filter(and_(Balance.device_id == device.id,
-                        Balance.type == calc_to_type[calc_method.type],
+            join(Account, Account.id == Balance.account_id).\
+            join(CalculationMethod, Account.calculation_method_id == CalculationMethod.id).\
+            join(Device, Device.account_id == Account.id).\
+            filter(and_(Balance.account_id == device.account_id,
+                        Balance.type == CalculationMethod.type,
                         Balance.due_date.is_(None))).one()
         return balance
 
     def get_unpaid_bills(self, device):
+        # TODO: Handle date
         return self.session.query(Bill).\
             join(ServiceLog, Bill.service_log_id == ServiceLog.id).\
             join(DeviceService, ServiceLog.device_service_id == DeviceService.id).\
@@ -172,7 +171,8 @@ class MobileOperatorSystem:
         self.session.add(log)
 
         if free_activation or service.activation_cost == Decimal(0):
-            logging.info('Activation is free')
+            # logging.info('Activation is free')
+            pass
         else:
             # TODO: Charge activation sum if latest tariff change was less than month ago
             # TODO: Handle charging subscription cost for current period
@@ -186,7 +186,7 @@ class MobileOperatorSystem:
     def can_into_service(self, device, service, usage_type='activation'):
         balance = self.get_active_balance(device)
 
-        if balance.type == 'main':
+        if balance.type == 'advance':
             # TODO: Usage cost?
             if balance.amount > 0:
                 if usage_type == 'activation':
@@ -327,9 +327,13 @@ class MobileOperatorSystem:
                 if service_log.recipient_phone_number:
                     # It is outgoing call, sms, mms or internet
                     recipient_operator = service_log.recipient_phone_number.mobile_operator
-                    cost = self.session.query(Cost).filter(Cost.operator_from == device_operator,
-                                                           Cost.operator_to == recipient_operator,
-                                                           Cost.service == service).one()
+                    try:
+                        cost = self.session.query(Cost).filter(Cost.operator_from == device_operator,
+                                                               Cost.operator_to == recipient_operator,
+                                                               Cost.service == service).one()
+                    except NoResultFound:
+                        cost = self.session.query(Cost).filter(Cost.operator_from == device_operator,
+                                                               Cost.service == service).one()
                 else:
                     cost = self.session.query(Cost).filter(Cost.operator_from == device_operator,
                                                            Cost.service == service).one()
@@ -605,10 +609,22 @@ class SimulatedCustomer:
 
         calc_method = self.session.query(CalculationMethod).\
             filter_by(type=account_info['calc_method']).one()
+
+        if calc_method.type == 'advance':
+            balance = Balance(date_created=registration_date,
+                              type='advance',
+                              amount=self.system.initial_balance)
+        else:
+            balance = Balance(date_created=registration_date,
+                              type='credit',
+                              amount=self.system.initial_balance)
+
         account = Account(date_from=registration_date,
                           calc_method=calc_method,
                           trust_category=account_info['trust_category'],
-                          credit_limit=account_info['credit_limit'])
+                          credit_limit=account_info['credit_limit'],
+                          balances=[balance])
+
         agreement.accounts.append(account)
         self.session.commit()
         return account
@@ -639,16 +655,16 @@ class SimulatedCustomer:
 
         home_operator = phone_number.mobile_operator
 
-        calc_method = account.calc_method
-        if calc_method.type == 'advance':
-            balance = Balance(date_created=registration_date,
-                              type='main',
-                              amount=self.system.initial_balance)
-        else:
-            balance = Balance(date_created=registration_date,
-                              type='credit',
-                              amount=self.system.initial_balance)
-        device.balances.append(balance)
+        # calc_method = account.calc_method
+        # if calc_method.type == 'advance':
+        #     balance = Balance(date_created=registration_date,
+        #                       type='main',
+        #                       amount=self.system.initial_balance)
+        # else:
+        #     balance = Balance(date_created=registration_date,
+        #                       type='credit',
+        #                       amount=self.system.initial_balance)
+        # device.balances.append(balance)
 
         initial_tariff_name = device_info['initial_tariff']
         logging.info('Should connect tariff %s' % initial_tariff_name)
