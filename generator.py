@@ -46,7 +46,7 @@ class MobileOperatorGenerator:
                                            terms_and_conditions=organization_terms)
 
         session.add_all([individual_agreement, organization_agreement])
-        session.commit()
+        # session.commit()
 
         self.print_status('Done')
 
@@ -57,7 +57,7 @@ class MobileOperatorGenerator:
         credit = CalculationMethod(type='credit')
 
         session.add_all([advance, credit])
-        session.commit()
+        # session.commit()
 
         self.print_status('Done')
 
@@ -93,7 +93,7 @@ class MobileOperatorGenerator:
             except:
                 print("ACHTUNG!!!!!!!!!!!!!!!")
 
-        session.commit()
+        # session.commit()
 
         self.print_status('Done')
 
@@ -122,7 +122,7 @@ class MobileOperatorGenerator:
             r = Region(name=result_name, type=region_type, code=code, country=russia)
             session.add(r)
 
-        session.commit()
+        # session.commit()
         self.print_status('Done')
 
     def generate_mobile_operators(self, session):
@@ -148,7 +148,7 @@ class MobileOperatorGenerator:
                     operator = MobileOperator(name=operator_name, country=country)
                     session.add(operator)
 
-        session.commit()
+        # session.commit()
         self.print_status('Done')
 
     def generate_services(self, session):
@@ -200,7 +200,7 @@ class MobileOperatorGenerator:
                 service = Service(name=name, activation_code=activation_code)
                 session.add(service)
 
-        session.commit()
+        # session.commit()
         self.print_status('Done')
 
     def generate_tariffs(self, session):
@@ -337,7 +337,7 @@ class MobileOperatorGenerator:
 
                 session.add(tariff)
 
-        session.commit()
+        # session.commit()
         self.print_status('Done')
 
     def generate_payment_methods(self, session):
@@ -350,7 +350,7 @@ class MobileOperatorGenerator:
         webmoney = ThirdPartyCollection(name='WebMoney')
 
         session.add_all([cash, qiwi, yandex, webmoney])
-        session.commit()
+        # session.commit()
         self.print_status('Done')
 
     def generate_fake_phone_numbers(self, session):
@@ -374,7 +374,7 @@ class MobileOperatorGenerator:
                 next_number += 1
 
             session.bulk_save_objects(phone_numbers)
-        session.commit()
+        # session.commit()
 
         self.print_status('Done')
 
@@ -383,11 +383,16 @@ class MobileOperatorGenerator:
         self.generate_calc_methods(session)
         self.generate_payment_methods(session)
         self.generate_countries(session)
-        self.generate_russian_regions(session)
-        self.generate_mobile_operators(session)
+        session.flush()
+        self.generate_russian_regions(session)  # Depend on countries
+        session.flush()
+        self.generate_mobile_operators(session)  # Depend on countries and regions
+        session.flush()
+        # Depend on mobile operators
         self.generate_services(session)
         self.generate_tariffs(session)
         self.generate_fake_phone_numbers(session)
+        session.commit()
 
 
 DISTRIBUTIONS_FILE = 'data/distributions.json'

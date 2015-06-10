@@ -62,13 +62,5 @@
       "Japan"
     ],
     "has_regions": false
-  },
-  {
-    "name": "MGTS",
-    "type": "fixed",
-    "countries": [
-      "Russia"
-    ],
-    "has_regions": true
   }
 ]

@@ -205,7 +205,7 @@ class MMS(DeviceAction):
     def to_dict_info(self):
         mms_info = {
             'date': self.start_date,
-            'name': 'mms',
+            'name': 'sms',  # FIXME: change back to mms when other tariffs will be
             'operator': self.recipient_info['operator'],
             'phone_number': self.recipient_info['phone_number']
         }

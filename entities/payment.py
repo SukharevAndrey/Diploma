@@ -99,9 +99,12 @@ class ThirdPartyCollection(PaymentMethod):
 
 class Cost(Base):
     __tablename__ = 'cost'
+    __table_args__ = (
+        db.Index("ix_cost_from_to", "operator_from_id", "operator_to_id"),
+    )
 
     id = db.Column(db.Integer, primary_key=True, index=True)
-    service_id = db.Column(db.Integer, db.ForeignKey('service.id'))
+    service_id = db.Column(db.Integer, db.ForeignKey('service.id'), index=True)
     operator_from_id = db.Column(db.Integer, db.ForeignKey('mobileOperator.id'))
     operator_to_id = db.Column(db.Integer, db.ForeignKey('mobileOperator.id'))
 
@@ -110,5 +113,4 @@ class Cost(Base):
 
     operator_from = relationship('MobileOperator', foreign_keys=[operator_from_id], uselist=False)
     operator_to = relationship('MobileOperator', foreign_keys=[operator_to_id], uselist=False)
-    # services = relationship('Service', secondary='serviceCost')
     service = relationship('Service', uselist=False)

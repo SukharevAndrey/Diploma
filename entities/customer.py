@@ -41,7 +41,7 @@ class Individual(Customer):
         'polymorphic_identity': 'individual'
     }
 
-    id = db.Column(db.Integer, db.ForeignKey('customer.id'), primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey('customer.id'), primary_key=True, index=True)
     info_id = db.Column(db.Integer, db.ForeignKey('individualInfo.id'))
 
     info = relationship('IndividualInfo', uselist=False)
@@ -168,7 +168,7 @@ class Device(Base):
     account_id = db.Column(db.Integer, db.ForeignKey('account.id'))
 
     date_registered = db.Column(db.DateTime, default=db.func.now())
-    IMEI = db.Column(db.String, unique=True)
+    IMEI = db.Column(db.String)
     type = db.Column(db.String, default='phone')
 
     account = relationship('Account', uselist=False)

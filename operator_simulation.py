@@ -37,9 +37,9 @@ devices_info = file_to_json(DEVICES_FILE)
 distributions_info = file_to_json(DISTRIBUTIONS_FILE)
 
 logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d.%m.%Y %H:%M:%S',
-                    level=logging.INFO)
-#                    filename='activity.log', filemode='w', level=logging.INFO)
-# logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+#                    level=logging.INFO)
+                    filename='activity.log', filemode='w', level=logging.INFO)
+logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 class MobileOperatorSimulator:
     def __init__(self, metadata):
@@ -51,6 +51,7 @@ class MobileOperatorSimulator:
         # self.generate_schema(self.db2_engine)
 
         self.db1_session = sessionmaker(bind=self.db1_engine)()
+        self.db1_session.autoflush = False
         # self.db2_session = sessionmaker(bind=self.db2_engine)()
 
         self.system = MobileOperatorSystem(self.db1_session)
@@ -63,7 +64,7 @@ class MobileOperatorSimulator:
 
     def generate_customers(self, simulation_date):
         print('Generating customers')
-        self.db1_engine.echo = False
+        start_time = time()
 
         for group_name in user_groups_info:
             group_info = user_groups_info[group_name]
@@ -82,11 +83,18 @@ class MobileOperatorSimulator:
                 c.generate_all_hierarchy(simulation_date)
                 self.customers.append(c)
 
+        end_time = time()
+        print('Customers generation done in %f seconds' % (end_time-start_time))
+
     def simulate_day(self, simulation_date):
         print('Simulating users activity on %s' % simulation_date)
         self.generate_customers(simulation_date)
+        self.db1_session.commit()
+        start_time = time()
         for customer in self.customers:
             customer.simulate_day(simulation_date)
+        end_time = time()
+        print('Period simulation done in %f seconds' % (end_time-start_time))
 
     def initial_fill(self):
         gen = MobileOperatorGenerator(verbose=True)
@@ -181,7 +189,7 @@ class MobileOperatorSystem:
             log.bill = bill
             self.handle_bill(bill)
 
-        self.session.commit()
+        # self.session.commit()
 
     def can_into_service(self, device, service, usage_type='activation'):
         balance = self.get_active_balance(device)
@@ -273,12 +281,13 @@ class MobileOperatorSystem:
         logging.info('Handling bill for service %s. Need to pay: %s' % (service.name, bill.debt))
         balance = self.get_active_balance(device)
         logging.info('Debiting %s RUB from %s balance with balance %s. New balance: %s' % (bill.debt, balance.type,
-                                                                                    balance.amount,
-                                                                                    balance.amount-bill.debt))
+                                                                                           balance.amount,
+                                                                                           balance.amount-bill.debt))
         balance.amount -= bill.debt
         bill.paid = bill.debt
         bill.debt = 0
-        self.session.commit()
+        # self.session.commit()
+        self.session.flush()
 
     def handle_used_service(self, service_log):
         logging.info('Handling used service')
@@ -311,9 +320,9 @@ class MobileOperatorSystem:
                 packet_service_info.packet_left -= packet_charge
                 unpaid_service_amount -= packet_charge
                 logging.info('Charging %d units from packet %s' % (packet_charge,
-                                                            packet_service_info.service.name))
+                                                                   packet_service_info.service.name))
                 logging.info('Units left in packet: %d, unpaid units: %d' % (packet_service_info.packet_left,
-                                                                      unpaid_service_amount))
+                                                                             unpaid_service_amount))
 
                 # TODO: Block services with packet_left == 0?
 
@@ -339,15 +348,17 @@ class MobileOperatorSystem:
                                                            Cost.service == service).one()
 
                 logging.info('Writing bill: need to pay %f (%d * %f)' % (unpaid_service_amount*cost.use_cost,
-                                                                  unpaid_service_amount,
-                                                                  cost.use_cost))
+                                                                         unpaid_service_amount,
+                                                                         cost.use_cost))
                 bill = Bill(service_log=service_log,
                             date_created=service_log.use_date,
                             debt=cost.use_cost*service_log.amount)
                 service_log.bill = bill
                 self.session.add(bill)
-                self.session.commit()
+                # self.session.commit()  # TODO: Flush?
                 self.handle_bill(bill)
+        else:
+            self.session.commit()
 
     def connect_tariff(self, device, tariff, free_activation=False, connection_date=db.func.now()):
         logging.info('Connecting tariff: %s' % tariff.name)
@@ -380,7 +391,7 @@ class MobileOperatorSystem:
             self.connect_service(device, service, connection_date, free_activation=free_activation,
                                  ability_check=False, commit=False)
 
-        self.session.commit()
+        # self.session.commit()
         return ServiceStatus.success
 
     def connect_service(self, device, service, connection_date, free_activation=False, ability_check=True, commit=True):
@@ -455,7 +466,7 @@ class MobileOperatorSystem:
             self.session.commit()
 
     def get_service(self, service_type='service', operator=None, name=None, code=None):
-        logging.info('Getting service (%s) %s (code %s)' % (service_type, name, code))
+        logging.info('Getting service (type: %s) %s (code %s)' % (service_type, name, code))
         if service_type == 'service':
             service_entity = Service
         else:
@@ -512,7 +523,7 @@ class SimulatedCustomer:
         self.devices = []
 
         session.add(self.customer)
-        session.commit()
+        # session.commit()
 
     def generate_all_hierarchy(self, simulation_date):
         logging.info('Generating agreements')
@@ -593,31 +604,26 @@ class SimulatedCustomer:
                     raise NotImplementedError('probabilistic device generation is not yet supported')
 
     def sign_agreement(self, agreement_info):
-        logging.info('Signing agreement: ', agreement_info)
+        logging.info('Signing agreement: %s' % agreement_info)
         sign_date = agreement_info['date']
 
         agreement = self.session.query(Agreement).filter_by(destination=self.customer.type).one()
         c_agreement = CustomerAgreement(sign_date=sign_date,
                                         signed_agreement=agreement)
         self.customer.agreements.append(c_agreement)
-        self.session.commit()
+        # self.session.commit()
         return c_agreement
 
     def register_account(self, agreement, account_info):
-        logging.info('Registering account: ', account_info)
+        logging.info('Registering account: %s' % account_info)
         registration_date = account_info['date']
 
         calc_method = self.session.query(CalculationMethod).\
             filter_by(type=account_info['calc_method']).one()
 
-        if calc_method.type == 'advance':
-            balance = Balance(date_created=registration_date,
-                              type='advance',
-                              amount=self.system.initial_balance)
-        else:
-            balance = Balance(date_created=registration_date,
-                              type='credit',
-                              amount=self.system.initial_balance)
+        balance = Balance(date_created=registration_date,
+                          type=calc_method.type,
+                          amount=self.system.initial_balance)
 
         account = Account(date_from=registration_date,
                           calc_method=calc_method,
@@ -626,11 +632,11 @@ class SimulatedCustomer:
                           balances=[balance])
 
         agreement.accounts.append(account)
-        self.session.commit()
+        # self.session.commit()
         return account
 
     def add_device(self, account, device_info):
-        logging.info('Attaching device to account: ', device_info)
+        logging.info('Attaching device to account: %s' % device_info)
         registration_date = device_info['date']
 
         device = Device(account=account,
@@ -650,35 +656,26 @@ class SimulatedCustomer:
             }
 
         # TODO: Handle date
-        phone_number = self.system.register_phone_number(operator_info, phone_number_info)
+        phone_number = self.system.register_phone_number(operator_info, phone_number_info, commit=False)
         device.phone_number = phone_number
 
         home_operator = phone_number.mobile_operator
-
-        # calc_method = account.calc_method
-        # if calc_method.type == 'advance':
-        #     balance = Balance(date_created=registration_date,
-        #                       type='main',
-        #                       amount=self.system.initial_balance)
-        # else:
-        #     balance = Balance(date_created=registration_date,
-        #                       type='credit',
-        #                       amount=self.system.initial_balance)
-        # device.balances.append(balance)
 
         initial_tariff_name = device_info['initial_tariff']
         logging.info('Should connect tariff %s' % initial_tariff_name)
 
         initial_tariff_name = 'Smart mini'  # TODO: Delete when other tariffs will be in system
         tariff = self.system.get_service(service_type='tariff', name=initial_tariff_name, operator=home_operator)
-        self.system.connect_tariff(device, tariff, free_activation=True, connection_date=registration_date)
+        self.system.connect_tariff(device, tariff, free_activation=True,
+                                   connection_date=registration_date)
 
         for initial_service_name in device_info['initial_services']:
             service = self.system.get_service(service_type='service', name=initial_service_name, operator=home_operator)
-            self.system.connect_service(device, service, free_activation=True, connection_date=registration_date)
+            self.system.connect_service(device, service, free_activation=True,
+                                        connection_date=registration_date, commit=False)
 
         self.session.add(device)
-        self.session.commit()
+        # self.session.commit()
         return device
 
     def simulate_day(self, simulation_day):
@@ -753,24 +750,24 @@ class SimulatedDevice:
                          recipient_phone_number=recipient_phone_number)
 
         self.session.add(log)
-        self.session.commit()
+        # self.session.commit()
         self.system.handle_used_service(log)
 
     def make_call(self, call_info):
         logging.info('Making call to phone number %s' % (call_info['phone_number']['code'] +
-                                                  ' ' + call_info['phone_number']['number']))
+                                                         ' ' + call_info['phone_number']['number']))
         # TODO: Save original call duration
         return self.use_service(call_info, self.system.round_call_duration(call_info['minutes'],
                                                                            call_info['seconds']))
 
     def send_sms(self, sms_info):
         logging.info('Sending sms to phone number %s' % (sms_info['phone_number']['code'] +
-                                                  ' ' + sms_info['phone_number']['number']))
+                                                         ' ' + sms_info['phone_number']['number']))
         return self.use_service(sms_info, 1)
 
     def send_mms(self, mms_info):
         logging.info('Sending sms to phone number %s' % (mms_info['phone_number']['code'] +
-                                                  ' ' + mms_info['phone_number']['number']))
+                                                         ' ' + mms_info['phone_number']['number']))
         return self.use_service(mms_info, amount=1)
 
     def use_internet(self, session_info):
@@ -793,7 +790,7 @@ class SimulatedDevice:
             request = Request(date_created=request_date, type=request_info['type'],
                               device=self.device, tariff=tariff)
         self.session.add(request)
-        self.session.commit()
+        # self.session.commit()
         return self.system.handle_request(request)
 
     def make_payment(self, payment_info):
@@ -811,7 +808,7 @@ class SimulatedDevice:
         payment = Payment(date=payment_date, amount=payment_info['amount'], method=payment_method)
 
         self.session.add(payment)
-        self.session.commit()
+        # self.session.commit()
         self.system.handle_payment(self.device, payment)
 
     def simulate_period(self, date_from, date_to):
