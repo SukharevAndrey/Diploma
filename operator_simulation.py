@@ -5,7 +5,7 @@ import logging
 
 from sqlalchemy import create_engine, and_, or_
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from entities.customer import *
 from entities.location import *
@@ -20,8 +20,8 @@ from status import ServiceStatus
 
 from analyzer import ActivityAnalyzer
 
-# TODO: Proper session handling
 # TODO: Decimal service amount
+# TODO: Global entities cache
 
 # TODO: Store it somewhere, where it can be imported
 USER_GROUPS_FILE = 'data/clusters/customer_clusters.json'
@@ -86,15 +86,15 @@ class MobileOperatorSimulator:
         end_time = time()
         print('Customers generation done in %f seconds' % (end_time-start_time))
 
-    def simulate_day(self, simulation_date):
-        print('Simulating users activity on %s' % simulation_date)
-        self.generate_customers(simulation_date)
+    def simulate_period(self, date_from, date_to):
+        print('Simulating customers activity from %s to %s' % (date_from, date_to))
+        self.generate_customers(date_from)
         self.db1_session.commit()
         start_time = time()
         for customer in self.customers:
-            customer.simulate_day(simulation_date)
+            customer.simulate_period(date_from, date_to)
         end_time = time()
-        print('Period simulation done in %f seconds' % (end_time-start_time))
+        print('Customers simulation done in %f seconds' % (end_time-start_time))
 
     def initial_fill(self):
         gen = MobileOperatorGenerator(verbose=True)
@@ -164,7 +164,7 @@ class MobileOperatorSystem:
         # TODO: Implement bonuses charging
         # TODO: Pay unpaid bills (credit only?)
 
-        self.session.commit()
+        # self.session.commit()
 
     def handle_connected_service(self, service_info, free_activation=False):
         logging.info('Handling connected service')
@@ -234,14 +234,14 @@ class MobileOperatorSystem:
         return operator
 
     def get_phone_number(self, operator_info, phone_info):
-        try:
-            phone_number = self.session.query(PhoneNumber).filter_by(area_code=phone_info['code'],
-                                                                     number=phone_info['number']).one()
-            logging.info('Phone number is already registered in base and belongs to operator %s %s' %
-                  (phone_number.mobile_operator.name, phone_number.mobile_operator.country.iso3_code))
-        except NoResultFound:
-            logging.info('Phone number is not registered in base')
+        phone_numbers = self.session.query(PhoneNumber).filter_by(area_code=phone_info['code'],
+                                                                  number=phone_info['number']).all()  # FIXME: One
+        if not phone_numbers:
             phone_number = self.register_phone_number(operator_info, phone_info, commit=False)
+        else:
+            phone_number = phone_numbers[0]
+            logging.info('Phone number is already registered in base and belongs to operator %s %s' %
+                         (phone_number.mobile_operator.name, phone_number.mobile_operator.country.iso3_code))
         return phone_number
 
     def register_phone_number(self, operator_info, phone_info, commit=True):
@@ -358,7 +358,8 @@ class MobileOperatorSystem:
                 # self.session.commit()  # TODO: Flush?
                 self.handle_bill(bill)
         else:
-            self.session.commit()
+            # self.session.commit()
+            pass
 
     def connect_tariff(self, device, tariff, free_activation=False, connection_date=db.func.now()):
         logging.info('Connecting tariff: %s' % tariff.name)
@@ -664,7 +665,7 @@ class SimulatedCustomer:
         initial_tariff_name = device_info['initial_tariff']
         logging.info('Should connect tariff %s' % initial_tariff_name)
 
-        initial_tariff_name = 'Smart mini'  # TODO: Delete when other tariffs will be in system
+        initial_tariff_name = 'Smart mini'  # FIXME: Delete when other tariffs will be in system
         tariff = self.system.get_service(service_type='tariff', name=initial_tariff_name, operator=home_operator)
         self.system.connect_tariff(device, tariff, free_activation=True,
                                    connection_date=registration_date)
@@ -678,9 +679,10 @@ class SimulatedCustomer:
         # self.session.commit()
         return device
 
-    def simulate_day(self, simulation_day):
+    def simulate_period(self, date_from, date_to):
         for device in self.devices:
-            device.simulate_day(simulation_day)
+            device.simulate_period(date_from, date_to)
+        self.session.commit()
 
 
 class SimulatedDevice:
@@ -720,7 +722,7 @@ class SimulatedDevice:
         new_location = Location(date_from=location_date, country=country, region=region, place=place)
         self.device.locations.append(new_location)
 
-        self.session.commit()
+        self.session.commit()  # TODO: Flush? Nothing?
 
     def use_service(self, service_info, amount=1):
         # if self.system.can_into_service(device):
@@ -760,15 +762,22 @@ class SimulatedDevice:
         return self.use_service(call_info, self.system.round_call_duration(call_info['minutes'],
                                                                            call_info['seconds']))
 
+    # TODO: Delete
     def send_sms(self, sms_info):
         logging.info('Sending sms to phone number %s' % (sms_info['phone_number']['code'] +
                                                          ' ' + sms_info['phone_number']['number']))
         return self.use_service(sms_info, 1)
 
+    # TODO: Delete
     def send_mms(self, mms_info):
         logging.info('Sending sms to phone number %s' % (mms_info['phone_number']['code'] +
                                                          ' ' + mms_info['phone_number']['number']))
         return self.use_service(mms_info, amount=1)
+
+    def send_message(self, message_info):
+        phone_number = message_info['phone_number']['code'] + ' ' + message_info['phone_number']['number']
+        logging.info('Sending %s message to phone number %s' % (message_info['name'], phone_number))
+        return self.use_service(message_info, amount=1)
 
     def use_internet(self, session_info):
         logging.info('Using internet: ', session_info)
@@ -812,17 +821,10 @@ class SimulatedDevice:
         self.system.handle_payment(self.device, payment)
 
     def simulate_period(self, date_from, date_to):
-        # TODO: Any period
-        self.simulate_day(date_from)
-
-    def simulate_day(self, simulation_day):
         period_start, period_end = self.system.get_tariff_period(self.device)
 
-        # start_time = time()
         gen = TimeLineGenerator(self.customer, self, period_start)
-        actions = gen.generate_timeline(simulation_day)
+        actions = gen.generate_timeline(date_from, date_to)
         for action in actions:
             logging.info(action)
             action.perform()
-        # end_time = time()
-        # logging.info('It took %f seconds to complete' % (end_time-start_time))

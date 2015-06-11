@@ -9,6 +9,12 @@ class TariffPreprocessor:
     def __init__(self, session):
         self.db_session = session
 
+        # Caching countries
+        countries = session.query(Country).all()
+        self.country_match = {}
+        for country in countries:
+            self.country_match[country.name] = country
+
     def created_country_info(self, name, info):
         country_info = {'name': name}
         if 'cost' in info:
@@ -67,7 +73,7 @@ class TariffPreprocessor:
 
         for country in new_country_infos:
             country_name = country['name']
-            country_entity = self.db_session.query(Country).filter_by(name=country_name).one()
+            country_entity = self.country_match[country_name]
             if 'operators' in country:
                 new_operator_infos = []
                 used_operators = []

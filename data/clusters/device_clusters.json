@@ -104,7 +104,7 @@
         "tariffs": [
           {
             "name": "Smart mini",
-            "code": "*100*1#"
+            "code": "*111*1023#"
           },
           {
             "name": "Super MTS",
@@ -309,7 +309,7 @@
         "tariffs": [
           {
             "name": "Smart mini",
-            "code": "*100*1#"
+            "code": "*111*1023#"
           },
           {
             "name": "Super MTS",

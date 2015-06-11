@@ -9,6 +9,7 @@ class Service(Base):
         'polymorphic_on': 'type',
         'polymorphic_identity': 'service'
     }
+    __table_args__ = (db.Index("ix_service", "mobile_operator_id", "in_archive"),)
 
     id = db.Column(db.Integer, primary_key=True, index=True)
     mobile_operator_id = db.Column(db.Integer, db.ForeignKey('mobileOperator.id'))

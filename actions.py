@@ -147,30 +147,31 @@ class Internet(DeviceAction):
     def __repr__(self):
         return '%s - Internet usage. Used %s mb, %s kb' % (self.start_date.time(), self.megabytes, self.kilobytes)
 
-
-class SMS(DeviceAction):
-    def __init__(self, device, start_date, recipient_info=None):
+class Message(DeviceAction):
+    def __init__(self, device, start_date, message_type, recipient_info):
         super().__init__(device, start_date)
+        self.message_type = message_type
         self.recipient_info = recipient_info
 
     def to_dict_info(self):
-        sms_info = {
+        messsage_info = {
             'date': self.start_date,
-            'name': 'sms',
-            'text': 'Lorem ipsum',
+            # 'name': self.message_type,
+            'name': 'sms',  # FIXME: Change when other tariffs will be in system
             'operator': self.recipient_info['operator'],
             'phone_number': self.recipient_info['phone_number']
         }
-        return sms_info
+        return messsage_info
 
     def perform(self):
-        sms_info = self.to_dict_info()
-        status = self.device.send_sms(sms_info)
+        message_info = self.to_dict_info()
+        status = self.device.send_message(message_info)
         if status == ServiceStatus.out_of_funds:
             self.handle_out_of_funds()
 
     def __repr__(self):
-        return '%s - SMS Message. Sent to %s' % (self.start_date.time(), self.recipient_info['operator'])
+        return '%s - %s Message. Sent to %s' % (self.start_date.time(), self.message_type.swapcase(),
+                                                self.recipient_info['operator'])
 
 
 class OneTimeService(DeviceAction):
@@ -195,30 +196,6 @@ class OneTimeService(DeviceAction):
     def __repr__(self):
         return '%s - USSD request. Service: %s, code: %s' % (self.start_date.time(),
                                                              self.service_name, self.activation_code)
-
-
-class MMS(DeviceAction):
-    def __init__(self, device, start_date, recipient_info=None):
-        super().__init__(device, start_date)
-        self.recipient_info = recipient_info
-
-    def to_dict_info(self):
-        mms_info = {
-            'date': self.start_date,
-            'name': 'sms',  # FIXME: change back to mms when other tariffs will be
-            'operator': self.recipient_info['operator'],
-            'phone_number': self.recipient_info['phone_number']
-        }
-        return mms_info
-
-    def perform(self):
-        mms_info = self.to_dict_info()
-        status = self.device.send_mms(mms_info)
-        if status == ServiceStatus.out_of_funds:
-            self.handle_out_of_funds()
-
-    def __repr__(self):
-        return '%s - MMS Message. Sent to %s' % (self.start_date.time(), self.recipient_info)
 
 
 class TariffChange(DeviceAction):
