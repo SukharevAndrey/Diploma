@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 from operator_simulation import MobileOperatorSimulator
 from base import Base

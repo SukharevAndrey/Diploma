@@ -59,12 +59,12 @@ class DevicePayment(DeviceAction):
 
 
 class Call(DeviceAction):
-    def __init__(self, device, start_date, maximum_duration, can_overlap=False):
+    def __init__(self, device, start_date, maximum_duration, recipient_info, can_overlap=False):
         super().__init__(device, start_date)
         self._duration = None
         self.end_date = None
         self.maximum_duration = maximum_duration
-        self.recipient_info = None
+        self.recipient_info = recipient_info
         self.can_overlap = can_overlap
 
     @property

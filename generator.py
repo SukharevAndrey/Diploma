@@ -1,5 +1,6 @@
 from datetime import datetime
 from collections import Counter
+from decimal import Decimal
 
 import numpy as np
 from transliterate import translit
@@ -482,10 +483,10 @@ class TimeLineGenerator:
         actions.extend(self.generate_messages(date_from, date_to))
         actions.extend(self.generate_internet_usages(date_from, date_to))
 
-        actions.extend(self.generate_other_services(date_from))
-        actions.extend(self.generate_tariff_changes(date_from))
-        actions.extend(self.generate_location_changes(date_from))
-        actions.extend(self.generate_payments(date_from))
+        actions.extend(self.generate_other_services(date_from, date_to))
+        actions.extend(self.generate_tariff_changes(date_from, date_to))
+        actions.extend(self.generate_location_changes(date_from, date_to))
+        actions.extend(self.generate_payments(date_from, date_to))
 
         actions.sort(key=lambda action: action.start_date)
         return actions
@@ -539,9 +540,8 @@ class TimeLineGenerator:
             deltas = [start_times[i+1]-start_times[i] for i in range(amount-1)] + [None]
 
             for i in range(amount):
-                call = Call(self.sim_device, start_times[i], deltas[i], can_overlap=False)
+                call = Call(self.sim_device, start_times[i], deltas[i], self.get_recipient(None), can_overlap=False)
                 call.generate_duration(call_duration_distribution)
-                call.recipient_info = self.get_recipient(None)
                 call_actions.append(call)
 
             cur_date += timedelta(days=1)
@@ -588,7 +588,7 @@ class TimeLineGenerator:
 
         return internet_actions
 
-    def generate_other_services(self, date):
+    def generate_other_services(self, date_from, date_to):
         service_usages = []
 
         for service_name in self.service_info:
@@ -596,40 +596,48 @@ class TimeLineGenerator:
                 info = self.service_info[service_name]
                 activation_code = info['activation_code']
                 usage_type = info['type']
-
                 service_days = self.get_service_amount_for_period(service_name)
-                day_in_period = self.get_day_in_period(date)
-                amount = service_days[day_in_period]
 
-                start_times = self.get_start_times(date=date, amount=amount)
-                for i in range(amount):
-                    service = OneTimeService(self.sim_device, start_times[i], service_name,
-                                             activation_code, usage_type)
-                    service_usages.append(service)
+                cur_date = date_from
+                while cur_date <= date_to:
+                    day_in_period = self.get_day_in_period(cur_date)
+                    amount = service_days[day_in_period]
+
+                    start_times = self.get_start_times(date=cur_date, amount=amount)
+                    for i in range(amount):
+                        service = OneTimeService(self.sim_device, start_times[i], service_name,
+                                                 activation_code, usage_type)
+                        service_usages.append(service)
+
+                    cur_date += timedelta(days=1)
 
         return service_usages
 
-    def generate_tariff_changes(self, date):
+    def generate_tariff_changes(self, date_from, date_to):
         tariff_changes = []
 
         info = self.service_info['Tariff changing']
         potential_tariffs = info['tariffs']
-
         change_days = self.get_service_amount_for_period('Tariff changing')
-        day_in_period = self.get_day_in_period(date)
-        amount = change_days[day_in_period]
 
-        start_times = self.get_start_times(date=date, amount=amount)
-        new_tariffs = [random.choice(potential_tariffs) for _ in range(amount)]
+        cur_date = date_from
+        while cur_date <= date_to:
+            day_in_period = self.get_day_in_period(cur_date)
+            amount = change_days[day_in_period]
 
-        for i in range(amount):
-            tariff_info = new_tariffs[i]
-            # FIXME: Delete after adding other tariffs
-            smart_mini_info = {'name': 'Smart mini', 'code': '*111*1023#'}
-            if tariff_info['name'] != 'Smart mini':
-                tariff_info = smart_mini_info
-            change = TariffChange(self.sim_device, start_times[i], tariff_info['code'], tariff_info['name'])
-            tariff_changes.append(change)
+            start_times = self.get_start_times(date=cur_date, amount=amount)
+            new_tariffs = [random.choice(potential_tariffs) for _ in range(amount)]
+
+            for i in range(amount):
+                tariff_info = new_tariffs[i]
+                # FIXME: Delete after adding other tariffs
+                smart_mini_info = {'name': 'Smart mini', 'code': '*111*1023#'}
+                if tariff_info['name'] != 'Smart mini':
+                    tariff_info = smart_mini_info
+                change = TariffChange(self.sim_device, start_times[i], tariff_info['code'], tariff_info['name'])
+                tariff_changes.append(change)
+
+            cur_date += timedelta(days=1)
 
         return tariff_changes
 
@@ -648,28 +656,31 @@ class TimeLineGenerator:
         else:
             return {'country': 'United States', 'region': None}
 
-    def generate_location_changes(self, date):
-        # print('Generating location changes')
+    def generate_location_changes(self, date_from, date_to):
         location_changes = []
 
         info = self.service_info['Traveling']
         destinations = info['destinations']
-
-        travel_days = self.get_service_amount_for_period('Traveling')
-        day_in_period = self.get_day_in_period(date)
-        amount = travel_days[day_in_period]
-
-        start_times = self.get_start_times(date=date, amount=amount)
         dest_distribution = distribution_from_list(destinations)
-        new_location_macroses = dest_distribution.get_value(n=amount)
-        for i in range(amount):
-            change = LocationChange(self.sim_device, start_times[i], self.get_location_from_macro(new_location_macroses[i]))
-            location_changes.append(change)
+        travel_days = self.get_service_amount_for_period('Traveling')
+
+        cur_date = date_from
+        while cur_date <= date_to:
+            day_in_period = self.get_day_in_period(cur_date)
+            amount = travel_days[day_in_period]
+            start_times = self.get_start_times(date=cur_date, amount=amount)
+
+            new_locations = dest_distribution.get_value(n=amount)
+            for i in range(amount):
+                change = LocationChange(self.sim_device, start_times[i],
+                                        self.get_location_from_macro(new_locations[i]))
+                location_changes.append(change)
+
+            cur_date += timedelta(days=1)
 
         return location_changes
 
-    def generate_payments(self, date):
-        # print('Generating payments')
+    def generate_payments(self, date_from, date_to):
         payments = []
 
         info = self.service_info['Payment']
@@ -677,17 +688,21 @@ class TimeLineGenerator:
         sums = info['sums']
         method_distribution = distribution_from_list(methods)
         sum_distribution = distribution_from_list(sums)
-
         payment_days = self.get_service_amount_for_period('Payment')
-        day_in_period = self.get_day_in_period(date)
-        amount = payment_days[day_in_period]
 
-        start_times = self.get_start_times(date=date, amount=amount)
-        for i in range(amount):
-            method = method_distribution.get_value(return_array=False).copy()
-            method_name, method_type = method.popitem()
-            payment_sum = int(sum_distribution.get_value(return_array=False))  # TODO: Decimal?
-            payment = DevicePayment(self.sim_device, start_times[i], method_name, method_type, payment_sum)
-            payments.append(payment)
+        cur_date = date_from
+        while cur_date <= date_to:
+            day_in_period = self.get_day_in_period(cur_date)
+            amount = payment_days[day_in_period]
+            start_times = self.get_start_times(date=cur_date, amount=amount)
+
+            for i in range(amount):
+                method = method_distribution.get_value(return_array=False).copy()
+                method_name, method_type = method.popitem()
+                payment_sum = int(sum_distribution.get_value(return_array=False))
+                payment = DevicePayment(self.sim_device, start_times[i], method_name, method_type, payment_sum)
+                payments.append(payment)
+
+            cur_date += timedelta(days=1)
 
         return payments
