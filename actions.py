@@ -28,13 +28,37 @@ class CustomerAction(Action):
         self.customer = customer
 
 
+class AccountAction(Action):
+    def __init__(self, account, start_date):
+        super().__init__(start_date)
+        self.account = account
+
+
+class AccountPayment(AccountAction):
+    def __init__(self, account, start_date, method_name, method_type, payment_sum):
+        super().__init__(account, start_date)
+        self.method_name = method_name
+        self.method_type = method_type
+        self.payment_sum = payment_sum
+
+    def to_dict_info(self):
+        return {'date': self.start_date,
+                'amount': self.payment_sum,
+                'name': self.method_name,
+                'method': self.method_type}
+
+    def perform(self):
+        pass
+
+
 class DeviceAction(Action):
     def __init__(self, device, start_date):
         super().__init__(start_date)
         self.device = device
 
     def handle_out_of_funds(self):
-        print('Handling out of funds situation')
+        print('Handling out of funds situation during %s' % self.__class__.__name__)
+        print('Trust category: %d' % self.device.trust_category)
 
 
 class DevicePayment(DeviceAction):
@@ -83,7 +107,7 @@ class Call(DeviceAction):
                 raise OverlapError('call intersects with next one')
 
     def generate_duration(self, distribution):
-        for i in range(10):
+        for i in range(33):
             duration_minutes = int(distribution.get_value())
             duration_seconds = random.randint(0, 59)
             duration = timedelta(minutes=duration_minutes, seconds=duration_seconds)
@@ -116,6 +140,10 @@ class Call(DeviceAction):
         status = self.device.make_call(call_info)
         if status == ServiceStatus.out_of_funds:
             self.handle_out_of_funds()
+
+    def handle_out_of_funds(self):
+        super().handle_out_of_funds()
+        workarounds = ['Nothing', 'Payment', 'Call me']
 
     def __repr__(self):
         return '%s - Outgoing call to %s, duration: %s' % (self.start_date.time(),

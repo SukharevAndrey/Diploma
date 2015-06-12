@@ -405,7 +405,22 @@ class MobileOperatorGenerator:
 DISTRIBUTIONS_FILE = 'data/distributions.json'
 distributions_info = file_to_json(DISTRIBUTIONS_FILE)
 
-class TimeLineGenerator:
+
+class ActivityGenerator:
+    def generate_timeline(self, date_from, date_to):
+        pass
+
+
+class AccountActivityGenerator(ActivityGenerator):
+    def __init__(self, account, period_start_date):
+        self.sim_account = account
+        self.period_start_date = period_start_date
+
+    def generate_timeline(self, date_from, date_to):
+        return []
+
+
+class DeviceActivityGenerator(ActivityGenerator):
     PERIOD_DURATION = 30
     MINUTES_IN_DAY = 1440
     HOURS_IN_DAY = 24
@@ -486,9 +501,9 @@ class TimeLineGenerator:
         actions.extend(self.generate_other_services(date_from, date_to))
         actions.extend(self.generate_tariff_changes(date_from, date_to))
         actions.extend(self.generate_location_changes(date_from, date_to))
-        actions.extend(self.generate_payments(date_from, date_to))
+        # actions.extend(self.generate_payments(date_from, date_to))
 
-        actions.sort(key=lambda action: action.start_date)
+        # actions.sort(key=lambda action: action.start_date)
         return actions
 
     def get_day_in_period(self, date):

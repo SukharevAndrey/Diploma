@@ -12,7 +12,7 @@ from entities.location import *
 from entities.operator import *
 from entities.payment import *
 from entities.service import *
-from generator import MobileOperatorGenerator, TimeLineGenerator
+from generator import MobileOperatorGenerator, AccountActivityGenerator, DeviceActivityGenerator
 from distribution import Distribution
 from random_data import *
 from tools import file_to_json, distribution_from_list
@@ -37,10 +37,10 @@ devices_info = file_to_json(DEVICES_FILE)
 distributions_info = file_to_json(DISTRIBUTIONS_FILE)
 
 logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d.%m.%Y %H:%M:%S',
-                    level=logging.INFO)
+#                    level=logging.INFO)
 #                     level=logging.CRITICAL)
-#                    filename='activity.log', filemode='w', level=logging.INFO)
-# logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+                    filename='activity.log', filemode='w', level=logging.INFO)
+logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 class MobileOperatorSimulator:
     def __init__(self, metadata):
@@ -81,7 +81,7 @@ class MobileOperatorSimulator:
                     customer = random_organization(simulation_date)
 
                 c = SimulatedCustomer(customer, group_info['agreements'], self.db1_session, self.system, verbose=True)
-                c.generate_all_hierarchy(simulation_date)
+                c.generate_hierarchy(simulation_date)
                 self.customers.append(c)
 
         end_time = time()
@@ -517,11 +517,12 @@ class SimulatedCustomer:
         self.agreement_cluster_names = agreement_cluster_names
         self.verbose = verbose
 
+        self.accounts = []
         self.devices = []
 
         session.add(self.customer)
 
-    def generate_all_hierarchy(self, simulation_date):
+    def generate_hierarchy(self, simulation_date):
         logging.info('Generating agreements')
         for agreement_cluster_name in self.agreement_cluster_names:
             agreement_cluster_info = agreements_info[agreement_cluster_name]
@@ -534,7 +535,6 @@ class SimulatedCustomer:
             logging.info('Generating accounts')
             for account_cluster_name in account_cluster_names:
                 account_cluster_info = accounts_info[account_cluster_name]
-                probabilistic = account_cluster_info['probabilistic']
                 account_info = {
                     'date': simulation_date,
                     'calc_method': account_cluster_info['calculation_method'],
@@ -543,61 +543,9 @@ class SimulatedCustomer:
                 }
                 account = self.register_account(agreement, account_info)
 
-                # Generating country distributions
-                home_locations_info = account_cluster_info['home_locations']
-                countries_distribution = distribution_from_list(home_locations_info)
-                regions_distribution = {}
-
-                for country_info in home_locations_info:
-                    country_name = country_info['name']
-                    if 'regions' in country_info:
-                        regions_distribution[country_name] = distribution_from_list(country_info['regions'])
-
-                # Getting home location
-                home_country = countries_distribution.get_value(return_array=False)
-                home_region = None
-                if home_country in regions_distribution:
-                    home_region = regions_distribution[home_country].get_value(return_array=False)
-
-                if not probabilistic:  # fixed device clusters
-                    device_cluster_names = account_cluster_info['devices']
-                    for device_cluster_name in device_cluster_names:
-                        device_cluster_info = devices_info[device_cluster_name]
-
-                        # Getting initial tariff name
-                        tariff_distribution = distribution_from_list(device_cluster_info['Initial tariffs'])
-                        initial_tariff_name = tariff_distribution.get_value(return_array=False)
-
-                        # Getting initial services amount and names
-                        initial_services_info = device_cluster_info['Initial services']['services']
-                        service_distribution = distribution_from_list(initial_services_info)
-                        avg_amount = device_cluster_info['Initial services']['amount']
-                        max_deviation = device_cluster_info['Initial services']['max_deviation']
-                        amount = random.randint(max(0, avg_amount-max_deviation), avg_amount+max_deviation)
-                        initial_services = set()
-                        for i in range(amount):
-                            initial_services.add(service_distribution.get_value(return_array=False))
-
-                        device_info = {
-                            'date': simulation_date,
-                            'initial_tariff': initial_tariff_name,
-                            'initial_services': list(initial_services),
-                            'IMEI': random_IMEI(),
-                            'type': device_cluster_info['type'],
-                            'operator': {
-                                'name': 'MTS',
-                                'country': home_country,
-                                'region': home_region
-                            }
-                        }
-
-                        home_region = {'country': home_country, 'region': home_region}
-
-                        device = self.add_device(account, device_info)
-                        self.devices.append(SimulatedDevice(self, device, device_cluster_info, home_region,
-                                                            self.session, self.system))
-                else:
-                    raise NotImplementedError('probabilistic device generation is not yet supported')
+                sim_acc = SimulatedAccount(self, account, account_cluster_info, self.session, self.system)
+                sim_acc.generate_devices(simulation_date)
+                self.accounts.append(sim_acc)
 
     def sign_agreement(self, agreement_info):
         logging.info('Signing agreement: %s' % agreement_info)
@@ -629,11 +577,27 @@ class SimulatedCustomer:
         agreement.accounts.append(account)
         return account
 
-    def add_device(self, account, device_info):
+    def simulate_period(self, date_from, date_to):
+        for account in self.accounts:
+            account.simulate_period(date_from, date_to)
+        self.session.commit()
+
+
+class SimulatedAccount:
+    def __init__(self, customer, account, account_cluster_info, session, operator_system):
+        self.session = session
+        self.customer = customer
+        self.account = account
+        self.account_cluster_info = account_cluster_info
+        self.system = operator_system
+
+        self.devices = []
+
+    def add_device(self, device_info):
         logging.info('Attaching device to account: %s' % device_info)
         registration_date = device_info['date']
 
-        device = Device(account=account,
+        device = Device(account=self.account,
                         date_registered=registration_date,
                         IMEI=device_info['IMEI'],
                         type=device_info['type'])
@@ -671,14 +635,83 @@ class SimulatedCustomer:
         self.session.add(device)
         return device
 
+    def generate_devices(self, simulation_date):
+        probabilistic = self.account_cluster_info['probabilistic']
+
+        # Generating country distributions
+        home_locations_info = self.account_cluster_info['home_locations']
+        countries_distribution = distribution_from_list(home_locations_info)
+        regions_distribution = {}
+
+        for country_info in home_locations_info:
+            country_name = country_info['name']
+            if 'regions' in country_info:
+                regions_distribution[country_name] = distribution_from_list(country_info['regions'])
+
+        # Getting home location
+        home_country = countries_distribution.get_value(return_array=False)
+        home_region = None
+        if home_country in regions_distribution:
+            home_region = regions_distribution[home_country].get_value(return_array=False)
+
+        if not probabilistic:  # fixed device clusters
+            device_cluster_names = self.account_cluster_info['devices']
+            for device_cluster_name in device_cluster_names:
+                device_cluster_info = devices_info[device_cluster_name]
+
+                # Getting initial tariff name
+                tariff_distribution = distribution_from_list(device_cluster_info['Initial tariffs'])
+                initial_tariff_name = tariff_distribution.get_value(return_array=False)
+
+                # Getting initial services amount and names
+                initial_services_info = device_cluster_info['Initial services']['services']
+                service_distribution = distribution_from_list(initial_services_info)
+                avg_amount = device_cluster_info['Initial services']['amount']
+                max_deviation = device_cluster_info['Initial services']['max_deviation']
+                amount = random.randint(max(0, avg_amount-max_deviation), avg_amount+max_deviation)
+                initial_services = set()
+                for i in range(amount):
+                    initial_services.add(service_distribution.get_value(return_array=False))
+
+                device_info = {
+                    'date': simulation_date,
+                    'initial_tariff': initial_tariff_name,
+                    'initial_services': list(initial_services),
+                    'IMEI': random_IMEI(),
+                    'type': device_cluster_info['type'],
+                    'operator': {
+                        'name': 'MTS',
+                        'country': home_country,
+                        'region': home_region
+                    }
+                }
+
+                home_region = {'country': home_country, 'region': home_region}
+
+                device = self.add_device(device_info)
+                self.devices.append(SimulatedDevice(self, device, device_cluster_info, home_region,
+                                                    self.account.trust_category, self.session, self.system))
+        else:
+            raise NotImplementedError('probabilistic device generation is not yet supported')
+
     def simulate_period(self, date_from, date_to):
+        gen = AccountActivityGenerator(self, date_from)  # TODO: When to start?
+        account_actions = gen.generate_timeline(date_from, date_to)
+
+        device_actions = []
         for device in self.devices:
-            device.simulate_period(date_from, date_to)
-        self.session.commit()
+            device_actions.extend(device.simulate_period(date_from, date_to))
+
+        actions = account_actions+device_actions
+
+        # TODO: Handle system changes every day
+        for action in sorted(actions, key=lambda action: action.start_date):
+            logging.info(action)
+            action.perform()
 
 
 class SimulatedDevice:
-    def __init__(self, device_customer, device_entity, behavior_info, home_region,
+    def __init__(self, device_customer, device_entity, behavior_info, home_region, trust_category,
                  session, operator_system, verbose=False):
         self.session = session
         self.system = operator_system
@@ -686,6 +719,7 @@ class SimulatedDevice:
         self.device = device_entity
         self.behavior_info = behavior_info
         self.home_region = home_region
+        self.trust_category = trust_category
         self.verbose = verbose
 
     def set_device_location(self, location_info):
@@ -698,7 +732,8 @@ class SimulatedDevice:
 
         location_date = location_info['date']
 
-        logging.info('Changing location to: Country = %s, Region = %s, Place = %s'%(country_name, region_name, place_name))
+        logging.info('Changing location to: Country = %s, Region = %s, Place = %s' % (country_name, region_name,
+                                                                                      place_name))
         if self.device.locations:
             latest_location = self.session.query(Location).filter_by(device=self.device, date_to=None).one()
             latest_location.date_to = location_date
@@ -794,8 +829,7 @@ class SimulatedDevice:
     def simulate_period(self, date_from, date_to):
         period_start, period_end = self.system.get_tariff_period(self.device)
 
-        gen = TimeLineGenerator(self.customer, self, period_start)
+        gen = DeviceActivityGenerator(self.customer, self, period_start)
         actions = gen.generate_timeline(date_from, date_to)
-        for action in actions:
-            logging.info(action)
-            action.perform()
+
+        return actions
