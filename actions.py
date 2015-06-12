@@ -52,7 +52,7 @@ class AccountPayment(AccountAction):
         self.account.make_payment(payment_info)
 
     def __repr__(self):
-        return '%s - Making payment of sum %s using %s' % (self.start_date.time(), self.payment_sum, self.method_name)
+        return '%s - Making payment of sum %s using %s' % (self.start_date, self.payment_sum, self.method_name)
 
 
 class DeviceAction(Action):
@@ -129,8 +129,8 @@ class Call(DeviceAction):
         workarounds = ['Nothing', 'Payment', 'Call me']
 
     def __repr__(self):
-        return '%s - Outgoing call to %s, duration: %s' % (self.start_date.time(),
-                                                           self.recipient_info['operator'], self.duration)
+        return '%s - Outgoing call to %s, duration: %s' % (self.start_date, self.recipient_info['operator'],
+                                                           self.duration)
 
 
 class Internet(DeviceAction):
@@ -156,7 +156,7 @@ class Internet(DeviceAction):
             self.handle_out_of_funds()
 
     def __repr__(self):
-        return '%s - Internet usage. Used %s mb, %s kb' % (self.start_date.time(), self.megabytes, self.kilobytes)
+        return '%s - Internet usage. Used %s mb, %s kb' % (self.start_date, self.megabytes, self.kilobytes)
 
 class Message(DeviceAction):
     def __init__(self, device, start_date, message_type, recipient_info):
@@ -167,8 +167,7 @@ class Message(DeviceAction):
     def to_dict_info(self):
         messsage_info = {
             'date': self.start_date,
-            # 'name': self.message_type,
-            'name': 'sms',  # FIXME: Change when other tariffs will be in system
+            'name': self.message_type,
             'operator': self.recipient_info['operator'],
             'phone_number': self.recipient_info['phone_number']
         }
@@ -181,7 +180,7 @@ class Message(DeviceAction):
             self.handle_out_of_funds()
 
     def __repr__(self):
-        return '%s - %s Message. Sent to %s' % (self.start_date.time(), self.message_type.swapcase(),
+        return '%s - %s Message. Sent to %s' % (self.start_date, self.message_type.swapcase(),
                                                 self.recipient_info['operator'])
 
 
@@ -205,7 +204,7 @@ class OneTimeService(DeviceAction):
             self.handle_out_of_funds()
 
     def __repr__(self):
-        return '%s - USSD request. Service: %s, code: %s' % (self.start_date.time(),
+        return '%s - USSD request. Service: %s, code: %s' % (self.start_date,
                                                              self.service_name, self.activation_code)
 
 
@@ -228,7 +227,7 @@ class TariffChange(DeviceAction):
             self.handle_out_of_funds()
 
     def __repr__(self):
-        return '%s - Changing tariff to %s' % (self.start_date.time(), self.tariff_name)
+        return '%s - Changing tariff to %s' % (self.start_date, self.tariff_name)
 
 
 class LocationChange(DeviceAction):
@@ -246,5 +245,5 @@ class LocationChange(DeviceAction):
         self.device.set_device_location(location_info)
 
     def __repr__(self):
-        return '%s - Changing location to %s %s' % (self.start_date.time(),
+        return '%s - Changing location to %s %s' % (self.start_date,
                                                     self.new_location['country'], self.new_location['region'])

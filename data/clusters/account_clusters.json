@@ -1,7 +1,7 @@
 {
   "Single smartphone with small activity 1": {
     "calculation_method": "advance",
-    "credit_limit": 800.0,
+    "credit_limit": 0.0,
     "trust_category": 4,
     "home_locations": [
       {
@@ -39,7 +39,7 @@
   },
   "Single smartphone with high activity 1": {
     "calculation_method": "advance",
-    "credit_limit": 800.0,
+    "credit_limit": 0.0,
     "trust_category": 5,
     "home_locations": [
       {

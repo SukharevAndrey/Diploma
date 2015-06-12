@@ -37,9 +37,9 @@ devices_info = file_to_json(DEVICES_FILE)
 distributions_info = file_to_json(DISTRIBUTIONS_FILE)
 
 logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d.%m.%Y %H:%M:%S',
-                    level=logging.INFO)
+#                    level=logging.INFO)
 #                     level=logging.CRITICAL)
-#                    filename='activity.log', filemode='w', level=logging.INFO)
+                    filename='activity.log', filemode='w', level=logging.INFO)
 #logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 class MobileOperatorSimulator:
@@ -140,13 +140,14 @@ class MobileOperatorSystem:
                         Balance.due_date.is_(None))).one()
         return balance
 
-    def get_unpaid_bills(self, device):
+    def get_unpaid_bills(self, account):
         # TODO: Handle date
         return self.session.query(Bill).\
             join(ServiceLog, Bill.service_log_id == ServiceLog.id).\
             join(DeviceService, ServiceLog.device_service_id == DeviceService.id).\
-            join(Device, and_(DeviceService.device_id == Device.id,
-                              Device.id == device.id)).\
+            join(Device, DeviceService.device_id == Device.id).\
+            join(Account, and_(Device.account_id == Account.id,
+                               Account.id == account.id)).\
             filter(Bill.debt > 0).all()
 
     def handle_request(self, request):
@@ -170,11 +171,22 @@ class MobileOperatorSystem:
 
         balance = self.get_active_balance_for_account(account)
         payment.balance = balance
-        balance.amount += Decimal(payment.amount)
-        logging.info('Replenishing %s balance at %f. New balance: %f' % (balance.type, payment.amount, balance.amount))
 
         # TODO: Implement bonuses charging
-        # TODO: Pay unpaid bills (credit only?)
+        if balance.type == 'advance':
+            balance.amount += Decimal(payment.amount)
+            logging.info('Replenishing advance balance at %f RUB. New balance: %f RUB' % (payment.amount,
+                                                                                          balance.amount))
+        else:  # credit
+            available_money = payment.amount
+            # Paying unpaid bills
+            unpaid_bills = self.get_unpaid_bills(account)
+            for bill in unpaid_bills:
+                bill_pay_sum = min(available_money, bill.debt)
+                bill.paid += bill_pay_sum
+                balance.amount += bill_pay_sum
+                bill.debt -= bill_pay_sum
+                available_money -= bill_pay_sum
 
     def handle_connected_service(self, service_info, free_activation=False):
         logging.info('Handling connected service')
@@ -282,18 +294,29 @@ class MobileOperatorSystem:
         device_service = bill.service_log.device_service
         service = device_service.service
         device = device_service.device
-        logging.info('Handling bill for service %s. Need to pay: %s' % (service.name, bill.debt))
+        logging.info('Handling bill for service %s. Need to pay: %f' % (service.name, bill.debt))
         balance = self.get_active_balance_for_device(device)
-        logging.info('Debiting %s RUB from %s balance with balance %s. New balance: %s' % (bill.debt, balance.type,
-                                                                                           balance.amount,
-                                                                                           balance.amount-bill.debt))
-        if balance.amount > 0 or balance.type == 'credit':
-            balance.amount -= bill.debt
-            bill.paid = bill.debt
-            bill.debt = 0
-            return ServiceStatus.success
-        elif balance.type == 'advance':
-            return ServiceStatus.out_of_funds
+
+        if balance.type == 'advance':
+            if balance.amount > 0:
+                # Decreasing balance and paying bill
+                logging.info('Debiting %s RUB from advance balance with %s RUS' % (bill.debt,
+                                                                                   balance.amount))
+                balance.amount -= bill.debt
+                bill.paid = bill.debt
+                bill.debt = 0
+                return ServiceStatus.success
+            else:
+                return ServiceStatus.out_of_funds
+        elif balance.type == 'credit':
+            if balance.amount > -balance.account.credit_limit:
+                # Decreasing balance, but the bill is still unpaid
+                logging.info('Debiting %s RUB from credit balance with %s RUB' % (bill.debt,
+                                                                                  balance.amount))
+                balance.amount -= bill.debt
+                return ServiceStatus.success
+            else:
+                return ServiceStatus.out_of_funds
 
     def handle_used_service(self, service_log):
         logging.info('Handling used service')
