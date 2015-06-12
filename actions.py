@@ -48,7 +48,11 @@ class AccountPayment(AccountAction):
                 'method': self.method_type}
 
     def perform(self):
-        pass
+        payment_info = self.to_dict_info()
+        self.account.make_payment(payment_info)
+
+    def __repr__(self):
+        return '%s - Making payment of sum %s using %s' % (self.start_date.time(), self.payment_sum, self.method_name)
 
 
 class DeviceAction(Action):
@@ -59,27 +63,6 @@ class DeviceAction(Action):
     def handle_out_of_funds(self):
         print('Handling out of funds situation during %s' % self.__class__.__name__)
         print('Trust category: %d' % self.device.trust_category)
-
-
-class DevicePayment(DeviceAction):
-    def __init__(self, device, start_date, method_name, method_type, payment_sum):
-        super().__init__(device, start_date)
-        self.method_name = method_name
-        self.method_type = method_type
-        self.payment_sum = payment_sum
-
-    def to_dict_info(self):
-        return {'date': self.start_date,
-                'amount': self.payment_sum,
-                'name': self.method_name,
-                'method': self.method_type}
-
-    def perform(self):
-        payment_info = self.to_dict_info()
-        self.device.make_payment(payment_info)
-
-    def __repr__(self):
-        return '%s - Making payment of sum %d using %s' % (self.start_date.time(), self.payment_sum, self.method_name)
 
 
 class Call(DeviceAction):

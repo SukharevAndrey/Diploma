@@ -23,6 +23,17 @@
         ]
       }
     ],
+    "activity": {
+      "Payment": {
+        "methods": "Payment method distribution 1",
+        "sums": "Small payment sum distribution 1",
+        "period_activity": {
+          "amount": 2,
+          "max_deviation": 2,
+          "days_activity": "Payment day distribution 1"
+        }
+      }
+    },
     "probabilistic": false,
     "devices": ["Smartphone with small activity 1"]
   },
@@ -50,6 +61,17 @@
         ]
       }
     ],
+    "activity": {
+      "Payment": {
+        "methods": "Payment method distribution 1",
+        "sums": "Medium payment sum distribution 1",
+        "period_activity": {
+          "amount": 3,
+          "max_deviation": 2,
+          "days_activity": "Payment day distribution 1"
+        }
+      }
+    },
     "probabilistic": false,
     "devices": ["Smartphone with high activity 1"]
   },
@@ -106,15 +128,6 @@
     ],
     "probabilistic": true,
     "devices_amount": 10,
-    "devices": [
-      {
-        "device_cluster": "Smartphone with medium activity",
-        "probability": 80
-      },
-      {
-        "device_cluster": "Phone with high activity",
-        "probability": 20
-      }
-    ]
+    "devices": "Small company device distribution 1"
   }
 }

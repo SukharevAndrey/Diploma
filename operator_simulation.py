@@ -37,10 +37,10 @@ devices_info = file_to_json(DEVICES_FILE)
 distributions_info = file_to_json(DISTRIBUTIONS_FILE)
 
 logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d.%m.%Y %H:%M:%S',
-#                    level=logging.INFO)
+                    level=logging.INFO)
 #                     level=logging.CRITICAL)
-                    filename='activity.log', filemode='w', level=logging.INFO)
-logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+#                    filename='activity.log', filemode='w', level=logging.INFO)
+#logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 class MobileOperatorSimulator:
     def __init__(self, metadata):
@@ -117,7 +117,7 @@ class MobileOperatorSystem:
         self.initial_balance = 200.0
         self.next_free_number = 0
 
-    def get_active_balance(self, device):
+    def get_active_balance_for_device(self, device):
         # TODO: Simplify (latest balance?)
         # TODO: Also check due date
         balance = self.session.query(Balance).\
@@ -125,6 +125,17 @@ class MobileOperatorSystem:
             join(CalculationMethod, Account.calculation_method_id == CalculationMethod.id).\
             join(Device, Device.account_id == Account.id).\
             filter(and_(Balance.account_id == device.account_id,
+                        Balance.type == CalculationMethod.type,
+                        Balance.due_date.is_(None))).one()
+        return balance
+
+    def get_active_balance_for_account(self, account):
+        # TODO: Simplify (latest balance?)
+        # TODO: Also check due date
+        balance = self.session.query(Balance).\
+            join(Account, Account.id == Balance.account_id).\
+            join(CalculationMethod, Account.calculation_method_id == CalculationMethod.id).\
+            filter(and_(Balance.account_id == account.id,
                         Balance.type == CalculationMethod.type,
                         Balance.due_date.is_(None))).one()
         return balance
@@ -154,19 +165,16 @@ class MobileOperatorSystem:
             logging.info('Doing nothing')
             return ServiceStatus.success
 
-    def handle_payment(self, device, payment):
+    def handle_payment(self, account, payment):
         logging.info('Handling payment')
 
-        balance = self.get_active_balance(device)
-        logging.info('Replenishing %s balance at %f' % (balance.type, payment.amount))
+        balance = self.get_active_balance_for_account(account)
         payment.balance = balance
-        balance.amount += payment.amount
-        logging.info('Current balance: %f' % balance.amount)
+        balance.amount += Decimal(payment.amount)
+        logging.info('Replenishing %s balance at %f. New balance: %f' % (balance.type, payment.amount, balance.amount))
 
         # TODO: Implement bonuses charging
         # TODO: Pay unpaid bills (credit only?)
-
-        # self.session.commit()
 
     def handle_connected_service(self, service_info, free_activation=False):
         logging.info('Handling connected service')
@@ -191,10 +199,8 @@ class MobileOperatorSystem:
             log.bill = bill
             self.handle_bill(bill)
 
-        # self.session.commit()
-
     def can_activate_service(self, device, service):
-        balance = self.get_active_balance(device)
+        balance = self.get_active_balance_for_device(device)
 
         if balance.amount > 0:
             if balance.type == 'credit' or balance.amount >= service.activation_cost:
@@ -277,7 +283,7 @@ class MobileOperatorSystem:
         service = device_service.service
         device = device_service.device
         logging.info('Handling bill for service %s. Need to pay: %s' % (service.name, bill.debt))
-        balance = self.get_active_balance(device)
+        balance = self.get_active_balance_for_device(device)
         logging.info('Debiting %s RUB from %s balance with balance %s. New balance: %s' % (bill.debt, balance.type,
                                                                                            balance.amount,
                                                                                            balance.amount-bill.debt))
@@ -694,6 +700,23 @@ class SimulatedAccount:
         else:
             raise NotImplementedError('probabilistic device generation is not yet supported')
 
+    def make_payment(self, payment_info):
+        logging.info('Making payment: %s' % payment_info)
+        if payment_info['method'] == 'third_party':
+            name = payment_info['name']
+            payment_method = self.session.query(ThirdPartyCollection).filter_by(name=name).one()
+        elif payment_info['method'] == 'cash':
+            payment_method = self.session.query(Cash).one()
+        else:  # credit card
+            # TODO: Implement credit card payment
+            raise NotImplementedError
+
+        payment_date = payment_info['date']
+        payment = Payment(date=payment_date, amount=payment_info['amount'], method=payment_method)
+
+        self.session.add(payment)
+        return self.system.handle_payment(self.account, payment)
+
     def simulate_period(self, date_from, date_to):
         gen = AccountActivityGenerator(self, date_from)  # TODO: When to start?
         account_actions = gen.generate_timeline(date_from, date_to)
@@ -809,27 +832,10 @@ class SimulatedDevice:
         self.session.add(request)
         return self.system.handle_request(request)
 
-    def make_payment(self, payment_info):
-        logging.info('Making payment: %s' % payment_info)
-        if payment_info['method'] == 'third_party':
-            name = payment_info['name']
-            payment_method = self.session.query(ThirdPartyCollection).filter_by(name=name).one()
-        elif payment_info['method'] == 'cash':
-            payment_method = self.session.query(Cash).one()
-        else:  # credit card
-            # TODO: Implement credit card payment
-            raise NotImplementedError
-
-        payment_date = payment_info['date']
-        payment = Payment(date=payment_date, amount=payment_info['amount'], method=payment_method)
-
-        self.session.add(payment)
-        return self.system.handle_payment(self.device, payment)
-
     def simulate_period(self, date_from, date_to):
         period_start, period_end = self.system.get_tariff_period(self.device)
 
-        gen = DeviceActivityGenerator(self.customer, self, period_start)
+        gen = DeviceActivityGenerator(self, period_start)
         actions = gen.generate_timeline(date_from, date_to)
 
         return actions

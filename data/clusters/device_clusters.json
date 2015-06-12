@@ -146,61 +146,6 @@
           "max_deviation": 1,
           "days_activity": "Uniform day distribution"
         }
-      },
-      "Payment": {
-        "methods": [
-          {
-            "name": {
-              "QIWI": "third_party"
-            },
-            "percentage": 99.0
-          },
-          {
-            "name": {
-              "Cash": "cash"
-            },
-            "percentage": 1.0
-          }
-        ],
-        "sums": [
-          {
-            "name": 10,
-            "percentage": 5.0
-          },
-          {
-            "name": 50,
-            "percentage": 10.0
-          },
-          {
-            "name": 100,
-            "percentage": 25.0
-          },
-          {
-            "name": 200,
-            "percentage": 30.0
-          },
-          {
-            "name": 300,
-            "percentage": 10.0
-          },
-          {
-            "name": 400,
-            "percentage": 10.0
-          },
-          {
-            "name": 500,
-            "percentage": 5.0
-          },
-          {
-            "name": 1000,
-            "percentage": 5.0
-          }
-        ],
-        "period_activity": {
-          "amount": 2,
-          "max_deviation": 2,
-          "days_activity": "Payment day distribution 1"
-        }
       }
     }
   },
@@ -350,53 +295,6 @@
           "amount": 3,
           "max_deviation": 2,
           "days_activity": "Uniform day distribution"
-        }
-      },
-      "Payment": {
-        "methods": [
-          {
-            "name": {
-              "QIWI": "third_party"
-            },
-            "percentage": 99.0
-          },
-          {
-            "name": {
-              "Cash": "cash"
-            },
-            "percentage": 1.0
-          }
-        ],
-        "sums": [
-          {
-            "name": 100,
-            "percentage": 10.0
-          },
-          {
-            "name": 200,
-            "percentage": 15.0
-          },
-          {
-            "name": 300,
-            "percentage": 25.0
-          },
-          {
-            "name": 400,
-            "percentage": 27.0
-          },
-          {
-            "name": 500,
-            "percentage": 30.0
-          },
-          {
-            "name": 1000,
-            "percentage": 15.0
-          }
-        ],
-        "period_activity": {
-          "amount": 2,
-          "max_deviation": 1,
-          "days_activity": "Payment day distribution 1"
         }
       }
     }

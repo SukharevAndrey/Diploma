@@ -100,5 +100,95 @@
     "Period end call time distribution 1": {
       "day_minutes": []
     }
+  },
+  "method": {
+    "Payment method distribution 1": [
+      {
+        "name": {
+          "QIWI": "third_party"
+        },
+        "percentage": 99.0
+      },
+      {
+        "name": {
+          "Cash": "cash"
+        },
+        "percentage": 1.0
+      }
+    ]
+  },
+  "sum": {
+    "Small payment sum distribution 1": [
+      {
+        "name": 10,
+        "percentage": 5.0
+      },
+      {
+        "name": 50,
+        "percentage": 10.0
+      },
+      {
+        "name": 100,
+        "percentage": 25.0
+      },
+      {
+        "name": 200,
+        "percentage": 30.0
+      },
+      {
+        "name": 300,
+        "percentage": 10.0
+      },
+      {
+        "name": 400,
+        "percentage": 10.0
+      },
+      {
+        "name": 500,
+        "percentage": 5.0
+      },
+      {
+        "name": 1000,
+        "percentage": 5.0
+      }
+    ],
+    "Medium payment sum distribution 1": [
+      {
+        "name": 100,
+        "percentage": 10.0
+      },
+      {
+        "name": 200,
+        "percentage": 15.0
+      },
+      {
+        "name": 300,
+        "percentage": 25.0
+      },
+      {
+        "name": 400,
+        "percentage": 27.0
+      },
+      {
+        "name": 500,
+        "percentage": 30.0
+      },
+      {
+        "name": 1000,
+        "percentage": 15.0
+      }
+    ]
+  },
+  "device": {
+    "Small company device distribution 1": [
+      {
+        "name": "Smartphone with medium activity",
+        "probability": 80
+      },
+      {
+        "name": "Phone with high activity",
+        "probability": 20
+      }
+    ]
   }
 }

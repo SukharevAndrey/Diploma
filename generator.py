@@ -407,41 +407,28 @@ distributions_info = file_to_json(DISTRIBUTIONS_FILE)
 
 
 class ActivityGenerator:
-    def generate_timeline(self, date_from, date_to):
-        pass
-
-
-class AccountActivityGenerator(ActivityGenerator):
-    def __init__(self, account, period_start_date):
-        self.sim_account = account
-        self.period_start_date = period_start_date
-
-    def generate_timeline(self, date_from, date_to):
-        return []
-
-
-class DeviceActivityGenerator(ActivityGenerator):
     PERIOD_DURATION = 30
     MINUTES_IN_DAY = 1440
     HOURS_IN_DAY = 24
     MINUTES_IN_HOUR = 60
     SECONDS_IN_MINUTE = 60
 
-    russian_regions = ['Moskva', 'Brjanskaja', 'Leningradskaja']  # TODO: Full regions list
-
-    basic_services = {'Call', 'Internet', 'SMS', 'MMS'}
-    other_activities = {'Payment', 'Traveling', 'Tariff changing'}
-
-    def __init__(self, customer, device, period_start_date):
-        self.sim_customer = customer
-        self.sim_device = device
+    def __init__(self, period_start_date):
         self.period_start_date = period_start_date
-        self.service_info = {}
-
         self.days_distribution = {}
-        self.duration_distribution = {}
+        self.activity_info = {}
 
-        self.parse_activity()
+    def parse_activity(self):
+        raise NotImplementedError
+
+    def generate_timeline(self, date_from, date_to):
+        raise NotImplementedError
+
+    def minutes_to_time(self, minute):
+        return divmod(minute, self.MINUTES_IN_HOUR)
+
+    def get_day_in_period(self, date):
+        return (date-self.period_start_date).days % self.PERIOD_DURATION + 1
 
     def get_start_times(self, date, amount):
         year, month, day = date.year, date.month, date.day
@@ -456,61 +443,8 @@ class DeviceActivityGenerator(ActivityGenerator):
 
         return times
 
-    def parse_activity(self):
-        basic_services_info = self.sim_device.behavior_info['Basic services']
-        other_services_info = self.sim_device.behavior_info['Other services']
-        other_activity_info = self.sim_device.behavior_info['Other activity']
-
-        for service_name in basic_services_info:
-            service_info = basic_services_info[service_name]
-            self.service_info[service_name] = service_info
-            service_activity = service_info['period_activity']
-            day_distribution_info = distributions_info['month'][service_activity['days_activity']]
-            self.days_distribution[service_name] = Distribution(info=day_distribution_info)
-            if 'duration' in service_activity:
-                dur_distribution_info = distributions_info['duration'][service_activity['duration']]
-                self.duration_distribution[service_name] = Distribution(info=dur_distribution_info)
-
-        for service_name in other_services_info:
-            # Writing service info
-            service_info = other_services_info[service_name]
-            self.service_info[service_name] = service_info
-
-            # Creating distribution
-            service_activity = service_info['period_activity']
-            day_distribution_info = distributions_info['month'][service_activity['days_activity']]
-            self.days_distribution[service_name] = Distribution(info=day_distribution_info)
-
-        for activity_name in other_activity_info:
-            activity_info = other_activity_info[activity_name]
-            self.service_info[activity_name] = activity_info
-
-            period_activity = activity_info['period_activity']
-            day_distribution_info = distributions_info['month'][period_activity['days_activity']]
-            self.days_distribution[activity_name] = Distribution(info=day_distribution_info)
-
-    def minutes_to_time(self, minute):
-        return divmod(minute, self.MINUTES_IN_HOUR)
-
-    def generate_timeline(self, date_from, date_to):
-        actions = []
-        actions.extend(self.generate_calls(date_from, date_to))
-        actions.extend(self.generate_messages(date_from, date_to))
-        actions.extend(self.generate_internet_usages(date_from, date_to))
-
-        actions.extend(self.generate_other_services(date_from, date_to))
-        actions.extend(self.generate_tariff_changes(date_from, date_to))
-        actions.extend(self.generate_location_changes(date_from, date_to))
-        # actions.extend(self.generate_payments(date_from, date_to))
-
-        # actions.sort(key=lambda action: action.start_date)
-        return actions
-
-    def get_day_in_period(self, date):
-        return (date-self.period_start_date).days % self.PERIOD_DURATION + 1
-
-    def get_service_amount_for_period(self, service_name):
-        period_activity = self.service_info[service_name]['period_activity']
+    def get_amount_for_period(self, activity_name):
+        period_activity = self.activity_info[activity_name]['period_activity']
         avg_amount = period_activity['amount']
         max_deviation = period_activity['max_deviation']
 
@@ -524,9 +458,126 @@ class DeviceActivityGenerator(ActivityGenerator):
             total_period_service = lower_boundary
         else:
             total_period_service = np.random.randint(lower_boundary, higher_boundary)
-        period_usage_days = self.days_distribution[service_name].get_value(n=total_period_service)
+        period_usage_days = self.days_distribution[activity_name].get_value(n=total_period_service)
 
         return Counter(period_usage_days)
+
+
+class AccountActivityGenerator(ActivityGenerator):
+    def __init__(self, account, period_start_date):
+        super().__init__(period_start_date)
+        self.sim_account = account
+
+        self.distributions = {}
+
+        self.parse_activity()
+
+    def parse_activity(self):
+        self.activity_info = self.sim_account.account_cluster_info['activity']
+        payment_activity = self.activity_info['Payment']
+
+        method_distribution = distribution_from_list(distributions_info['method'][payment_activity['methods']])
+        self.distributions['method'] = method_distribution
+        sum_distribution = distribution_from_list(distributions_info['sum'][payment_activity['sums']])
+        self.distributions['sum'] = sum_distribution
+
+        payment_period_activity = payment_activity['period_activity']
+        day_distribution_info = distributions_info['month'][payment_period_activity['days_activity']]
+        self.days_distribution['Payment'] = Distribution(info=day_distribution_info)
+
+    def generate_timeline(self, date_from, date_to):
+        actions = []
+        actions.extend(self.generate_payments(date_from, date_to))
+
+        return actions
+
+    def generate_payments(self, date_from, date_to):
+        payments = []
+
+        method_distribution = self.distributions['method']
+        sum_distribution = self.distributions['sum']
+
+        payment_days = self.get_amount_for_period('Payment')
+
+        cur_date = date_from
+        while cur_date <= date_to:
+            day_in_period = self.get_day_in_period(cur_date)
+            amount = payment_days[day_in_period]
+            start_times = self.get_start_times(date=cur_date, amount=amount)
+
+            for i in range(amount):
+                method = method_distribution.get_value(return_array=False).copy()
+                method_name, method_type = method.popitem()
+                payment_sum = int(sum_distribution.get_value(return_array=False))
+                payment = AccountPayment(self.sim_account, start_times[i], method_name, method_type, payment_sum)
+                payments.append(payment)
+
+            cur_date += timedelta(days=1)
+
+        return payments
+
+
+class DeviceActivityGenerator(ActivityGenerator):
+    russian_regions = ['Moskva', 'Brjanskaja', 'Leningradskaja']  # TODO: Full regions list
+
+    basic_services = {'Call', 'Internet', 'SMS', 'MMS'}
+    other_activities = {'Traveling', 'Tariff changing'}
+
+    def __init__(self, device, period_start_date):
+        super().__init__(period_start_date)
+
+        self.sim_device = device
+
+        self.duration_distribution = {}
+
+        self.parse_activity()
+
+    def parse_activity(self):
+        basic_services_info = self.sim_device.behavior_info['Basic services']
+        other_services_info = self.sim_device.behavior_info['Other services']
+        other_activity_info = self.sim_device.behavior_info['Other activity']
+
+        for service_name in basic_services_info:
+            service_info = basic_services_info[service_name]
+            self.activity_info[service_name] = service_info
+
+            service_activity = service_info['period_activity']
+            day_distribution_info = distributions_info['month'][service_activity['days_activity']]
+            self.days_distribution[service_name] = Distribution(info=day_distribution_info)
+
+            if 'duration' in service_activity:
+                dur_distribution_info = distributions_info['duration'][service_activity['duration']]
+                self.duration_distribution[service_name] = Distribution(info=dur_distribution_info)
+
+        for service_name in other_services_info:
+            # Writing service info
+            service_info = other_services_info[service_name]
+            self.activity_info[service_name] = service_info
+
+            # Creating distribution
+            service_activity = service_info['period_activity']
+            day_distribution_info = distributions_info['month'][service_activity['days_activity']]
+            self.days_distribution[service_name] = Distribution(info=day_distribution_info)
+
+        for activity_name in other_activity_info:
+            activity_info = other_activity_info[activity_name]
+            self.activity_info[activity_name] = activity_info
+
+            period_activity = activity_info['period_activity']
+            day_distribution_info = distributions_info['month'][period_activity['days_activity']]
+            self.days_distribution[activity_name] = Distribution(info=day_distribution_info)
+
+    def generate_timeline(self, date_from, date_to):
+        actions = []
+        actions.extend(self.generate_calls(date_from, date_to))
+        actions.extend(self.generate_messages(date_from, date_to))
+        actions.extend(self.generate_internet_usages(date_from, date_to))
+
+        actions.extend(self.generate_other_services(date_from, date_to))
+        actions.extend(self.generate_tariff_changes(date_from, date_to))
+        actions.extend(self.generate_location_changes(date_from, date_to))
+
+        return actions
 
     def get_recipient(self, distribution=None):
         # TODO: Real recipient generation using distribution
@@ -542,7 +593,7 @@ class DeviceActivityGenerator(ActivityGenerator):
 
     def generate_calls(self, date_from, date_to):
         call_actions = []
-        call_day_usages = self.get_service_amount_for_period('Call')
+        call_day_usages = self.get_amount_for_period('Call')
         call_duration_distribution = self.duration_distribution['Call']
 
         cur_date = date_from
@@ -567,7 +618,7 @@ class DeviceActivityGenerator(ActivityGenerator):
         message_actions = []
 
         for service in ('SMS', 'MMS'):
-            message_day_usages = self.get_service_amount_for_period(service)
+            message_day_usages = self.get_amount_for_period(service)
 
             cur_date = date_from
             while cur_date <= date_to:
@@ -585,7 +636,7 @@ class DeviceActivityGenerator(ActivityGenerator):
 
     def generate_internet_usages(self, date_from, date_to):
         internet_actions = []
-        internet_day_usages = self.get_service_amount_for_period('Internet')
+        internet_day_usages = self.get_amount_for_period('Internet')
         session_length_distribution = self.duration_distribution['Internet']
 
         cur_date = date_from
@@ -606,12 +657,12 @@ class DeviceActivityGenerator(ActivityGenerator):
     def generate_other_services(self, date_from, date_to):
         service_usages = []
 
-        for service_name in self.service_info:
+        for service_name in self.activity_info:
             if service_name not in (self.basic_services | self.other_activities):
-                info = self.service_info[service_name]
+                info = self.activity_info[service_name]
                 activation_code = info['activation_code']
                 usage_type = info['type']
-                service_days = self.get_service_amount_for_period(service_name)
+                service_days = self.get_amount_for_period(service_name)
 
                 cur_date = date_from
                 while cur_date <= date_to:
@@ -631,9 +682,9 @@ class DeviceActivityGenerator(ActivityGenerator):
     def generate_tariff_changes(self, date_from, date_to):
         tariff_changes = []
 
-        info = self.service_info['Tariff changing']
+        info = self.activity_info['Tariff changing']
         potential_tariffs = info['tariffs']
-        change_days = self.get_service_amount_for_period('Tariff changing')
+        change_days = self.get_amount_for_period('Tariff changing')
 
         cur_date = date_from
         while cur_date <= date_to:
@@ -674,10 +725,10 @@ class DeviceActivityGenerator(ActivityGenerator):
     def generate_location_changes(self, date_from, date_to):
         location_changes = []
 
-        info = self.service_info['Traveling']
+        info = self.activity_info['Traveling']
         destinations = info['destinations']
         dest_distribution = distribution_from_list(destinations)
-        travel_days = self.get_service_amount_for_period('Traveling')
+        travel_days = self.get_amount_for_period('Traveling')
 
         cur_date = date_from
         while cur_date <= date_to:
@@ -694,30 +745,3 @@ class DeviceActivityGenerator(ActivityGenerator):
             cur_date += timedelta(days=1)
 
         return location_changes
-
-    def generate_payments(self, date_from, date_to):
-        payments = []
-
-        info = self.service_info['Payment']
-        methods = info['methods']
-        sums = info['sums']
-        method_distribution = distribution_from_list(methods)
-        sum_distribution = distribution_from_list(sums)
-        payment_days = self.get_service_amount_for_period('Payment')
-
-        cur_date = date_from
-        while cur_date <= date_to:
-            day_in_period = self.get_day_in_period(cur_date)
-            amount = payment_days[day_in_period]
-            start_times = self.get_start_times(date=cur_date, amount=amount)
-
-            for i in range(amount):
-                method = method_distribution.get_value(return_array=False).copy()
-                method_name, method_type = method.popitem()
-                payment_sum = int(sum_distribution.get_value(return_array=False))
-                payment = DevicePayment(self.sim_device, start_times[i], method_name, method_type, payment_sum)
-                payments.append(payment)
-
-            cur_date += timedelta(days=1)
-
-        return payments

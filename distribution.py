@@ -19,6 +19,15 @@ class Distribution:
 
         self.normalize()
 
+    @staticmethod
+    def from_list(values_list):
+        # TODO: Refactor from distributions_from_list
+        return 1
+
+    @staticmethod
+    def from_dict(values_dict):
+        return 1
+
     def normalize(self):
         # TODO: Handle situation when sum is not 1 (due to float error)
         sum_p = np.sum(self.p)
