@@ -12,15 +12,11 @@ from entities.location import *
 from entities.operator import *
 from entities.service import *
 from entities.payment import *
-from tools import file_to_json, distribution_from_list
+from tools import distribution_from_list
 from random_data import *
 from preprocessor import TariffPreprocessor
-
-COUNTRIES_FILE_PATH = 'data/countries.json'
-OPERATORS_FILE_PATH = 'data/operators.json'
-TARIFFS_FILE_PATH = 'data/mts_tariffs.json'
-SERVICES_FILE_PATH = 'data/mts_services.json'
-REGIONS_FILE_PATH = 'data/russia_subjects.json'
+from file_info import distributions_info, countries_info, regions_info,\
+    operators_info, tariffs_info, services_info, out_of_funds_info
 
 
 class MobileOperatorGenerator:
@@ -33,7 +29,6 @@ class MobileOperatorGenerator:
 
     def generate_agreements(self, session):
         self.print_status('Generating agreements...')
-
         terms_count = 5
 
         individual_terms = [TermOrCondition(description=random_string().capitalize())
@@ -47,7 +42,6 @@ class MobileOperatorGenerator:
                                            terms_and_conditions=organization_terms)
 
         session.add_all([individual_agreement, organization_agreement])
-        # session.commit()
 
         self.print_status('Done')
 
@@ -58,14 +52,11 @@ class MobileOperatorGenerator:
         credit = CalculationMethod(type='credit')
 
         session.add_all([advance, credit])
-        # session.commit()
 
         self.print_status('Done')
 
     def generate_countries(self, session):
         self.print_status('Generating countries...')
-
-        countries_info = file_to_json(COUNTRIES_FILE_PATH)
 
         for c_info in countries_info:
             try:
@@ -94,13 +85,10 @@ class MobileOperatorGenerator:
             except:
                 print("ACHTUNG!!!!!!!!!!!!!!!")
 
-        # session.commit()
-
         self.print_status('Done')
 
     def generate_russian_regions(self, session):
         self.print_status('Generating regions...')
-        regions_info = file_to_json(REGIONS_FILE_PATH)
         subject_types = {
             'Респ': 'republic',
             'обл': 'oblast',
@@ -123,12 +111,10 @@ class MobileOperatorGenerator:
             r = Region(name=result_name, type=region_type, code=code, country=russia)
             session.add(r)
 
-        # session.commit()
         self.print_status('Done')
 
     def generate_mobile_operators(self, session):
         self.print_status('Generating mobile operators...')
-        operators_info = file_to_json(OPERATORS_FILE_PATH)
 
         russia = session.query(Country).filter_by(name='Russia').one()
 
@@ -149,12 +135,10 @@ class MobileOperatorGenerator:
                     operator = MobileOperator(name=operator_name, country=country)
                     session.add(operator)
 
-        # session.commit()
         self.print_status('Done')
 
     def generate_services(self, session):
         self.print_status('Generating services...')
-        services_info = file_to_json(SERVICES_FILE_PATH)
 
         russia = session.query(Country).filter_by(name='Russia').one()
 
@@ -201,12 +185,10 @@ class MobileOperatorGenerator:
                 service = Service(name=name, activation_code=activation_code)
                 session.add(service)
 
-        # session.commit()
         self.print_status('Done')
 
     def generate_tariffs(self, session):
         self.print_status('Generating tariffs...')
-        tariffs_info = file_to_json(TARIFFS_FILE_PATH)
         preprocessor = TariffPreprocessor(session)
         preprocessor.preprocess(tariffs_info, replace=True)
 
@@ -344,7 +326,6 @@ class MobileOperatorGenerator:
 
                 session.add(tariff)
 
-        # session.commit()
         self.print_status('Done')
 
     def generate_payment_methods(self, session):
@@ -381,7 +362,6 @@ class MobileOperatorGenerator:
                 next_number += 1
 
             session.bulk_save_objects(phone_numbers)
-        # session.commit()
 
         self.print_status('Done')
 
@@ -400,10 +380,6 @@ class MobileOperatorGenerator:
         self.generate_tariffs(session)
         self.generate_fake_phone_numbers(session)
         session.commit()
-
-
-DISTRIBUTIONS_FILE = 'data/distributions.json'
-distributions_info = file_to_json(DISTRIBUTIONS_FILE)
 
 
 class ActivityGenerator:
@@ -466,8 +442,8 @@ class ActivityGenerator:
 class AccountActivityGenerator(ActivityGenerator):
     def __init__(self, account, period_start_date):
         super().__init__(period_start_date)
-        self.sim_account = account
 
+        self.sim_account = account
         self.distributions = {}
 
         self.parse_activity()
@@ -527,8 +503,8 @@ class DeviceActivityGenerator(ActivityGenerator):
         super().__init__(period_start_date)
 
         self.sim_device = device
-
         self.duration_distribution = {}
+        self.out_of_funds_distributions = {}
 
         self.parse_activity()
 
@@ -567,6 +543,16 @@ class DeviceActivityGenerator(ActivityGenerator):
             day_distribution_info = distributions_info['month'][period_activity['days_activity']]
             self.days_distribution[activity_name] = Distribution(info=day_distribution_info)
 
+        # TODO: Static for all instances
+        for category_num in out_of_funds_info['trust_category']:
+            category = int(category_num)
+            category_activity = out_of_funds_info['trust_category'][category_num]
+            self.out_of_funds_distributions[category] = {}
+            for action_name in category_activity:
+                actions_info = category_activity[action_name]['actions']
+                action_distribution = distribution_from_list(actions_info)
+                self.out_of_funds_distributions[category][action_name] = action_distribution
+
     def generate_timeline(self, date_from, date_to):
         actions = []
         actions.extend(self.generate_calls(date_from, date_to))
@@ -595,6 +581,7 @@ class DeviceActivityGenerator(ActivityGenerator):
         call_actions = []
         call_day_usages = self.get_amount_for_period('Call')
         call_duration_distribution = self.duration_distribution['Call']
+        out_of_funds = self.out_of_funds_distributions[self.sim_device.trust_category]['Call']
 
         cur_date = date_from
         while cur_date <= date_to:
@@ -606,7 +593,8 @@ class DeviceActivityGenerator(ActivityGenerator):
             deltas = [start_times[i+1]-start_times[i] for i in range(amount-1)] + [None]
 
             for i in range(amount):
-                call = Call(self.sim_device, start_times[i], deltas[i], self.get_recipient(None), can_overlap=False)
+                call = Call(self.sim_device, start_times[i], deltas[i],
+                            self.get_recipient(None), out_of_funds, can_overlap=False)
                 call.generate_duration(call_duration_distribution)
                 call_actions.append(call)
 
@@ -616,6 +604,7 @@ class DeviceActivityGenerator(ActivityGenerator):
 
     def generate_messages(self, date_from, date_to):
         message_actions = []
+        out_of_funds = self.out_of_funds_distributions[self.sim_device.trust_category]['Message']
 
         for service in ('SMS', 'MMS'):
             message_day_usages = self.get_amount_for_period(service)
@@ -627,7 +616,8 @@ class DeviceActivityGenerator(ActivityGenerator):
 
                 start_times = self.get_start_times(date=cur_date, amount=amount)
                 for i in range(amount):
-                    message = Message(self.sim_device, start_times[i], service.lower(), self.get_recipient(None))
+                    message = Message(self.sim_device, start_times[i], service.lower(),
+                                      self.get_recipient(None), out_of_funds)
                     message_actions.append(message)
 
                 cur_date += timedelta(days=1)
@@ -638,6 +628,7 @@ class DeviceActivityGenerator(ActivityGenerator):
         internet_actions = []
         internet_day_usages = self.get_amount_for_period('Internet')
         session_length_distribution = self.duration_distribution['Internet']
+        out_of_funds = self.out_of_funds_distributions[self.sim_device.trust_category]['Internet']
 
         cur_date = date_from
         while cur_date <= date_to:
@@ -646,7 +637,7 @@ class DeviceActivityGenerator(ActivityGenerator):
 
             start_times = self.get_start_times(date=cur_date, amount=amount)
             for i in range(amount):
-                internet = Internet(self.sim_device, start_times[i])
+                internet = Internet(self.sim_device, start_times[i], out_of_funds)
                 internet.generate_service_usage(session_length_distribution)
                 internet_actions.append(internet)
 
@@ -656,6 +647,7 @@ class DeviceActivityGenerator(ActivityGenerator):
 
     def generate_other_services(self, date_from, date_to):
         service_usages = []
+        # TODO: Out of funds?
 
         for service_name in self.activity_info:
             if service_name not in (self.basic_services | self.other_activities):
@@ -672,7 +664,7 @@ class DeviceActivityGenerator(ActivityGenerator):
                     start_times = self.get_start_times(date=cur_date, amount=amount)
                     for i in range(amount):
                         service = OneTimeService(self.sim_device, start_times[i], service_name,
-                                                 activation_code, usage_type)
+                                                 activation_code, usage_type, None)
                         service_usages.append(service)
 
                     cur_date += timedelta(days=1)
@@ -685,6 +677,7 @@ class DeviceActivityGenerator(ActivityGenerator):
         info = self.activity_info['Tariff changing']
         potential_tariffs = info['tariffs']
         change_days = self.get_amount_for_period('Tariff changing')
+        out_of_funds = self.out_of_funds_distributions[self.sim_device.trust_category]['TariffChange']
 
         cur_date = date_from
         while cur_date <= date_to:
@@ -700,7 +693,8 @@ class DeviceActivityGenerator(ActivityGenerator):
                 smart_mini_info = {'name': 'Smart mini', 'code': '*111*1023#'}
                 if tariff_info['name'] != 'Smart mini':
                     tariff_info = smart_mini_info
-                change = TariffChange(self.sim_device, start_times[i], tariff_info['code'], tariff_info['name'])
+                change = TariffChange(self.sim_device, start_times[i], tariff_info['code'], tariff_info['name'],
+                                      out_of_funds)
                 tariff_changes.append(change)
 
             cur_date += timedelta(days=1)

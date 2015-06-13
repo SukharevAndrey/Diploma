@@ -56,18 +56,37 @@ class AccountPayment(AccountAction):
 
 
 class DeviceAction(Action):
-    def __init__(self, device, start_date):
+    def __init__(self, device, start_date, out_of_funds):
         super().__init__(start_date)
         self.device = device
+        self.out_of_funds = out_of_funds
 
     def handle_out_of_funds(self):
         print('Handling out of funds situation during %s' % self.__class__.__name__)
         print('Trust category: %d' % self.device.trust_category)
 
+        if self.out_of_funds:
+            solution = self.out_of_funds.get_value(return_array=False)
+            print('We can solve it by %s' % solution)
+            if solution == 'Nothing':
+                pass
+            elif solution == 'Payment':
+                # Making small payment (may be required multiple times, but who cares)
+                payment = AccountPayment(self.device.account, self.start_date, 'QIWI', 'third_party', 100)
+                payment.perform()
+                # Trying to perform action one more time
+                self.perform()
+            elif solution == 'Call me':
+                call_me = Message(self.device, self.start_date, 'sms',
+                                  self.recipient_info, self.out_of_funds, free_message=True)
+                call_me.perform()
+            elif solution == 'Packet':
+                pass
+
 
 class Call(DeviceAction):
-    def __init__(self, device, start_date, maximum_duration, recipient_info, can_overlap=False):
-        super().__init__(device, start_date)
+    def __init__(self, device, start_date, maximum_duration, recipient_info, out_of_funds, can_overlap=False):
+        super().__init__(device, start_date, out_of_funds)
         self._duration = None
         self.end_date = None
         self.maximum_duration = maximum_duration
@@ -111,6 +130,7 @@ class Call(DeviceAction):
         call_info = {
             'date': self.start_date,
             'name': 'outgoing_call',
+            'is_free': False,
             'minutes': dur_minutes,
             'seconds': dur_seconds,
             'operator': self.recipient_info['operator'],
@@ -124,18 +144,14 @@ class Call(DeviceAction):
         if status == ServiceStatus.out_of_funds:
             self.handle_out_of_funds()
 
-    def handle_out_of_funds(self):
-        super().handle_out_of_funds()
-        workarounds = ['Nothing', 'Payment', 'Call me']
-
     def __repr__(self):
         return '%s - Outgoing call to %s, duration: %s' % (self.start_date, self.recipient_info['operator'],
                                                            self.duration)
 
 
 class Internet(DeviceAction):
-    def __init__(self, device, start_date):
-        super().__init__(device, start_date)
+    def __init__(self, device, start_date, out_of_funds):
+        super().__init__(device, start_date, out_of_funds)
         self.megabytes = 0
         self.kilobytes = 0
 
@@ -146,6 +162,7 @@ class Internet(DeviceAction):
     def to_dict_info(self):
         return {'date': self.start_date,
                 'name': 'internet',
+                'is_free': False,
                 'megabytes': self.megabytes,
                 'kilobytes': self.kilobytes}
 
@@ -159,15 +176,21 @@ class Internet(DeviceAction):
         return '%s - Internet usage. Used %s mb, %s kb' % (self.start_date, self.megabytes, self.kilobytes)
 
 class Message(DeviceAction):
-    def __init__(self, device, start_date, message_type, recipient_info):
-        super().__init__(device, start_date)
+    def __init__(self, device, start_date, message_type, recipient_info, out_of_funds, free_message=False):
+        super().__init__(device, start_date, out_of_funds)
         self.message_type = message_type
         self.recipient_info = recipient_info
+        self.free_message = free_message
+        if self.free_message:
+            self.msg_type = 'Free'
+        else:
+            self.msg_type = 'Non free'
 
     def to_dict_info(self):
         messsage_info = {
             'date': self.start_date,
             'name': self.message_type,
+            'is_free': self.free_message,
             'operator': self.recipient_info['operator'],
             'phone_number': self.recipient_info['phone_number']
         }
@@ -180,21 +203,22 @@ class Message(DeviceAction):
             self.handle_out_of_funds()
 
     def __repr__(self):
-        return '%s - %s Message. Sent to %s' % (self.start_date, self.message_type.swapcase(),
-                                                self.recipient_info['operator'])
+        return '%s - %s %s message. Sent to %s' % (self.start_date, self.msg_type, self.message_type.swapcase(),
+                                                   self.recipient_info['operator'])
 
 
 class OneTimeService(DeviceAction):
-    def __init__(self, device, start_date, service_name, activation_code, type):
-        super().__init__(device, start_date)
+    def __init__(self, device, start_date, service_name, activation_code, action_type, out_of_funds):
+        super().__init__(device, start_date, out_of_funds)
         self.activation_code = activation_code
         self.service_name = service_name
-        self.type = type
+        self.action_type = action_type
 
     def to_dict_info(self):
         return {'date': self.start_date,
                 'code': self.activation_code,
-                'type': self.type,
+                'is_free': False,
+                'type': self.action_type,
                 'service_type': 'service'}
 
     def perform(self):
@@ -209,14 +233,15 @@ class OneTimeService(DeviceAction):
 
 
 class TariffChange(DeviceAction):
-    def __init__(self, device, start_date, tariff_code, tariff_name):
-        super().__init__(device, start_date)
+    def __init__(self, device, start_date, tariff_code, tariff_name, out_of_funds):
+        super().__init__(device, start_date, out_of_funds)
         self.tariff_code = tariff_code
         self.tariff_name = tariff_name
 
     def to_dict_info(self):
         return {'date': self.start_date,
                 'code': self.tariff_code,
+                'is_free': False,
                 'type': 'activation',
                 'service_type': 'tariff'}
 
@@ -232,7 +257,7 @@ class TariffChange(DeviceAction):
 
 class LocationChange(DeviceAction):
     def __init__(self, device, start_date, new_location):
-        super().__init__(device, start_date)
+        super().__init__(device, start_date, None)
         self.new_location = new_location
 
     def to_dict_info(self):

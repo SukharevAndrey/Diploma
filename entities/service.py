@@ -96,6 +96,7 @@ class ServiceLog(Base):
     use_date = db.Column(db.DateTime, default=db.func.now())
     action_type = db.Column(db.String, default='usage')
     amount = db.Column(db.Integer, default=1)
+    is_free = db.Column(db.Boolean, default=False)
 
     device_service = relationship('DeviceService', uselist=False)
     recipient_location = relationship('Location', uselist=False)
@@ -119,6 +120,7 @@ class Request(Base):
     date_created = db.Column(db.DateTime, default=db.func.now())
     type = db.Column(db.String, default='activation')
     request_type = db.Column(db.String)
+    status = db.Column(db.String, default='success')
 
     device = relationship('Device', uselist=False)
     service = relationship('Service', foreign_keys=[service_id], uselist=False)

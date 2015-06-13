@@ -5,42 +5,29 @@ import logging
 
 from sqlalchemy import create_engine, and_, or_
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from sqlalchemy.orm.exc import NoResultFound
 
 from entities.customer import *
 from entities.location import *
 from entities.operator import *
 from entities.payment import *
 from entities.service import *
+from file_info import user_groups_info, agreements_info, accounts_info, devices_info, distributions_info
 from generator import MobileOperatorGenerator, AccountActivityGenerator, DeviceActivityGenerator
 from distribution import Distribution
 from random_data import *
-from tools import file_to_json, distribution_from_list
+from tools import distribution_from_list
 from status import ServiceStatus
-
 from analyzer import ActivityAnalyzer
 
 # TODO: Decimal service amount
 # TODO: Global entities cache
 
-# TODO: Store it somewhere, where it can be imported
-USER_GROUPS_FILE = 'data/clusters/customer_clusters.json'
-AGREEMENTS_FILE = 'data/clusters/agreement_clusters.json'
-ACCOUNTS_FILE = 'data/clusters/account_clusters.json'
-DEVICES_FILE = 'data/clusters/device_clusters.json'
-DISTRIBUTIONS_FILE = 'data/distributions.json'
-
-user_groups_info = file_to_json(USER_GROUPS_FILE)
-agreements_info = file_to_json(AGREEMENTS_FILE)
-accounts_info = file_to_json(ACCOUNTS_FILE)
-devices_info = file_to_json(DEVICES_FILE)
-distributions_info = file_to_json(DISTRIBUTIONS_FILE)
-
 logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d.%m.%Y %H:%M:%S',
 #                    level=logging.INFO)
 #                     level=logging.CRITICAL)
                     filename='activity.log', filemode='w', level=logging.INFO)
-#logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+# logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 class MobileOperatorSimulator:
     def __init__(self, metadata):
@@ -118,27 +105,29 @@ class MobileOperatorSystem:
         self.next_free_number = 0
 
     def get_active_balance_for_device(self, device):
-        # TODO: Simplify (latest balance?)
-        # TODO: Also check due date
-        balance = self.session.query(Balance).\
-            join(Account, Account.id == Balance.account_id).\
-            join(CalculationMethod, Account.calculation_method_id == CalculationMethod.id).\
-            join(Device, Device.account_id == Account.id).\
-            filter(and_(Balance.account_id == device.account_id,
-                        Balance.type == CalculationMethod.type,
-                        Balance.due_date.is_(None))).one()
-        return balance
+        return device.account.balances[-1]
+        # # TODO: Simplify (latest balance?)
+        # # TODO: Also check due date
+        # balance = self.session.query(Balance).\
+        #     join(Account, Account.id == Balance.account_id).\
+        #     join(CalculationMethod, Account.calculation_method_id == CalculationMethod.id).\
+        #     join(Device, Device.account_id == Account.id).\
+        #     filter(and_(Balance.account_id == device.account_id,
+        #                 Balance.type == CalculationMethod.type,
+        #                 Balance.due_date.is_(None))).one()
+        # return balance
 
     def get_active_balance_for_account(self, account):
-        # TODO: Simplify (latest balance?)
-        # TODO: Also check due date
-        balance = self.session.query(Balance).\
-            join(Account, Account.id == Balance.account_id).\
-            join(CalculationMethod, Account.calculation_method_id == CalculationMethod.id).\
-            filter(and_(Balance.account_id == account.id,
-                        Balance.type == CalculationMethod.type,
-                        Balance.due_date.is_(None))).one()
-        return balance
+        return account.balances[-1]
+        # # TODO: Simplify (latest balance?)
+        # # TODO: Also check due date
+        # balance = self.session.query(Balance).\
+        #     join(Account, Account.id == Balance.account_id).\
+        #     join(CalculationMethod, Account.calculation_method_id == CalculationMethod.id).\
+        #     filter(and_(Balance.account_id == account.id,
+        #                 Balance.type == CalculationMethod.type,
+        #                 Balance.due_date.is_(None))).one()
+        # return balance
 
     def get_unpaid_bills(self, account):
         # TODO: Handle date
@@ -172,21 +161,20 @@ class MobileOperatorSystem:
         balance = self.get_active_balance_for_account(account)
         payment.balance = balance
 
+        balance.amount += Decimal(payment.amount)
+        logging.info('Replenishing %s balance at %f RUB' % (balance.type, payment.amount))
         # TODO: Implement bonuses charging
-        if balance.type == 'advance':
-            balance.amount += Decimal(payment.amount)
-            logging.info('Replenishing advance balance at %f RUB. New balance: %f RUB' % (payment.amount,
-                                                                                          balance.amount))
-        else:  # credit
+        if balance.type == 'credit':
             available_money = payment.amount
             # Paying unpaid bills
             unpaid_bills = self.get_unpaid_bills(account)
             for bill in unpaid_bills:
                 bill_pay_sum = min(available_money, bill.debt)
                 bill.paid += bill_pay_sum
-                balance.amount += bill_pay_sum
                 bill.debt -= bill_pay_sum
                 available_money -= bill_pay_sum
+
+        logging.info('New balance: %f RUB' % balance.amount)
 
     def handle_connected_service(self, service_info, free_activation=False):
         logging.info('Handling connected service')
@@ -214,16 +202,16 @@ class MobileOperatorSystem:
     def can_activate_service(self, device, service):
         balance = self.get_active_balance_for_device(device)
 
-        if balance.amount > 0:
-            if balance.type == 'credit' or balance.amount >= service.activation_cost:
+        if balance.type == 'advance':
+            if balance.amount >= service.activation_cost:
                 return True
             else:
                 return False
-        else:
-            if balance.type == 'advance':
-                return False
-            else:
+        else:  # credit
+            if balance.amount - service.activation_cost >= -balance.account.credit_limit:
                 return True
+            else:
+                return False
 
     def get_device_location(self, device, date):
         return self.session.query(Location).filter(and_(Location.device == device,
@@ -313,6 +301,7 @@ class MobileOperatorSystem:
                 # Decreasing balance, but the bill is still unpaid
                 logging.info('Debiting %s RUB from credit balance with %s RUB' % (bill.debt,
                                                                                   balance.amount))
+                # TODO: Write due date to bill
                 balance.amount -= bill.debt
                 return ServiceStatus.success
             else:
@@ -324,6 +313,9 @@ class MobileOperatorSystem:
         service_info = service_log.device_service
         service = service_info.service
         device = service_info.device
+
+        if service_log.is_free:
+            return ServiceStatus.success
 
         unpaid_service_amount = service_log.amount
 
@@ -395,6 +387,7 @@ class MobileOperatorSystem:
             logging.info('Device can connect tariff')
         else:
             logging.info('The device has unpaid services. Connecting tariff is impossible')
+            # TODO: Remove request? Request status?
             return ServiceStatus.out_of_funds
 
         # If device already has a tariff
@@ -746,7 +739,7 @@ class SimulatedAccount:
 
         device_actions = []
         for device in self.devices:
-            device_actions.extend(device.simulate_period(date_from, date_to))
+            device_actions.extend(device.generate_period_actions(date_from, date_to))
 
         actions = account_actions+device_actions
 
@@ -757,11 +750,11 @@ class SimulatedAccount:
 
 
 class SimulatedDevice:
-    def __init__(self, device_customer, device_entity, behavior_info, home_region, trust_category,
+    def __init__(self, sim_account, device_entity, behavior_info, home_region, trust_category,
                  session, operator_system, verbose=False):
         self.session = session
         self.system = operator_system
-        self.customer = device_customer
+        self.account = sim_account
         self.device = device_entity
         self.behavior_info = behavior_info
         self.home_region = home_region
@@ -816,6 +809,7 @@ class SimulatedDevice:
                          amount=amount,
                          action_type='usage',
                          use_date=usage_date,
+                         is_free=service_info['is_free'],
                          recipient_phone_number=recipient_phone_number)
 
         self.session.add(log)
@@ -824,7 +818,6 @@ class SimulatedDevice:
     def make_call(self, call_info):
         logging.info('Making call to phone number %s' % (call_info['phone_number']['code'] +
                                                          ' ' + call_info['phone_number']['number']))
-        # TODO: Save original call duration
         return self.use_service(call_info, self.system.round_call_duration(call_info['minutes'],
                                                                            call_info['seconds']))
 
@@ -845,17 +838,19 @@ class SimulatedDevice:
         request_date = request_info['date']
 
         if request_info['service_type'] == 'service':
-            service = self.system.get_service(service_type='service', operator=regional_operator, code=request_info['code'])
+            service = self.system.get_service(service_type='service', operator=regional_operator,
+                                              code=request_info['code'])
             request = Request(date_created=request_date, type=request_info['type'],
                               device=self.device, service=service)
         else:
-            tariff = self.system.get_service(service_type='tariff', operator=regional_operator, code=request_info['code'])
+            tariff = self.system.get_service(service_type='tariff', operator=regional_operator,
+                                             code=request_info['code'])
             request = Request(date_created=request_date, type=request_info['type'],
                               device=self.device, tariff=tariff)
         self.session.add(request)
         return self.system.handle_request(request)
 
-    def simulate_period(self, date_from, date_to):
+    def generate_period_actions(self, date_from, date_to):
         period_start, period_end = self.system.get_tariff_period(self.device)
 
         gen = DeviceActivityGenerator(self, period_start)
