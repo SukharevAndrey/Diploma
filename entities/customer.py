@@ -10,6 +10,7 @@ class Customer(Base):
     }
 
     id = db.Column(db.Integer, primary_key=True, index=True)
+    cluster_id = db.Column(db.Integer, default=0)
     geographic_address_id = db.Column(db.Integer, db.ForeignKey('geographicAddress.id'))
 
     date_from = db.Column(db.DateTime, default=db.func.now())
@@ -140,6 +141,7 @@ class Account(Base):
     __tablename__ = 'account'
 
     id = db.Column(db.Integer, primary_key=True, index=True)
+    cluster_id = db.Column(db.Integer, default=0)
     agreement_id = db.Column(db.Integer, db.ForeignKey('customerAgreement.id'))
     calculation_method_id = db.Column(db.Integer, db.ForeignKey('calculationMethod.id'))
 
@@ -163,6 +165,7 @@ class Device(Base):
     )
 
     id = db.Column(db.Integer, primary_key=True, index=True)
+    cluster_id = db.Column(db.Integer, default=0)
     phone_number_id = db.Column(db.Integer, db.ForeignKey('phoneNumber.id'))
     tariff_id = db.Column(db.Integer, db.ForeignKey('tariff.id'))
     account_id = db.Column(db.Integer, db.ForeignKey('account.id'))

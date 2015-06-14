@@ -6,33 +6,37 @@ from base import Base
 def main():
     base_schema = Base.metadata
     simulator = MobileOperatorSimulator(base_schema)
-    simulator.initial_fill()
+    simulator.generate_static_data()
+    simulator.generate_customers(date.today())
     simulator.simulate_period(date.today(), date.today())
-    # simulator.analyze_data(date.today())
+    simulator.analyze_data(date.today(), date.today())
 
-# def main():
-#     base_schema = Base.metadata
-#     simulator = MobileOperatorSimulator(base_schema)
-#     while True:
-#         print('Select action:')
-#         print('1. Fill database with static data')
-#         print('2. Simulate day')
-#         print('3. Analyze data')
-#         print('4. Clear all data')
-#         print('0. Exit')
-#         choice = input()
-#         if choice == '1':
-#             simulator.initial_fill()
-#         elif choice == '2':
-#             simulator.simulate_day(date.today())
-#         elif choice == '3':
-#             simulator.analyze_data(date.today())
-#         elif choice == '4':
-#             simulator.clear_all_data()
-#         elif choice == '0':
-#             return 0
-#         else:
-#             print('Wrong choice')
+def main1():
+    base_schema = Base.metadata
+    simulator = MobileOperatorSimulator(base_schema)
+    while True:
+        print('Select action:')
+        print('1. Fill database with static data')
+        print('2. Generate customers and their devices')
+        print('3. Simulate day')
+        print('4. Analyze data')
+        print('5. Clear all data')
+        print('0. Exit')
+        choice = input()
+        if choice == '1':
+            simulator.generate_static_data()
+        elif choice == '2':
+            simulator.generate_customers(date.today())
+        elif choice == '3':
+            simulator.simulate_period(date.today(), date.today())
+        elif choice == '4':
+            simulator.analyze_data(date.today())
+        elif choice == '5':
+            simulator.clear_all_data()
+        elif choice == '0':
+            return 0
+        else:
+            print('Wrong choice')
 
 if __name__ == '__main__':
     main()

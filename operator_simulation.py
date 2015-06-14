@@ -2,6 +2,7 @@ from collections import deque
 from decimal import Decimal
 from time import time
 import logging
+import os
 
 from sqlalchemy import create_engine, and_, or_
 from sqlalchemy.orm import sessionmaker
@@ -25,9 +26,9 @@ from analyzer import ActivityAnalyzer
 
 logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d.%m.%Y %H:%M:%S',
 #                    level=logging.INFO)
-#                     level=logging.CRITICAL)
-                    filename='activity.log', filemode='w', level=logging.INFO)
-# logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+                     level=logging.CRITICAL)
+#                    filename='activity.log', filemode='w', level=logging.INFO)
+#logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 class MobileOperatorSimulator:
     def __init__(self, metadata):
@@ -67,24 +68,24 @@ class MobileOperatorSimulator:
                 else:
                     customer = random_organization(simulation_date)
 
+                customer.cluster_id = group_info['cluster_id']
                 c = SimulatedCustomer(customer, group_info['agreements'], self.db1_session, self.system, verbose=True)
                 c.generate_hierarchy(simulation_date)
                 self.customers.append(c)
 
+        self.db1_session.commit()
         end_time = time()
         print('Customers generation done in %f seconds' % (end_time-start_time))
 
     def simulate_period(self, date_from, date_to):
         print('Simulating customers activity from %s to %s' % (date_from, date_to))
-        self.generate_customers(date_from)
-        self.db1_session.commit()
         start_time = time()
         for customer in self.customers:
             customer.simulate_period(date_from, date_to)
         end_time = time()
         print('Customers simulation done in %f seconds' % (end_time-start_time))
 
-    def initial_fill(self):
+    def generate_static_data(self):
         gen = MobileOperatorGenerator(verbose=True)
         gen.generate_static_data(self.db1_session)
         # gen.generate_static_data(self.db2_session)
@@ -94,8 +95,8 @@ class MobileOperatorSimulator:
         self.metadata.drop_all(self.db1_engine, checkfirst=True)
         self.generate_schema(self.db1_engine)
 
-    def analyze_data(self, date):
-        self.analyzer.analyze(date)
+    def analyze_data(self, date_from, date_to):
+        self.analyzer.analyze(date_from, date_to)
 
 
 class MobileOperatorSystem:
@@ -560,6 +561,7 @@ class SimulatedCustomer:
                 account_info = {
                     'date': simulation_date,
                     'calc_method': account_cluster_info['calculation_method'],
+                    'cluster_id': account_cluster_info['cluster_id'],
                     'trust_category': account_cluster_info['trust_category'],
                     'credit_limit': account_cluster_info['credit_limit']
                 }
@@ -591,6 +593,7 @@ class SimulatedCustomer:
                           amount=self.system.initial_balance)
 
         account = Account(date_from=registration_date,
+                          cluster_id=account_info['cluster_id'],
                           calc_method=calc_method,
                           trust_category=account_info['trust_category'],
                           credit_limit=account_info['credit_limit'],
@@ -621,6 +624,7 @@ class SimulatedAccount:
 
         device = Device(account=self.account,
                         date_registered=registration_date,
+                        cluster_id=device_info['cluster_id'],
                         IMEI=device_info['IMEI'],
                         type=device_info['type'])
 
@@ -696,6 +700,7 @@ class SimulatedAccount:
                     initial_services.add(service_distribution.get_value(return_array=False))
 
                 device_info = {
+                    'cluster_id': device_cluster_info['cluster_id'],
                     'date': simulation_date,
                     'initial_tariff': initial_tariff_name,
                     'initial_services': list(initial_services),

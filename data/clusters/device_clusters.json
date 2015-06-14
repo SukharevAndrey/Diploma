@@ -1,5 +1,6 @@
 {
   "Smartphone with small activity 1": {
+    "cluster_id": 1,
     "type": "smartphone",
     "Initial tariffs": [
       {
@@ -150,6 +151,7 @@
     }
   },
   "Smartphone with high activity 1": {
+    "cluster_id": 2,
     "type": "smartphone",
     "Initial tariffs": [
       {

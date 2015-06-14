@@ -1,1 +1,2 @@
-url=sqlite:///:memory:
+main_engine = sqlite:///:memory:
+test_engine = sqlite:///:memory:

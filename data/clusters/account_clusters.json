@@ -1,5 +1,6 @@
 {
   "Single smartphone with small activity 1": {
+    "cluster_id": 1,
     "calculation_method": "advance",
     "credit_limit": 0.0,
     "trust_category": 4,
@@ -38,6 +39,7 @@
     "devices": ["Smartphone with small activity 1"]
   },
   "Single smartphone with high activity 1": {
+    "cluster_id": 2,
     "calculation_method": "advance",
     "credit_limit": 0.0,
     "trust_category": 5,
@@ -76,6 +78,7 @@
     "devices": ["Smartphone with high activity 1"]
   },
   "Smartphone and tablet with small activity 1": {
+    "cluster_id": 3,
     "calculation_method": "advance",
     "credit_limit": 800.0,
     "trust_category": 4,
@@ -103,6 +106,7 @@
     "devices": ["Smartphone with small activity 1", "Tablet with small activity 1"]
   },
   "Small company account 1": {
+    "cluster_id": 4,
     "calculation_method": "credit",
     "credit_limit": 10000.0,
     "trust_category": 5,
