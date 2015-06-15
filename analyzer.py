@@ -254,13 +254,15 @@ class ActivityAnalyzer:
         print('Analyzing took %f seconds' % (end_time-start_time))
 
         self.print_metrics(processed_devices, estimated_device_labels, device_labels)
-        self.plot_data(processed_devices, estimated_device_labels)
+        # self.plot_data(processed_devices, estimated_device_labels)
 
         self.print_metrics(processed_accounts, estimated_account_labels, account_labels)
         # self.plot_data(processed_accounts, estimated_account_labels)
 
         self.print_metrics(processed_customers, estimated_customer_labels, customer_labels)
         # self.plot_data(processed_customers, estimated_customer_labels)
+
+        return customer_clusters
 
 def main():
     pass

@@ -12,8 +12,9 @@ class Balance(Base):
     id = db.Column(db.Integer, primary_key=True, index=True)
     account_id = db.Column(db.Integer, db.ForeignKey('account.id'))
 
-    date_created = db.Column(db.DateTime, default=db.func.now())
-    due_date = db.Column(db.DateTime)
+    date_from = db.Column(db.DateTime, default=db.func.now())
+    date_to = db.Column(db.DateTime)
+
     type = db.Column(db.String, default='advance')
     amount = db.Column(db.Numeric, default=0)
 
@@ -29,7 +30,9 @@ class Bill(Base):
     service_log_id = db.Column(db.Integer, db.ForeignKey('serviceLog.id'))
     balance_id = db.Column(db.Integer, db.ForeignKey('balance.id'))
 
-    date_created = db.Column(db.DateTime, default=db.func.now())
+    date_from = db.Column(db.DateTime, default=db.func.now())
+    date_to = db.Column(db.DateTime)
+
     due_date = db.Column(db.DateTime)
     paid = db.Column(db.Numeric, default=0)
     debt = db.Column(db.Numeric, default=0)
@@ -59,7 +62,7 @@ class PaymentMethod(Base):
     }
 
     id = db.Column(db.Integer, primary_key=True, index=True)
-    payment_id = db.Column(db.Integer, db.ForeignKey('payment.id'))
+    payment_id = db.Column(db.Integer, db.ForeignKey('payment.id', use_alter=True))
 
     type = db.Column(db.String)
     name = db.Column(db.String)

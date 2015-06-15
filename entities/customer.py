@@ -15,6 +15,7 @@ class Customer(Base):
 
     date_from = db.Column(db.DateTime, default=db.func.now())
     date_to = db.Column(db.DateTime)
+
     type = db.Column(db.String)
     status = db.Column(db.String, default='active')
     rank = db.Column(db.Integer, default=1)
@@ -116,8 +117,9 @@ class CustomerAgreement(Base):
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'))
     agreement_id = db.Column(db.Integer, db.ForeignKey('agreement.id'))
 
-    sign_date = db.Column(db.Date, default=db.func.now())
+    date_from = db.Column(db.Date, default=db.func.now())
     date_to = db.Column(db.Date)
+
     income_rating = db.Column(db.Integer, default=0)
 
     customer = relationship('Customer')
@@ -170,7 +172,7 @@ class Device(Base):
     tariff_id = db.Column(db.Integer, db.ForeignKey('tariff.id'))
     account_id = db.Column(db.Integer, db.ForeignKey('account.id'))
 
-    date_registered = db.Column(db.DateTime, default=db.func.now())
+    date_from = db.Column(db.DateTime, default=db.func.now())
     IMEI = db.Column(db.String)
     type = db.Column(db.String, default='phone')
 

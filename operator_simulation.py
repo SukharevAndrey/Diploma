@@ -20,38 +20,43 @@ from random_data import *
 from tools import distribution_from_list
 from status import ServiceStatus
 from analyzer import ActivityAnalyzer
+from loading import LoadSimulator
 
 # TODO: Decimal service amount
 # TODO: Global entities cache
 
 logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d.%m.%Y %H:%M:%S',
 #                    level=logging.INFO)
-                     level=logging.CRITICAL)
-#                    filename='activity.log', filemode='w', level=logging.INFO)
-#logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+#                     level=logging.CRITICAL)
+                    filename='activity.log', filemode='w', level=logging.INFO)
+logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 class MobileOperatorSimulator:
     def __init__(self, metadata):
         self.metadata = metadata
-        self.db1_engine = create_engine('sqlite:///:memory:', echo=False)
-        # self.db2_engine = create_engine('sqlite:///:memory:', echo=False)
+        # TODO: From config
+        self.main_engine = create_engine('sqlite:///:memory:')
+        self.test_engine = create_engine('sqlite:///:memory:')
 
-        self.generate_schema(self.db1_engine)
-        # self.generate_schema(self.db2_engine)
+        self.generate_schema(self.main_engine)
+        self.generate_schema(self.test_engine)
 
-        self.db1_session = sessionmaker(bind=self.db1_engine)()
-        self.db1_session.autoflush = False
-        # self.db2_session = sessionmaker(bind=self.db2_engine)()
+        self.main_session = sessionmaker(bind=self.main_engine)()
+        self.main_session.autoflush = False
+        self.test_session = sessionmaker(bind=self.test_engine)()
+        self.test_session.autoflush = False  # TODO: True?
 
-        self.system = MobileOperatorSystem(self.db1_session)
-        self.analyzer = ActivityAnalyzer(self.db1_session)
+        self.system = MobileOperatorSystem(self.main_session)
+        self.analyzer = ActivityAnalyzer(self.main_session)
+        self.load_simulator = LoadSimulator(self.main_session, self.test_session)
 
         self.customers = []
+        self.customer_clusters = {}
 
     def generate_schema(self, engine):
         self.metadata.create_all(engine, checkfirst=True)
 
-    def generate_customers(self, simulation_date):
+    def generate_customers(self, generation_date):
         print('Generating customers')
         start_time = time()
 
@@ -64,16 +69,16 @@ class MobileOperatorSimulator:
 
             for i in range(size):
                 if customer_type == 'individual':
-                    customer = random_individual(simulation_date, age)
+                    customer = random_individual(generation_date, age)
                 else:
-                    customer = random_organization(simulation_date)
+                    customer = random_organization(generation_date)
 
                 customer.cluster_id = group_info['cluster_id']
-                c = SimulatedCustomer(customer, group_info['agreements'], self.db1_session, self.system, verbose=True)
-                c.generate_hierarchy(simulation_date)
+                c = SimulatedCustomer(customer, group_info['agreements'], self.main_session, self.system, verbose=True)
+                c.generate_hierarchy(generation_date)
                 self.customers.append(c)
 
-        self.db1_session.commit()
+        self.main_session.commit()
         end_time = time()
         print('Customers generation done in %f seconds' % (end_time-start_time))
 
@@ -85,18 +90,27 @@ class MobileOperatorSimulator:
         end_time = time()
         print('Customers simulation done in %f seconds' % (end_time-start_time))
 
+    def generate_test_load(self, date_from, date_to):
+        if not self.customer_clusters:
+            print('Analyze data first')
+        else:
+            self.load_simulator.copy_activity(self.customer_clusters, date_from, date_to)
+
     def generate_static_data(self):
         gen = MobileOperatorGenerator(verbose=True)
-        gen.generate_static_data(self.db1_session)
-        # gen.generate_static_data(self.db2_session)
+        gen.generate_static_data(self.main_session)
 
-    def clear_all_data(self):
-        # FIXME: Doesn't work. Need to handle foreign keys
-        self.metadata.drop_all(self.db1_engine, checkfirst=True)
-        self.generate_schema(self.db1_engine)
+    def clear_main_base_data(self):
+        self.metadata.drop_all(self.main_engine)
+        self.generate_schema(self.main_engine)
+        self.customer_clusters = {}
+
+    def clear_test_base_data(self):
+        self.metadata.drop_all(self.test_engine)
+        self.generate_schema(self.test_engine)
 
     def analyze_data(self, date_from, date_to):
-        self.analyzer.analyze(date_from, date_to)
+        self.customer_clusters = self.analyzer.analyze(date_from, date_to)
 
 
 class MobileOperatorSystem:
@@ -143,7 +157,7 @@ class MobileOperatorSystem:
     def handle_request(self, request):
         logging.info('Handling request')
 
-        request_date = request.date_created
+        request_date = request.date_from
 
         if request.type == 'activation':
             if request.service:
@@ -196,7 +210,7 @@ class MobileOperatorSystem:
             # TODO: Charge activation sum if latest tariff change was less than month ago
             # TODO: Handle charging subscription cost for current period
             logging.info('Writing bill: need to pay %f' % service.activation_cost)
-            bill = Bill(date_created=connection_date, service_log=log, debt=service.activation_cost)
+            bill = Bill(date_from=connection_date, service_log=log, debt=service.activation_cost)
             log.bill = bill
             self.handle_bill(bill)
 
@@ -242,14 +256,14 @@ class MobileOperatorSystem:
         phone_numbers = self.session.query(PhoneNumber).filter_by(area_code=phone_info['code'],
                                                                   number=phone_info['number']).all()  # FIXME: One
         if not phone_numbers:
-            phone_number = self.register_phone_number(operator_info, phone_info, commit=False)
+            phone_number = self.register_phone_number(operator_info, phone_info)
         else:
             phone_number = phone_numbers[0]  # FIXME: Dirty hack
             logging.info('Phone number is already registered in base and belongs to operator %s %s' %
                          (phone_number.mobile_operator.name, phone_number.mobile_operator.country.iso3_code))
         return phone_number
 
-    def register_phone_number(self, operator_info, phone_info, commit=True):
+    def register_phone_number(self, operator_info, phone_info):
         logging.info('Registering phone number %s of operator %s' % (phone_info, operator_info))
 
         regional_operator = self.get_regional_operator(operator_info)
@@ -257,9 +271,7 @@ class MobileOperatorSystem:
                                    number=phone_info['number'],
                                    mobile_operator=regional_operator)
         self.session.add(phone_number)
-
-        if commit:
-            self.session.commit()
+        self.session.flush([phone_number])
 
         return phone_number
 
@@ -373,7 +385,7 @@ class MobileOperatorSystem:
                                                                          unpaid_service_amount,
                                                                          cost.use_cost))
                 bill = Bill(service_log=service_log,
-                            date_created=service_log.use_date,
+                            date_from=service_log.use_date,
                             debt=cost.use_cost*service_log.amount)
                 service_log.bill = bill
                 self.session.add(bill)
@@ -405,16 +417,17 @@ class MobileOperatorSystem:
         device.tariff = tariff
         # Connecting tariff as a service
         self.connect_service(device, tariff, connection_date, free_activation=free_activation,
-                             ability_check=False, commit=False)
+                             ability_check=False, flush=False)
 
         # Add to user basic services (like calls, sms, mms, internet)
         for service in tariff.attached_services:
             self.connect_service(device, service, connection_date, free_activation=free_activation,
-                                 ability_check=False, commit=False)
+                                 ability_check=False, flush=False)
 
         return ServiceStatus.success
 
-    def connect_service(self, device, service, connection_date, free_activation=False, ability_check=True, commit=True):
+    def connect_service(self, device, service, connection_date,
+                        free_activation=False, ability_check=True, flush=True):
         logging.info('Connecting service: %s' % service.name)
 
         if ability_check:
@@ -438,23 +451,22 @@ class MobileOperatorSystem:
 
         self.session.add(device_service)
 
-        if commit:
-            self.session.commit()
+        if flush:
+            self.session.flush([device_service])
 
         self.handle_connected_service(device_service, free_activation=free_activation)
 
-    def activate_service(self, device, service, date, commit=True):
+    def activate_service(self, device, service, date, flush=True):
         # TODO: Date?
         logging.info('Activating service: %s' % service.name)
         self.session.query(DeviceService).\
             filter_by(device=device, service=service, is_activated=False).\
             update({'is_activated': True},
                    synchronize_session='fetch')
+        if flush:
+            self.session.flush()
 
-        if commit:
-            self.session.commit()
-
-    def deactivate_service(self, device, service, date, commit=True):
+    def deactivate_service(self, device, service, date, flush=True):
         # TODO: Date?
         logging.info('Deactivating service: %s' % service.name)
         self.session.query(DeviceService).\
@@ -462,28 +474,28 @@ class MobileOperatorSystem:
             update({'is_activated': False,
                     'date_to': date},
                    synchronize_session='fetch')
-        if commit:
-            self.session.commit()
+        if flush:
+            self.session.flush()
 
-    def block_service(self, device, service, date, commit=True):
+    def block_service(self, device, service, date, flush=True):
         # TODO: Date?
         logging.info('Blocking service: %s' % service.name)
         self.session.query(DeviceService).\
             filter_by(device=device, service=service, is_blocked=False).\
             update({'is_blocked': True},
                    synchronize_session='fetch')
-        if commit:
-            self.session.commit()
+        if flush:
+            self.session.flush()
 
-    def unlock_service(self, device, service, date, commit=True):
+    def unlock_service(self, device, service, date, flush=True):
         # TODO: Date?
         logging.info('Blocking service: %s' % service.name)
         self.session.query(DeviceService).\
             filter_by(device=device, service=service, is_blocked=True).\
             update({'is_blocked': False},
                    synchronize_session='fetch')
-        if commit:
-            self.session.commit()
+        if flush:
+            self.session.flush()
 
     def get_service(self, service_type='service', operator=None, name=None, code=None):
         logging.info('Getting service (type: %s) %s (code %s)' % (service_type, name, code))
@@ -545,12 +557,12 @@ class SimulatedCustomer:
 
         session.add(self.customer)
 
-    def generate_hierarchy(self, simulation_date):
+    def generate_hierarchy(self, generation_date):
         logging.info('Generating agreements')
         for agreement_cluster_name in self.agreement_cluster_names:
             agreement_cluster_info = agreements_info[agreement_cluster_name]
             agreement_info = {
-                'date': simulation_date,
+                'date': generation_date,
                 'income_rating': agreement_cluster_info['income_rating']
             }
             agreement = self.sign_agreement(agreement_info)
@@ -559,7 +571,7 @@ class SimulatedCustomer:
             for account_cluster_name in account_cluster_names:
                 account_cluster_info = accounts_info[account_cluster_name]
                 account_info = {
-                    'date': simulation_date,
+                    'date': generation_date,
                     'calc_method': account_cluster_info['calculation_method'],
                     'cluster_id': account_cluster_info['cluster_id'],
                     'trust_category': account_cluster_info['trust_category'],
@@ -568,7 +580,7 @@ class SimulatedCustomer:
                 account = self.register_account(agreement, account_info)
 
                 sim_acc = SimulatedAccount(self, account, account_cluster_info, self.session, self.system)
-                sim_acc.generate_devices(simulation_date)
+                sim_acc.generate_devices(generation_date)
                 self.accounts.append(sim_acc)
 
     def sign_agreement(self, agreement_info):
@@ -576,7 +588,7 @@ class SimulatedCustomer:
         sign_date = agreement_info['date']
 
         agreement = self.session.query(Agreement).filter_by(destination=self.customer.type).one()
-        c_agreement = CustomerAgreement(sign_date=sign_date,
+        c_agreement = CustomerAgreement(date_from=sign_date,
                                         signed_agreement=agreement)
         self.customer.agreements.append(c_agreement)
         return c_agreement
@@ -588,7 +600,7 @@ class SimulatedCustomer:
         calc_method = self.session.query(CalculationMethod).\
             filter_by(type=account_info['calc_method']).one()
 
-        balance = Balance(date_created=registration_date,
+        balance = Balance(date_from=registration_date,
                           type=calc_method.type,
                           amount=self.system.initial_balance)
 
@@ -623,7 +635,7 @@ class SimulatedAccount:
         registration_date = device_info['date']
 
         device = Device(account=self.account,
-                        date_registered=registration_date,
+                        date_from=registration_date,
                         cluster_id=device_info['cluster_id'],
                         IMEI=device_info['IMEI'],
                         type=device_info['type'])
@@ -640,10 +652,14 @@ class SimulatedAccount:
             }
 
         # TODO: Handle date
-        phone_number = self.system.register_phone_number(operator_info, phone_number_info, commit=False)
+        phone_number = self.system.register_phone_number(operator_info, phone_number_info)
         device.phone_number = phone_number
 
         home_operator = phone_number.mobile_operator
+
+        initial_location = Location(country=home_operator.country, region=home_operator.region,
+                                    date_from=registration_date)
+        device.locations.append(initial_location)
 
         initial_tariff_name = device_info['initial_tariff']
         logging.info('Should connect tariff %s' % initial_tariff_name)
@@ -656,12 +672,12 @@ class SimulatedAccount:
         for initial_service_name in device_info['initial_services']:
             service = self.system.get_service(service_type='service', name=initial_service_name, operator=home_operator)
             self.system.connect_service(device, service, free_activation=True,
-                                        connection_date=registration_date, commit=False)
+                                        connection_date=registration_date, flush=False)
 
         self.session.add(device)
         return device
 
-    def generate_devices(self, simulation_date):
+    def generate_devices(self, generation_date):
         probabilistic = self.account_cluster_info['probabilistic']
 
         # Generating country distributions
@@ -701,7 +717,7 @@ class SimulatedAccount:
 
                 device_info = {
                     'cluster_id': device_cluster_info['cluster_id'],
-                    'date': simulation_date,
+                    'date': generation_date,
                     'initial_tariff': initial_tariff_name,
                     'initial_services': list(initial_services),
                     'IMEI': random_IMEI(),
@@ -778,9 +794,9 @@ class SimulatedDevice:
 
         logging.info('Changing location to: Country = %s, Region = %s, Place = %s' % (country_name, region_name,
                                                                                       place_name))
-        if self.device.locations:
-            latest_location = self.session.query(Location).filter_by(device=self.device, date_to=None).one()
-            latest_location.date_to = location_date
+
+        latest_location = self.session.query(Location).filter_by(device=self.device, date_to=None).one()
+        latest_location.date_to = location_date
 
         region, place = None, None
 
@@ -790,10 +806,10 @@ class SimulatedDevice:
         if place_name:
             place = self.session.query(Place).filter_by(region=region, name=place_name).one()
 
-        new_location = Location(date_from=location_date, country=country, region=region, place=place)
+        new_location = Location(device=self.device, date_from=location_date,
+                                country=country, region=region, place=place)
         self.device.locations.append(new_location)
-
-        self.session.flush()  # TODO: Nothing?
+        self.session.flush([latest_location, new_location])
 
     def use_service(self, service_info, amount=1):
         recipient_phone_number = None
@@ -845,12 +861,12 @@ class SimulatedDevice:
         if request_info['service_type'] == 'service':
             service = self.system.get_service(service_type='service', operator=regional_operator,
                                               code=request_info['code'])
-            request = Request(date_created=request_date, type=request_info['type'],
+            request = Request(date_from=request_date, type=request_info['type'],
                               device=self.device, service=service)
         else:
             tariff = self.system.get_service(service_type='tariff', operator=regional_operator,
                                              code=request_info['code'])
-            request = Request(date_created=request_date, type=request_info['type'],
+            request = Request(date_from=request_date, type=request_info['type'],
                               device=self.device, tariff=tariff)
         self.session.add(request)
         return self.system.handle_request(request)

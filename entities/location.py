@@ -23,7 +23,7 @@ class Region(Base):
     __table_args__ = (db.Index('ix_region_name_country_id', "name", "country_id"),)
 
     id = db.Column(db.Integer, primary_key=True, index=True)
-    country_id = db.Column(db.Integer, db.ForeignKey('country.id'))
+    country_id = db.Column(db.Integer, db.ForeignKey('country.id', use_alter=True))
 
     name = db.Column(db.String, nullable=False)
     type = db.Column(db.String, default='oblast')
