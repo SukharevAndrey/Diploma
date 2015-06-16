@@ -3,16 +3,16 @@ from datetime import date, timedelta
 from operator_simulation import MobileOperatorSimulator
 from base import Base
 
-def main1():
+def main():
     base_schema = Base.metadata
     simulator = MobileOperatorSimulator(base_schema)
     simulator.generate_static_data()
     simulator.generate_customers(date.today()-timedelta(days=1))
     simulator.simulate_period(date.today(), date.today())
-    #simulator.analyze_data(date.today(), date.today())
-    #simulator.generate_test_load(date.today(), date.today())
+    simulator.analyze_data(date.today(), date.today())
+    simulator.generate_test_load(date.today(), date.today())
 
-def main():
+def main1():
     base_schema = Base.metadata
     simulator = MobileOperatorSimulator(base_schema)
     while True:

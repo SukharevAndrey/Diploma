@@ -27,9 +27,9 @@ from loading import LoadSimulator
 
 logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d.%m.%Y %H:%M:%S',
 #                    level=logging.INFO)
-#                     level=logging.CRITICAL)
-                    filename='activity.log', filemode='w', level=logging.INFO)
-logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+                     level=logging.CRITICAL)
+#                    filename='activity.log', filemode='w', level=logging.INFO)
+#logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 class MobileOperatorSimulator:
     def __init__(self, metadata):

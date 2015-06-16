@@ -190,5 +190,27 @@
         "probability": 20
       }
     ]
+  },
+  "location": {
+    "Mostly Moscow": [
+      {
+        "name": "Russia",
+        "percentage": 100.0,
+        "regions": [
+          {
+            "name": "Moskva",
+            "percentage": 70.0
+          },
+          {
+            "name": "Leningradskaja",
+            "percentage": 25.0
+          },
+          {
+            "name": "Brjanskaja",
+            "percentage": 5.0
+          }
+        ]
+      }
+    ]
   }
 }
