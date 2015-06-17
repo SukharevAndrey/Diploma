@@ -6,7 +6,7 @@ import os
 
 from sqlalchemy import create_engine, and_, or_
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from entities.customer import *
 from entities.location import *
@@ -64,12 +64,15 @@ class MobileOperatorSimulator:
             group_info = user_groups_info[group_name]
             size = group_info['size']
             customer_type = group_info['customer_type']
-            age_distribution = Distribution(info=distributions_info['age'][group_info['ages']])
-            age = int(age_distribution.get_value(return_array=False))
+            if customer_type == 'individual':
+                age_distribution = Distribution(info=distributions_info['age'][group_info['ages']])
+                gender_distribution = distribution_from_list(distributions_info['gender'][group_info['gender']])
 
             for i in range(size):
                 if customer_type == 'individual':
-                    customer = random_individual(generation_date, age)
+                    age = int(age_distribution.get_value(return_array=False))
+                    gender = gender_distribution.get_value(return_array=False)
+                    customer = random_individual(generation_date, age, gender)
                 else:
                     customer = random_organization(generation_date)
 
@@ -516,6 +519,8 @@ class MobileOperatorSystem:
                                                                        operator=operator).one()
             except NoResultFound:
                 service = self.session.query(service_entity).filter_by(name=name, in_archive=False).one()
+            except MultipleResultsFound:
+                print('ERROR: The tariff or service is not defined for region %s' % operator.region.name)
         else:  # activation code
             try:
                 service = self.session.query(service_entity).filter_by(activation_code=code,
@@ -523,6 +528,8 @@ class MobileOperatorSystem:
                                                                        operator=operator).one()
             except NoResultFound:
                 service = self.session.query(service_entity).filter_by(activation_code=code, in_archive=False).one()
+            except MultipleResultsFound:
+                print('ERROR: The tariff or service is not defined for region %s' % operator.region.name)
 
         return service
 
@@ -687,7 +694,7 @@ class SimulatedAccount:
         probabilistic = self.account_cluster_info['probabilistic']
 
         # Generating country distributions
-        home_locations_info = self.account_cluster_info['home_locations']
+        home_locations_info = distributions_info['location'][self.account_cluster_info['home_locations']]
         countries_distribution = distribution_from_list(home_locations_info)
         regions_distribution = {}
 

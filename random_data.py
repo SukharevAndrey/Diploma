@@ -35,10 +35,6 @@ def random_passport():
     return '%d %d' % (series, number)
 
 
-def random_gender():
-    return random.choice(['male', 'female'])
-
-
 def random_marital_status():
     return random.choice(['single', 'married'])
 
@@ -50,8 +46,7 @@ def random_birth_date(current_date, age):
     return current_date+timedelta(days=-days)
 
 
-def random_individual(current_date, age):
-    gender = random_gender()
+def random_individual(current_date, age, gender):
     first_name, second_name, middle_name = random_credentials(gender)
 
     info = IndividualInfo(first_name=first_name,

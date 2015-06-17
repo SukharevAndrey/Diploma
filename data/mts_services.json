@@ -108,6 +108,18 @@
         "activation_cost": 17.0,
         "cost": 3.95,
         "restrictions": []
+      },
+      {
+        "region_name": "Brjanskaja",
+        "activation_cost": 15.0,
+        "cost": 3.95,
+        "restrictions": []
+      },
+      {
+        "region_name": "Leningradskaja",
+        "activation_cost": 17.0,
+        "cost": 3.95,
+        "restrictions": []
       }
     ]
   },

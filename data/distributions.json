@@ -192,7 +192,7 @@
     ]
   },
   "location": {
-    "Mostly Moscow": [
+    "Mostly Moscow 1": [
       {
         "name": "Russia",
         "percentage": 100.0,
@@ -207,9 +207,21 @@
           },
           {
             "name": "Brjanskaja",
-            "percentage": 5.0
+            "percentage": 0.0
           }
         ]
+      }
+    ]
+  },
+  "gender": {
+    "Uniform gender distribution 1": [
+      {
+        "name": "male",
+        "percentage": 50
+      },
+      {
+        "name": "female",
+        "percentage": 50
       }
     ]
   }

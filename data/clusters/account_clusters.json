@@ -4,26 +4,7 @@
     "calculation_method": "advance",
     "credit_limit": 0.0,
     "trust_category": 4,
-    "home_locations": [
-      {
-        "name": "Russia",
-        "percentage": 100.0,
-        "regions": [
-          {
-            "name": "Moskva",
-            "percentage": 70.0
-          },
-          {
-            "name": "Leningradskaja",
-            "percentage": 25.0
-          },
-          {
-            "name": "Brjanskaja",
-            "percentage": 0.0
-          }
-        ]
-      }
-    ],
+    "home_locations": "Mostly Moscow 1",
     "activity": {
       "Payment": {
         "methods": "Payment method distribution 1",
@@ -43,26 +24,7 @@
     "calculation_method": "advance",
     "credit_limit": 0.0,
     "trust_category": 5,
-    "home_locations": [
-      {
-        "name": "Russia",
-        "percentage": 100.0,
-        "regions": [
-          {
-            "name": "Moskva",
-            "percentage": 70.0
-          },
-          {
-            "name": "Leningradskaja",
-            "percentage": 25.0
-          },
-          {
-            "name": "Brjanskaja",
-            "percentage": 0.0
-          }
-        ]
-      }
-    ],
+    "home_locations": "Mostly Moscow 1",
     "activity": {
       "Payment": {
         "methods": "Payment method distribution 1",
@@ -82,26 +44,7 @@
     "calculation_method": "advance",
     "credit_limit": 800.0,
     "trust_category": 4,
-    "home_locations": [
-      {
-        "name": "Russia",
-        "percentage": 100.0,
-        "regions": [
-          {
-            "name": "Moskva",
-            "percentage": 70.0
-          },
-          {
-            "name": "Leningradskaja",
-            "percentage": 25.0
-          },
-          {
-            "name": "Brjanskaja",
-            "percentage": 0.0
-          }
-        ]
-      }
-    ],
+    "home_locations": "Mostly Moscow 1",
     "probabilistic": false,
     "devices": ["Smartphone with small activity 1", "Tablet with small activity 1"]
   },
@@ -110,26 +53,7 @@
     "calculation_method": "credit",
     "credit_limit": 10000.0,
     "trust_category": 5,
-    "home_locations": [
-      {
-        "name": "Russia",
-        "percentage": 100.0,
-        "regions": [
-          {
-            "name": "Moskva",
-            "percentage": 70.0
-          },
-          {
-            "name": "Leningradskaja",
-            "percentage": 25.0
-          },
-          {
-            "name": "Brjanskaja",
-            "percentage": 5.0
-          }
-        ]
-      }
-    ],
+    "home_locations": "Mostly Moscow 1",
     "probabilistic": true,
     "devices_amount": 10,
     "devices": "Small company device distribution 1"

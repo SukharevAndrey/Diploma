@@ -4,6 +4,7 @@
     "size": 50,
     "customer_type": "individual",
     "ages": "Age distribution 1",
+    "gender": "Uniform gender distribution 1",
     "agreements": ["Individual agreement 1"]
   },
   "Group 2": {
@@ -11,6 +12,7 @@
     "size": 50,
     "customer_type": "individual",
     "ages": "Age distribution 1",
+    "gender": "Uniform gender distribution 1",
     "agreements": ["Individual agreement 2"]
   }
 }
