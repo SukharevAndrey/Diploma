@@ -31,7 +31,7 @@ class CreditProfile(Base):
     id = db.Column(db.Integer, primary_key=True, index=True)
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'))
 
-    date_created = db.Column(db.DateTime, default=db.func.now())
+    date_from = db.Column(db.DateTime, default=db.func.now())
     credit_risk_rating = db.Column(db.Integer, default=0)
 
     customer = relationship('Customer')

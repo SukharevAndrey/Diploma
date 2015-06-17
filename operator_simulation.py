@@ -191,6 +191,12 @@ class MobileOperatorSystem:
 
         logging.info('New balance: %f RUB' % balance.amount)
 
+    def charge_periodic_services(self, charge_date):
+        logging.info('Charging money for periodic services')
+
+    def block_unpaid_services(self, charge_date):
+        logging.info('Blocking users that have unpaid bills')
+
     def handle_connected_service(self, service_info, free_activation=False):
         logging.info('Handling connected service')
         # TODO: Pass date through parameter
@@ -228,11 +234,11 @@ class MobileOperatorSystem:
             else:
                 return False
 
-    def get_device_location(self, device, date):
+    def get_device_location(self, device, change_date):
         return self.session.query(Location).filter(and_(Location.device == device,
-                                                        Location.date_from <= date,
+                                                        Location.date_from <= change_date,
                                                         or_(Location.date_to.is_(None),
-                                                            Location.date_to >= date))).one()
+                                                            Location.date_to >= change_date))).one()
 
     def get_device_packet_services(self, device, service_name):
         return self.session.query(DeviceService).\

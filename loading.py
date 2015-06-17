@@ -26,18 +26,24 @@ class LoadSimulator:
         make_transient(obj)
         return obj
 
+    def detached_objects(self, objects, to_list=False):
+        if to_list:
+            return list(map(self.make_transient, objects))
+        else:
+            return map(self.make_transient, objects)
+
     def copy_static_data(self):
         print('Copying static data')
-        agreements = map(self.make_transient, self.main_session.query(Agreement).all())
-        terms = map(self.make_transient, self.main_session.query(TermOrCondition).all())
-        payment_methods = map(self.make_transient, self.main_session.query(PaymentMethod).all())
-        calc_methods = map(self.make_transient, self.main_session.query(CalculationMethod).all())
-        countries = map(self.make_transient, self.main_session.query(Country).all())
-        regions = map(self.make_transient, self.main_session.query(Region).all())
-        operators = map(self.make_transient, self.main_session.query(MobileOperator).all())
-        phone_numbers = map(self.make_transient, self.main_session.query(PhoneNumber).all())
-        services = map(self.make_transient, self.main_session.query(Service).all())
-        costs = map(self.make_transient, self.main_session.query(Cost).all())
+        agreements = self.detached_objects(self.main_session.query(Agreement).all())
+        terms = self.detached_objects(self.main_session.query(TermOrCondition).all())
+        payment_methods = self.detached_objects(self.main_session.query(PaymentMethod).all())
+        calc_methods = self.detached_objects(self.main_session.query(CalculationMethod).all())
+        countries = self.detached_objects(self.main_session.query(Country).all())
+        regions = self.detached_objects(self.main_session.query(Region).all())
+        operators = self.detached_objects(self.main_session.query(MobileOperator).all())
+        phone_numbers = self.detached_objects(self.main_session.query(PhoneNumber).all())
+        services = self.detached_objects(self.main_session.query(Service).all())
+        costs = self.detached_objects(self.main_session.query(Cost).all())
 
         self.test_session.add_all(agreements)
         self.test_session.add_all(terms)
@@ -53,36 +59,38 @@ class LoadSimulator:
     def copy_preperiod_customers_data(self, customer_ids, period_start):
         print('Copying customers')
         period_start_date = datetime(period_start.year, period_start.month, period_start.day, 0, 0, 0)
-        customers = list(map(self.make_transient, self.main_session.query(Customer).
-                        filter(and_(Customer.id.in_(customer_ids),
-                                    Customer.date_from < period_start_date)).all()))
+        customers = self.detached_objects(self.main_session.query(Customer).
+                                          filter(and_(Customer.id.in_(customer_ids),
+                                                      Customer.date_from < period_start_date)).all(), to_list=True)
 
-        agreements = list(map(self.make_transient, self.main_session.query(CustomerAgreement).
-                         filter(and_(CustomerAgreement.customer_id.in_(customer_ids),
-                                     CustomerAgreement.date_from < period_start_date)).all()))
+        agreements = self.detached_objects(self.main_session.query(CustomerAgreement).
+                                           filter(and_(CustomerAgreement.customer_id.in_(customer_ids),
+                                                       CustomerAgreement.date_from < period_start_date)).all(),
+                                           to_list=True)
         agreement_ids = [agreement.id for agreement in agreements]
 
-        accounts = list(map(self.make_transient, self.main_session.query(Account).
-                       filter(and_(Account.agreement_id.in_(agreement_ids),
-                                   Account.date_from < period_start_date)).all()))
+        accounts = self.detached_objects(self.main_session.query(Account).
+                                         filter(and_(Account.agreement_id.in_(agreement_ids),
+                                                     Account.date_from < period_start_date)).all(), to_list=True)
         account_ids = [account.id for account in accounts]
 
-        balances = list(map(self.make_transient, self.main_session.query(Balance).
-                       filter(and_(Balance.account_id.in_(account_ids),
-                                   Balance.date_from < period_start_date)).all()))
+        balances = self.detached_objects(self.main_session.query(Balance).
+                                         filter(and_(Balance.account_id.in_(account_ids),
+                                                     Balance.date_from < period_start_date)).all(), to_list=True)
 
-        devices = list(map(self.make_transient, self.main_session.query(Device).
-                      filter(and_(Device.account_id.in_(account_ids),
-                                  Device.date_from < period_start_date)).all()))
+        devices = self.detached_objects(self.main_session.query(Device).
+                                        filter(and_(Device.account_id.in_(account_ids),
+                                                    Device.date_from < period_start_date)).all(), to_list=True)
         device_ids = [device.id for device in devices]
 
-        device_services = list(map(self.make_transient, self.main_session.query(DeviceService).
-                              filter(and_(DeviceService.device_id.in_(device_ids),
-                                          DeviceService.date_from < period_start_date)).all()))
+        device_services = self.detached_objects(self.main_session.query(DeviceService).
+                                                filter(and_(DeviceService.device_id.in_(device_ids),
+                                                            DeviceService.date_from < period_start_date)).all(),
+                                                to_list=True)
 
-        requests = list(map(self.make_transient, self.main_session.query(Request).
-                       filter(and_(Request.device_id.in_(device_ids),
-                                   Request.date_from < period_start_date)).all()))
+        requests = self.detached_objects(self.main_session.query(Request).
+                                         filter(and_(Request.device_id.in_(device_ids),
+                                                     Request.date_from < period_start_date)).all(), to_list=True)
 
         self.test_session.add_all(customers)
         self.test_session.add_all(agreements)
@@ -92,8 +100,12 @@ class LoadSimulator:
         self.test_session.add_all(device_services)
         self.test_session.add_all(requests)
 
+    def select_subset_of_customers(self, customer_ids, percentage):
+        # TODO: Select randomly n% from each cluster
+        return customer_ids[0] + customer_ids[1]
+
     def copy_activity(self, customer_ids, date_from, date_to):
-        ids_to_copy = customer_ids[0]+customer_ids[1]  # TODO: Select randomly n% from each cluster
+        ids_to_copy = self.select_subset_of_customers(customer_ids, 100)
         print(ids_to_copy)
 
         self.copy_static_data()
