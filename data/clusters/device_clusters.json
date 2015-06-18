@@ -2,25 +2,11 @@
   "Smartphone with small activity 1": {
     "cluster_id": 1,
     "type": "smartphone",
-    "Initial tariffs": [
-      {
-        "name": "Smart mini",
-        "percentage": 60.0
-      },
-      {
-        "name": "Super MTS",
-        "percentage": 40.0
-      }
-    ],
+    "Initial tariffs": "Initial tariff distribution 1",
     "Initial services": {
       "amount": 1,
       "max_deviation": 1,
-      "services": [
-        {
-          "name": "Anti CLI",
-          "percentage": 100.0
-        }
-      ]
+      "services": "Initial service distribution 1"
     },
     "Recipients location": {
       "HOME_REGION": 95.0,
@@ -124,24 +110,7 @@
         }
       },
       "Traveling": {
-        "destinations": [
-          {
-            "name": "HOME_COUNTRY_REGION",
-            "percentage": 99.0
-          },
-          {
-            "name": "CIS_COUNTRY",
-            "percentage": 1.0
-          },
-          {
-            "name": "EUROPE_COUNTRY",
-            "percentage": 0.0
-          },
-          {
-            "name": "REST_COUNTRIES",
-            "percentage": 0.0
-          }
-        ],
+        "destinations": "Mostly home distribution 1",
         "period_activity": {
           "amount": 0,
           "max_deviation": 1,
@@ -153,25 +122,11 @@
   "Smartphone with high activity 1": {
     "cluster_id": 2,
     "type": "smartphone",
-    "Initial tariffs": [
-      {
-        "name": "Smart mini",
-        "percentage": 60.0
-      },
-      {
-        "name": "Super MTS",
-        "percentage": 40.0
-      }
-    ],
+    "Initial tariffs": "Initial tariff distribution 1",
     "Initial services": {
       "amount": 1,
       "max_deviation": 1,
-      "services": [
-        {
-          "name": "Anti CLI",
-          "percentage": 100.0
-        }
-      ]
+      "services": "Initial service distribution 1"
     },
     "Recipients location": {
       "HOME_REGION": 85.0,
@@ -275,24 +230,7 @@
         }
       },
       "Traveling": {
-        "destinations": [
-          {
-            "name": "HOME_COUNTRY_REGION",
-            "percentage": 99.0
-          },
-          {
-            "name": "CIS_COUNTRY",
-            "percentage": 1.0
-          },
-          {
-            "name": "EUROPE_COUNTRY",
-            "percentage": 0.0
-          },
-          {
-            "name": "REST_COUNTRIES",
-            "percentage": 0.0
-          }
-        ],
+        "destinations": "Mostly home distribution 1",
         "period_activity": {
           "amount": 3,
           "max_deviation": 2,

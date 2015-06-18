@@ -1,6 +1,9 @@
-from datetime import datetime
+from datetime import date, datetime, timedelta
+import random
+from itertools import chain
+import numpy as np
 
-from sqlalchemy import and_, inspect
+from sqlalchemy import and_, between
 from sqlalchemy.orm.session import make_transient
 from entities.customer import *
 from entities.payment import *
@@ -45,19 +48,11 @@ class LoadSimulator:
         services = self.detached_objects(self.main_session.query(Service).all())
         costs = self.detached_objects(self.main_session.query(Cost).all())
 
-        self.test_session.add_all(agreements)
-        self.test_session.add_all(terms)
-        self.test_session.add_all(payment_methods)
-        self.test_session.add_all(calc_methods)
-        self.test_session.add_all(countries)
-        self.test_session.add_all(regions)
-        self.test_session.add_all(operators)
-        self.test_session.add_all(phone_numbers)
-        self.test_session.add_all(services)
-        self.test_session.add_all(costs)
+        self.test_session.add_all(chain(agreements, terms, payment_methods, calc_methods,
+                                        countries, regions, operators, phone_numbers, services, costs))
 
     def copy_preperiod_customers_data(self, customer_ids, period_start):
-        print('Copying customers')
+        print('Copying preperiod data')
         period_start_date = datetime(period_start.year, period_start.month, period_start.day, 0, 0, 0)
         customers = self.detached_objects(self.main_session.query(Customer).
                                           filter(and_(Customer.id.in_(customer_ids),
@@ -83,6 +78,11 @@ class LoadSimulator:
                                                     Device.date_from < period_start_date)).all(), to_list=True)
         device_ids = [device.id for device in devices]
 
+        locations = self.detached_objects(self.main_session.query(Location)
+                                          .join(Device, Device.id == Location.device_id)
+                                          .filter(and_(Device.id.in_(device_ids),
+                                                       Location.date_from < period_start_date)).all(), to_list=True)
+
         device_services = self.detached_objects(self.main_session.query(DeviceService).
                                                 filter(and_(DeviceService.device_id.in_(device_ids),
                                                             DeviceService.date_from < period_start_date)).all(),
@@ -92,30 +92,93 @@ class LoadSimulator:
                                          filter(and_(Request.device_id.in_(device_ids),
                                                      Request.date_from < period_start_date)).all(), to_list=True)
 
-        self.test_session.add_all(customers)
-        self.test_session.add_all(agreements)
-        self.test_session.add_all(accounts)
-        self.test_session.add_all(balances)
-        self.test_session.add_all(devices)
-        self.test_session.add_all(device_services)
-        self.test_session.add_all(requests)
+        self.test_session.add_all(chain(customers, agreements, accounts, balances,
+                                        devices, locations, device_services, requests))
 
-    def select_subset_of_customers(self, customer_ids, percentage):
-        # TODO: Select randomly n% from each cluster
-        return customer_ids[0] + customer_ids[1]
+    def copy_period_activity(self, customer_ids, date_from, date_to):
+        start_date = datetime(date_from.year, date_from.month, date_from.day, 0, 0, 0)
+        end_date = datetime(date_to.year, date_to.month, date_to.day, 0, 0, 0) + timedelta(days=1)
 
-    def copy_activity(self, customer_ids, date_from, date_to):
-        ids_to_copy = self.select_subset_of_customers(customer_ids, 100)
-        print(ids_to_copy)
+        window_hours = 4
+
+        step = timedelta(hours=window_hours)
+        window_begin = start_date
+        window_end = window_begin + timedelta(hours=window_hours)
+
+        devices = self.detached_objects(self.main_session.query(Device)
+                                        .join(Account, Account.id == Device.id)
+                                        .join(CustomerAgreement, CustomerAgreement.id == Account.agreement_id)
+                                        .join(Customer, Customer.id == CustomerAgreement.customer_id)
+                                        .filter(Customer.id.in_(customer_ids)).all(), to_list=True)
+        device_ids = [device.id for device in devices]
+
+        while window_end <= end_date:
+            print('Copying activity from %s to %s' % (window_begin, window_end))
+
+            logs = self.detached_objects(self.main_session.query(ServiceLog)
+                                         .join(DeviceService, DeviceService.id == ServiceLog.device_service_id)
+                                         .join(Device, Device.id == DeviceService.device_id)
+                                         .filter(and_(between(ServiceLog.date_from,
+                                                              window_begin, window_end),
+                                                      Device.id.in_(device_ids))).all(), to_list=True)
+            log_ids = [log.id for log in logs]
+            bills = self.detached_objects(self.main_session.query(Bill)
+                                          .filter(and_(between(Bill.date_from, window_begin, window_end),
+                                                       Bill.service_log_id.in_(log_ids))).all(), to_list=True)
+            locations = self.detached_objects(self.main_session.query(Location)
+                                              .join(Device, Device.id == Location.device_id)
+                                              .filter(and_(Device.id.in_(device_ids),
+                                                           between(Location.date_from,
+                                                                   window_begin, window_end))).all(), to_list=True)
+            requests = self.detached_objects(self.main_session.query(Request)
+                                             .join(Device, Device.id == Request.device_id)
+                                             .filter(and_(Device.id.in_(device_ids),
+                                                          between(Request.date_from,
+                                                                  window_begin, window_end))).all(), to_list=True)
+            device_services = self.detached_objects(self.main_session.query(DeviceService)
+                                                    .join(Device, Device.id == DeviceService.device_id)
+                                                    .filter(and_(Device.id.in_(device_ids),
+                                                                 between(DeviceService.date_from,
+                                                                         window_begin, window_end))).all(),
+                                                    to_list=True)
+            balances = self.detached_objects(self.main_session.query(Balance)
+                                             .join(Account, Account.id == Balance.account_id)
+                                             .join(Device, Device.account_id == Account.id)
+                                             .filter(and_(Device.id.in_(device_ids),
+                                                          between(DeviceService.date_from,
+                                                                  window_begin, window_end))).all(), to_list=True)
+
+            entities = list(chain(logs, bills, locations, requests, device_services, balances))
+
+            # Shifting dates
+            delta = date.today()-entities[0].date_from.date()
+            for entity in entities:
+                entity.date_from += delta
+                if hasattr(entity, 'date_to'):
+                    entity.date_to += delta
+
+            # TODO: Add entities according their time
+            self.test_session.add_all(entities)
+            self.test_session.flush()
+
+            window_begin += step
+            window_end += step
+
+    def select_subset_of_customers(self, customer_clusters, load_factor):
+        customer_ids = []
+        for cluster_num in customer_clusters:
+            cluster_size = len(customer_clusters[cluster_num])
+            smaller_size = int(cluster_size*load_factor)
+            ids = np.random.choice(customer_clusters[cluster_num], size=smaller_size, replace=False).tolist()
+            customer_ids.extend(ids)
+        return customer_ids
+
+    def copy_activity(self, customer_clusters, load_factor, date_from, date_to):
+        customer_ids = self.select_subset_of_customers(customer_clusters, load_factor)
 
         self.copy_static_data()
         self.test_session.flush()
-        self.copy_preperiod_customers_data(ids_to_copy, date_from)
+        self.copy_preperiod_customers_data(customer_ids, date_from)
         self.test_session.commit()
-
-        countries = self.test_session.query(Country).all()
-        print(len(countries))
-        customers = self.test_session.query(Customer).all()
-        print(len(customers))
-        c_agreements = self.test_session.query(CustomerAgreement).all()
-        print(len(c_agreements))
+        self.copy_period_activity(customer_ids, date_from, date_to)
+        self.test_session.commit()

@@ -93,7 +93,7 @@ class ServiceLog(Base):
     recipient_phone_number_id = db.Column(db.Integer, db.ForeignKey('phoneNumber.id'))
     recipient_location_id = db.Column(db.Integer, db.ForeignKey('location.id'))
 
-    use_date = db.Column(db.DateTime, default=db.func.now())
+    date_from = db.Column(db.DateTime, default=db.func.now())
     action_type = db.Column(db.String, default='usage')
     amount = db.Column(db.Integer, default=1)
     is_free = db.Column(db.Boolean, default=False)

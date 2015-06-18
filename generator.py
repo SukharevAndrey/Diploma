@@ -720,7 +720,7 @@ class DeviceActivityGenerator(ActivityGenerator):
         location_changes = []
 
         info = self.activity_info['Traveling']
-        destinations = info['destinations']
+        destinations = distributions_info['destination'][info['destinations']]
         dest_distribution = distribution_from_list(destinations)
         travel_days = self.get_amount_for_period('Traveling')
 

@@ -47,7 +47,7 @@ class MobileOperatorSimulator:
         self.test_session.autoflush = False  # TODO: True?
 
         self.system = MobileOperatorSystem(self.main_session)
-        self.analyzer = ActivityAnalyzer(self.main_session)
+        self.analyzer = ActivityAnalyzer(self.main_session, self.test_session)
         self.load_simulator = LoadSimulator(self.main_session, self.test_session)
 
         self.customers = []
@@ -93,11 +93,11 @@ class MobileOperatorSimulator:
         end_time = time()
         print('Customers simulation done in %f seconds' % (end_time-start_time))
 
-    def generate_test_load(self, date_from, date_to):
+    def generate_test_load(self, date_from, date_to, load_factor):
         if not self.customer_clusters:
             print('Analyze data first')
         else:
-            self.load_simulator.copy_activity(self.customer_clusters, date_from, date_to)
+            self.load_simulator.copy_activity(self.customer_clusters, load_factor, date_from, date_to)
 
     def generate_static_data(self):
         gen = MobileOperatorGenerator(verbose=True)
@@ -112,9 +112,11 @@ class MobileOperatorSimulator:
         self.metadata.drop_all(self.test_engine)
         self.generate_schema(self.test_engine)
 
-    def analyze_data(self, date_from, date_to):
-        self.customer_clusters = self.analyzer.analyze(date_from, date_to)
-
+    def analyze_data(self, date_from, date_to, base_type='main'):
+        if base_type == 'main':
+            self.customer_clusters = self.analyzer.analyze(date_from, date_to)
+        else:
+            self.analyzer.analyze(date_from, date_to)
 
 class MobileOperatorSystem:
     def __init__(self, session):
@@ -147,7 +149,7 @@ class MobileOperatorSystem:
         #                 Balance.due_date.is_(None))).one()
         # return balance
 
-    def get_unpaid_bills(self, account):
+    def get_unpaid_bills(self, account, check_date=None):
         # TODO: Handle date
         return self.session.query(Bill).\
             join(ServiceLog, Bill.service_log_id == ServiceLog.id).\
@@ -205,7 +207,7 @@ class MobileOperatorSystem:
         # TODO: Pass date through parameter
         connection_date = service_info.date_from
         log = ServiceLog(device_service=service_info,
-                         use_date=connection_date,
+                         date_from=connection_date,
                          action_type='activation',
                          amount=1)
 
@@ -394,7 +396,7 @@ class MobileOperatorSystem:
                                                                          unpaid_service_amount,
                                                                          cost.use_cost))
                 bill = Bill(service_log=service_log,
-                            date_from=service_log.use_date,
+                            date_from=service_log.date_from,
                             debt=cost.use_cost*service_log.amount)
                 service_log.bill = bill
                 self.session.add(bill)
@@ -419,9 +421,9 @@ class MobileOperatorSystem:
                 return ServiceStatus.fail
             else:
                 logging.info("The device already has tariff '%s', disconnecting it first" % tariff.name)
-                self.deactivate_service(device, tariff, connection_date, commit=False)
+                self.deactivate_service(device, tariff, connection_date)
                 for service in tariff.attached_services:
-                    self.deactivate_service(device, service, connection_date, commit=False)
+                    self.deactivate_service(device, service, connection_date)
 
         device.tariff = tariff
         # Connecting tariff as a service
@@ -715,11 +717,12 @@ class SimulatedAccount:
                 device_cluster_info = devices_info[device_cluster_name]
 
                 # Getting initial tariff name
-                tariff_distribution = distribution_from_list(device_cluster_info['Initial tariffs'])
+                tariff_distribution_info = distributions_info['tariff'][device_cluster_info['Initial tariffs']]
+                tariff_distribution = distribution_from_list(tariff_distribution_info)
                 initial_tariff_name = tariff_distribution.get_value(return_array=False)
 
                 # Getting initial services amount and names
-                initial_services_info = device_cluster_info['Initial services']['services']
+                initial_services_info = distributions_info['service'][device_cluster_info['Initial services']['services']]
                 service_distribution = distribution_from_list(initial_services_info)
                 avg_amount = device_cluster_info['Initial services']['amount']
                 max_deviation = device_cluster_info['Initial services']['max_deviation']
@@ -842,7 +845,7 @@ class SimulatedDevice:
         log = ServiceLog(device_service=device_service,
                          amount=amount,
                          action_type='usage',
-                         use_date=usage_date,
+                         date_from=usage_date,
                          is_free=service_info['is_free'],
                          recipient_phone_number=recipient_phone_number)
 

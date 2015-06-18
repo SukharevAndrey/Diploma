@@ -17,14 +17,15 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
 class ActivityAnalyzer:
-    def __init__(self, session):
-        self.session = session
+    def __init__(self, main_session, test_session):
+        self.main_session = main_session
+        self.test_session = test_session
 
     def get_devices_info(self, date_from, date_to):
         date_begin = datetime(date_from.year, date_from.month, date_from.day, 0, 0, 0)
         date_end = datetime(date_to.year, date_to.month, date_to.day, 23, 59, 59)
 
-        devices = self.session.query(Device).order_by(Device.id).all()
+        devices = self.main_session.query(Device).order_by(Device.id).all()
         devices_info = []
         device_original_labels = []
         device_ids = []
@@ -36,7 +37,7 @@ class ActivityAnalyzer:
 
             # Getting device services, which could be used on given time period
             # TODO: Date from?
-            connected_services = self.session.query(DeviceService).\
+            connected_services = self.main_session.query(DeviceService).\
                 filter(and_(DeviceService.device_id == device.id,
                             or_(DeviceService.date_to.is_(None),
                                 DeviceService.date_to >= date_begin))).all()
@@ -44,11 +45,11 @@ class ActivityAnalyzer:
             for device_service in connected_services:
                 service = device_service.service
                 try:
-                    total_usage, usage_amount = self.session.query(db.func.count(ServiceLog.id),
-                                                                   db.func.sum(ServiceLog.amount)).\
+                    total_usage, usage_amount = self.main_session.query(db.func.count(ServiceLog.id),
+                                                                        db.func.sum(ServiceLog.amount)).\
                         filter(and_(ServiceLog.device_service == device_service,
                                     ServiceLog.action_type == 'usage',
-                                    between(ServiceLog.use_date, date_begin, date_end))).\
+                                    between(ServiceLog.date_from, date_begin, date_end))).\
                         group_by(ServiceLog.device_service_id).one()
                 except NoResultFound:
                     total_usage = 0
@@ -88,7 +89,7 @@ class ActivityAnalyzer:
         return mask
 
     def get_accounts_info(self, device_cluster_match, device_clusters_amount):
-        accounts = self.session.query(Account).order_by(Account.id).all()
+        accounts = self.main_session.query(Account).order_by(Account.id).all()
         account_infos = []
         account_original_labels = []
         account_ids = []
@@ -102,7 +103,7 @@ class ActivityAnalyzer:
                 'calc_method_id': account.calculation_method_id
             }
 
-            devices = self.session.query(Device).filter_by(account_id=account.id).all()
+            devices = self.main_session.query(Device).filter_by(account_id=account.id).all()
             account_info['devices_amount'] = len(devices)
             device_clusters = []
             for device in devices:
@@ -117,7 +118,7 @@ class ActivityAnalyzer:
         return account_infos, account_original_labels, device_masks, account_ids
 
     def get_customers_info(self, account_cluster_match, account_clusters_amount):
-        customers = self.session.query(Customer).order_by(Customer.id).all()
+        customers = self.main_session.query(Customer).order_by(Customer.id).all()
         customer_infos = []
         customer_original_labels = []
         customer_ids = []
@@ -135,13 +136,13 @@ class ActivityAnalyzer:
             else:
                 pass
 
-            agreements = self.session.query(CustomerAgreement).filter_by(customer_id=customer.id).all()
+            agreements = self.main_session.query(CustomerAgreement).filter_by(customer_id=customer.id).all()
             customer_info['agreements_amount'] = len(agreements)
 
             accounts_cluster_mask = np.zeros(account_clusters_amount)
             # Accumulating information about all accounts
             for agreement in agreements:
-                accounts = self.session.query(Account).filter_by(agreement_id=agreement.id).all()
+                accounts = self.main_session.query(Account).filter_by(agreement_id=agreement.id).all()
 
                 account_clusters = []
                 for account in accounts:
@@ -254,7 +255,7 @@ class ActivityAnalyzer:
         print('Analyzing took %f seconds' % (end_time-start_time))
 
         self.print_metrics(processed_devices, estimated_device_labels, device_labels)
-        # self.plot_data(processed_devices, estimated_device_labels)
+        self.plot_data(processed_devices, estimated_device_labels)
 
         self.print_metrics(processed_accounts, estimated_account_labels, account_labels)
         # self.plot_data(processed_accounts, estimated_account_labels)
