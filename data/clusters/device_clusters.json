@@ -129,7 +129,7 @@
         "has_recipient": true,
         "period_activity": {
           "amount": 350,
-          "max_deviation": 20,
+          "max_deviation": 30,
           "duration": "Long calls distribution 1",
           "days_activity": "Period call day distribution 1",
           "week_activity": "Week call time distribution 1"
@@ -172,7 +172,7 @@
         "has_recipient": false,
         "period_activity": {
           "amount": 60,
-          "max_deviation": 5,
+          "max_deviation": 10,
           "duration": "High internet usage distribution 1",
           "days_activity": "Period internet day distribution 1",
           "week_activity": "Week internet time distribution 1"
@@ -222,8 +222,8 @@
       "Traveling": {
         "destinations": "Mostly home distribution 1",
         "period_activity": {
-          "amount": 3,
-          "max_deviation": 2,
+          "amount": 7,
+          "max_deviation": 3,
           "days_activity": "Uniform day distribution"
         }
       }
@@ -337,7 +337,7 @@
       "Traveling": {
         "destinations": "Mostly home distribution 1",
         "period_activity": {
-          "amount": 3,
+          "amount": 6,
           "max_deviation": 2,
           "days_activity": "Uniform day distribution"
         }
