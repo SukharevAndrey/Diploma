@@ -154,8 +154,9 @@ class LoadSimulator:
             delta = date.today()-entities[0].date_from.date()
             for entity in entities:
                 entity.date_from += delta
-                if hasattr(entity, 'date_to'):
-                    entity.date_to += delta
+                # FIXME: TypeError: unsupported operand type(s) for +=: 'NoneType' and 'datetime.timedelta'
+                # if hasattr(entity, 'date_to'):
+                #     entity.date_to += delta
 
             # TODO: Add entities according their time
             self.test_session.add_all(entities)
