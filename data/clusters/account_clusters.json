@@ -39,8 +39,28 @@
     "probabilistic": false,
     "devices": ["Smartphone with high activity 1"]
   },
-  "Smartphone and tablet with small activity 1": {
+  "Single tablet with small activity 1": {
     "cluster_id": 3,
+    "calculation_method": "advance",
+    "credit_limit": 0.0,
+    "trust_category": 3,
+    "home_locations": "Mostly Moscow 1",
+    "activity": {
+      "Payment": {
+        "methods": "Payment method distribution 1",
+        "sums": "Small payment sum distribution 1",
+        "period_activity": {
+          "amount": 3,
+          "max_deviation": 2,
+          "days_activity": "Payment day distribution 1"
+        }
+      }
+    },
+    "probabilistic": false,
+    "devices": ["Tablet with small activity 1"]
+  },
+  "Smartphone and tablet with small activity 1": {
+    "cluster_id": 4,
     "calculation_method": "advance",
     "credit_limit": 800.0,
     "trust_category": 4,
@@ -49,7 +69,7 @@
     "devices": ["Smartphone with small activity 1", "Tablet with small activity 1"]
   },
   "Small company account 1": {
-    "cluster_id": 4,
+    "cluster_id": 5,
     "calculation_method": "credit",
     "credit_limit": 10000.0,
     "trust_category": 5,

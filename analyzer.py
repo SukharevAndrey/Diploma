@@ -6,6 +6,8 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from entities.customer import *
 from entities.service import *
+from entities.location import *
+from entities.payment import *
 
 import numpy as np
 from sklearn.feature_extraction import DictVectorizer
@@ -42,6 +44,42 @@ class ActivityAnalyzer:
                             or_(DeviceService.date_to.is_(None),
                                 DeviceService.date_to >= date_begin))).all()
 
+            requests = self.main_session.query(Service.name, Request.type, db.func.count(Request.id)).\
+                join(Request, and_(Request.service_id == Service.id,
+                                   Request.device_id == device.id,
+                                   between(Request.date_from, date_begin, date_end))).\
+                group_by(Service.name).all()
+
+            for service_name, request_type, request_count in requests:
+                if service_name == 'Balance request':
+                    device_info['balance_checks'] = request_count
+                else:
+                    if 'other_requests' not in device_info:
+                        device_info['other_requests'] = request_count
+                    else:
+                        device_info['other_requests'] += request_count
+
+            locations = self.main_session.query(Location).filter(and_(Location.device_id == device.id,
+                                                                      between(Location.date_from,
+                                                                              date_begin, date_end))).all()
+            device_info['location_changes'] = len(locations)
+            # TODO: Parse locations
+
+            payments = self.main_session.query(Payment.method_id,
+                                               db.func.sum(Payment.amount), db.func.count(Payment.id)).\
+                join(PaymentMethod, PaymentMethod.id == Payment.method_id).\
+                join(Balance, Balance.id == Payment.balance_id).\
+                join(Account, Account.id == Balance.account_id).\
+                join(Device, Device.account_id == Account.id).\
+                filter(Device.id == device.id).\
+                group_by(Payment.method_id).all()
+
+            for method_id, payment_sum, payment_count in payments:
+                if 'payment_sum' not in device_info:
+                    device_info['payment_sum'] = float(payment_sum)
+                else:
+                    device_info['payment_sum'] += float(payment_sum)
+
             for device_service in connected_services:
                 service = device_service.service
                 try:
@@ -68,6 +106,7 @@ class ActivityAnalyzer:
                 elif service.name == 'mms':
                     device_info['mms'] = total_usage
                 elif service.name == 'internet':
+                    device_info['internet_sessions_count'] = usage_amount
                     device_info['internet_usage'] = total_usage*usage_amount
                 else:
                     if 'other_usages' not in device_info:
@@ -76,6 +115,7 @@ class ActivityAnalyzer:
                         device_info['other_usages'] += total_usage
 
             devices_info.append(device_info)
+            # print(device_info)
             device_ids.append(device.id)
             device_original_labels.append(device.cluster_id)
             i += 1
@@ -195,7 +235,7 @@ class ActivityAnalyzer:
         processed_devices = min_max_scaler.fit_transform(processed_devices)
 
         # estimator = DBSCAN(eps=0.3)  # TODO: Scaling eps
-        device_estimator = KMeans(n_clusters=2, n_jobs=-1)
+        device_estimator = KMeans(n_clusters=3, n_jobs=-1)
         device_estimator.fit(processed_devices)
         estimated_device_labels = device_estimator.labels_
 
@@ -207,14 +247,14 @@ class ActivityAnalyzer:
         for i, device_id in enumerate(device_ids):
             device_cluster_match[device_id] = estimated_device_labels[i]
 
-        accounts_info, account_labels, device_masks, account_ids = self.get_accounts_info(device_cluster_match, 2)
+        accounts_info, account_labels, device_masks, account_ids = self.get_accounts_info(device_cluster_match, 3)
         processed_accounts = vectorizer.fit_transform(accounts_info).toarray()
 
         # Adding device clusters info to accounts
         processed_accounts = np.concatenate((processed_accounts, device_masks), axis=1)
         processed_accounts = min_max_scaler.fit_transform(processed_accounts)
 
-        account_estimator = KMeans(n_clusters=2, n_jobs=-1)
+        account_estimator = KMeans(n_clusters=3, n_jobs=-1)
         account_estimator.fit(processed_accounts)
         estimated_account_labels = account_estimator.labels_
 
@@ -226,14 +266,14 @@ class ActivityAnalyzer:
         for i, account_id in enumerate(account_ids):
             account_cluster_match[account_id] = estimated_account_labels[i]
 
-        customers_info, customer_labels, account_masks, customer_ids = self.get_customers_info(account_cluster_match, 2)
+        customers_info, customer_labels, account_masks, customer_ids = self.get_customers_info(account_cluster_match, 3)
         processed_customers = vectorizer.fit_transform(customers_info).toarray()
 
         # Adding account clusters info to customers
         processed_customers = np.concatenate((processed_customers, account_masks), axis=1)
         processed_customers = min_max_scaler.fit_transform(processed_customers)
 
-        customer_estimator = KMeans(n_clusters=2, n_jobs=-1)
+        customer_estimator = KMeans(n_clusters=3, n_jobs=-1)
         customer_estimator.fit_transform(processed_customers)
         estimated_customer_labels = customer_estimator.labels_
 

@@ -12,15 +12,19 @@
     },
     "Long calls distribution 1": {
       "max_values": 50,
-      "probabilities": [5, 6, 7, 8, 9, 10, 20, 25, 25, 30, 50, 43, 57, 53]
+      "probabilities": [5, 6, 7, 8, 9, 10, 20, 15, 22, 30, 50, 43, 57, 53, 34, 48, 46, 31]
     },
     "Small internet usage distribution 1": {
       "max_values": 100,
       "probabilities": [6, 13, 2, 4, 6, 13, 2, 4, 6, 13, 2, 4, 6, 13, 2, 4]
     },
+    "Middle internet usage distribution 1": {
+      "max_values": 100,
+      "probabilities": [2, 4, 2, 5, 7, 20, 12, 2, 4, 3, 2, 45, 53, 3, 45, 65, 35, 37, 45, 74, 23, 21, 45]
+    },
     "High internet usage distribution 1": {
       "max_values": 100,
-      "probabilities": [6, 13, 2, 4, 6, 13, 2, 4, 6, 13, 2, 4, 6, 13, 2, 4, 20, 21, 23, 34, 52, 55, 43, 54, 56, 77]
+      "probabilities": [6, 13, 2, 4, 6, 13, 2, 4, 6, 13, 2, 4, 6, 13, 2, 4, 20, 21, 23, 34, 52, 55, 43, 54, 56, 77, 85, 68, 80, 24]
     }
   },
   "month": {
@@ -257,6 +261,26 @@
       },
       {
         "name": "EUROPE_COUNTRY",
+        "percentage": 0.0
+      },
+      {
+        "name": "REST_COUNTRIES",
+        "percentage": 0.0
+      }
+    ]
+  },
+  "recipient_location": {
+    "Mostly home recipient distribution 1": [
+      {
+        "name": "HOME_REGION",
+        "percentage": 95.0
+      },
+      {
+        "name": "HOME_COUNTRY",
+        "percentage": 5.0
+      },
+      {
+        "name": "CIS_COUNTRIES",
         "percentage": 0.0
       },
       {

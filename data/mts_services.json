@@ -136,5 +136,19 @@
     "activation_code": "*152#",
     "activation_cost": 0.0,
     "cost": 0.0
+  },
+  {
+    "name": "Horoscope",
+    "is_periodic": false,
+    "activation_code": "",
+    "activation_cost": 0.0,
+    "cost": 15.0
+  },
+  {
+    "name": "Joke",
+    "is_periodic": false,
+    "activation_code": "",
+    "activation_cost": 0.0,
+    "cost": 20.0
   }
 ]

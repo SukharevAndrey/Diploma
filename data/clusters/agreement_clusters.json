@@ -6,5 +6,9 @@
   "Individual agreement 2": {
     "income_rating": 3,
     "accounts": ["Single smartphone with high activity 1"]
+  },
+  "Individual agreement 3": {
+    "income_rating": 2,
+    "accounts": ["Single tablet with small activity 1"]
   }
 }

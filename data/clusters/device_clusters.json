@@ -8,12 +8,7 @@
       "max_deviation": 1,
       "services": "Initial service distribution 1"
     },
-    "Recipients location": {
-      "HOME_REGION": 95.0,
-      "HOME_COUNTRY": 5.0,
-      "CIS_COUNTRIES": 0.0,
-      "REST_COUNTRIES": 0.0
-    },
+    "Recipients location": "Mostly home recipient distribution 1",
     "Basic services": {
       "Call": {
         "has_recipient": true,
@@ -128,17 +123,12 @@
       "max_deviation": 1,
       "services": "Initial service distribution 1"
     },
-    "Recipients location": {
-      "HOME_REGION": 85.0,
-      "HOME_COUNTRY": 13.0,
-      "CIS_COUNTRIES": 2.0,
-      "REST_COUNTRIES": 0.0
-    },
+    "Recipients location": "Mostly home recipient distribution 1",
     "Basic services": {
       "Call": {
         "has_recipient": true,
         "period_activity": {
-          "amount": 300,
+          "amount": 350,
           "max_deviation": 20,
           "duration": "Long calls distribution 1",
           "days_activity": "Period call day distribution 1",
@@ -169,6 +159,236 @@
         "period_activity": {
           "amount": 0,
           "max_deviation": 0,
+          "days_activity": "Period message day distribution 1",
+          "week_activity": "Week message time distribution 1"
+        },
+        "special_days_activity": {
+          "Birth day": "Birthday message time distribution 1",
+          "New year": "New year message time distribution 1",
+          "National holiday": "Holiday message time distribution 1"
+        }
+      },
+      "Internet": {
+        "has_recipient": false,
+        "period_activity": {
+          "amount": 60,
+          "max_deviation": 5,
+          "duration": "High internet usage distribution 1",
+          "days_activity": "Period internet day distribution 1",
+          "week_activity": "Week internet time distribution 1"
+        },
+        "special_days_activity": {
+          "Birth day": "Birthday internet time distribution 1",
+          "New year": "New year internet time distribution 1",
+          "National holiday": "Holiday internet time distribution 1"
+        }
+      }
+    },
+    "Other services": {
+      "Balance request": {
+        "activation_code": "*100#",
+        "type": "status",
+        "has_recipient": false,
+        "period_activity": {
+          "amount": 30,
+          "max_deviation": 5,
+          "days_activity": "Balance check day distribution 1"
+        }
+      }
+    },
+    "Other activity": {
+      "Tariff changing": {
+        "tariffs": [
+          {
+            "name": "Smart mini",
+            "code": "*111*1023#"
+          },
+          {
+            "name": "Super MTS",
+            "code": ""
+          },
+          {
+            "name": "Red Energy",
+            "code": ""
+          }
+        ],
+        "period_activity": {
+          "amount": 1,
+          "max_deviation": 1,
+          "upper_limit": 1,
+          "days_activity": "Tariff change day distribution 1"
+        }
+      },
+      "Traveling": {
+        "destinations": "Mostly home distribution 1",
+        "period_activity": {
+          "amount": 3,
+          "max_deviation": 2,
+          "days_activity": "Uniform day distribution"
+        }
+      }
+    }
+  },
+  "Tablet with small activity 1": {
+    "cluster_id": 3,
+    "type": "tablet",
+    "Initial tariffs": "Initial tariff distribution 1",
+    "Initial services": {
+      "amount": 1,
+      "max_deviation": 1,
+      "services": "Initial service distribution 1"
+    },
+    "Recipients location": "Mostly home recipient distribution 1",
+    "Basic services": {
+      "Call": {
+        "has_recipient": true,
+        "period_activity": {
+          "amount": 0,
+          "max_deviation": 0,
+          "duration": "Long calls distribution 1",
+          "days_activity": "Period call day distribution 1",
+          "week_activity": "Week call time distribution 1"
+        },
+        "special_days_activity": {
+          "Birth day": "Birthday call time distribution 1",
+          "New year": "New year call time distribution 1",
+          "National holiday": "Holiday call time distribution 1"
+        }
+      },
+      "SMS": {
+        "has_recipient": true,
+        "period_activity": {
+          "amount": 0,
+          "max_deviation": 0,
+          "days_activity": "Period message day distribution 1",
+          "week_activity": "Week message time distribution 1"
+        },
+        "special_days_activity": {
+          "Birth day": "Birthday message time distribution 1",
+          "New year": "New year message time distribution 1",
+          "National holiday": "Holiday message time distribution 1"
+        }
+      },
+      "MMS": {
+        "has_recipient": true,
+        "period_activity": {
+          "amount": 0,
+          "max_deviation": 0,
+          "days_activity": "Period message day distribution 1",
+          "week_activity": "Week message time distribution 1"
+        },
+        "special_days_activity": {
+          "Birth day": "Birthday message time distribution 1",
+          "New year": "New year message time distribution 1",
+          "National holiday": "Holiday message time distribution 1"
+        }
+      },
+      "Internet": {
+        "has_recipient": false,
+        "period_activity": {
+          "amount": 75,
+          "max_deviation": 10,
+          "duration": "Middle internet usage distribution 1",
+          "days_activity": "Period internet day distribution 1",
+          "week_activity": "Week internet time distribution 1"
+        },
+        "special_days_activity": {
+          "Birth day": "Birthday internet time distribution 1",
+          "New year": "New year internet time distribution 1",
+          "National holiday": "Holiday internet time distribution 1"
+        }
+      }
+    },
+    "Other services": {
+      "Balance request": {
+        "activation_code": "*100#",
+        "type": "status",
+        "has_recipient": false,
+        "period_activity": {
+          "amount": 30,
+          "max_deviation": 5,
+          "days_activity": "Balance check day distribution 1"
+        }
+      }
+    },
+    "Other activity": {
+      "Tariff changing": {
+        "tariffs": [
+          {
+            "name": "Smart mini",
+            "code": "*111*1023#"
+          },
+          {
+            "name": "Super MTS",
+            "code": ""
+          },
+          {
+            "name": "Red Energy",
+            "code": ""
+          }
+        ],
+        "period_activity": {
+          "amount": 1,
+          "max_deviation": 1,
+          "upper_limit": 1,
+          "days_activity": "Tariff change day distribution 1"
+        }
+      },
+      "Traveling": {
+        "destinations": "Mostly home distribution 1",
+        "period_activity": {
+          "amount": 3,
+          "max_deviation": 2,
+          "days_activity": "Uniform day distribution"
+        }
+      }
+    }
+  },
+  "Dumbass 1": {
+    "cluster_id": 4,
+    "type": "smartphone",
+    "Initial tariffs": "Initial tariff distribution 1",
+    "Initial services": {
+      "amount": 1,
+      "max_deviation": 1,
+      "services": "Initial service distribution 1"
+    },
+    "Recipients location": "Mostly home recipient distribution 1",
+    "Basic services": {
+      "Call": {
+        "has_recipient": true,
+        "period_activity": {
+          "amount": 40,
+          "max_deviation": 10,
+          "duration": "Short calls distribution 1",
+          "days_activity": "Period call day distribution 1",
+          "week_activity": "Week call time distribution 1"
+        },
+        "special_days_activity": {
+          "Birth day": "Birthday call time distribution 1",
+          "New year": "New year call time distribution 1",
+          "National holiday": "Holiday call time distribution 1"
+        }
+      },
+      "SMS": {
+        "has_recipient": true,
+        "period_activity": {
+          "amount": 50,
+          "max_deviation": 10,
+          "days_activity": "Period message day distribution 1",
+          "week_activity": "Week message time distribution 1"
+        },
+        "special_days_activity": {
+          "Birth day": "Birthday message time distribution 1",
+          "New year": "New year message time distribution 1",
+          "National holiday": "Holiday message time distribution 1"
+        }
+      },
+      "MMS": {
+        "has_recipient": true,
+        "period_activity": {
+          "amount": 30,
+          "max_deviation": 5,
           "days_activity": "Period message day distribution 1",
           "week_activity": "Week message time distribution 1"
         },
