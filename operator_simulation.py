@@ -44,7 +44,7 @@ class MobileOperatorSimulator:
         self.main_session = sessionmaker(bind=self.main_engine)()
         self.main_session.autoflush = False
         self.test_session = sessionmaker(bind=self.test_engine)()
-        self.test_session.autoflush = False  # TODO: True?
+        self.test_session.autoflush = False
 
         self.system = MobileOperatorSystem(self.main_session)
         self.analyzer = ActivityAnalyzer(self.main_session, self.test_session)
