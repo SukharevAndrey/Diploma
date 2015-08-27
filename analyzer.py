@@ -65,21 +65,6 @@ class ActivityAnalyzer:
             device_info['location_changes'] = len(locations)
             # TODO: Parse locations
 
-            payments = self.main_session.query(Payment.method_id,
-                                               db.func.sum(Payment.amount), db.func.count(Payment.id)).\
-                join(PaymentMethod, PaymentMethod.id == Payment.method_id).\
-                join(Balance, Balance.id == Payment.balance_id).\
-                join(Account, Account.id == Balance.account_id).\
-                join(Device, Device.account_id == Account.id).\
-                filter(Device.id == device.id).\
-                group_by(Payment.method_id).all()
-
-            for method_id, payment_sum, payment_count in payments:
-                if 'payment_sum' not in device_info:
-                    device_info['payment_sum'] = float(payment_sum)
-                else:
-                    device_info['payment_sum'] += float(payment_sum)
-
             for device_service in connected_services:
                 service = device_service.service
                 try:
@@ -142,6 +127,19 @@ class ActivityAnalyzer:
                 'bill_group': account.bill_group,
                 'calc_method_id': account.calculation_method_id
             }
+            payments = self.main_session.query(Payment.method_id,
+                                               db.func.sum(Payment.amount), db.func.count(Payment.id)).\
+                join(PaymentMethod, PaymentMethod.id == Payment.method_id).\
+                join(Balance, Balance.id == Payment.balance_id).\
+                join(Account, Account.id == Balance.account_id).\
+                filter(Account.id == account.id).\
+                group_by(Payment.method_id).all()
+
+            for method_id, payment_sum, payment_count in payments:
+                if 'payment_sum' not in account_info:
+                    account_info['payment_sum'] = float(payment_sum)
+                else:
+                    account_info['payment_sum'] += float(payment_sum)
 
             devices = self.main_session.query(Device).filter_by(account_id=account.id).all()
             account_info['devices_amount'] = len(devices)
@@ -221,7 +219,17 @@ class ActivityAnalyzer:
         print("Silhouette Coefficient: %0.3f"
               % metrics.silhouette_score(data, labels))
 
-    def analyze(self, date_from, date_to):
+    def get_estimator(self, algorithm, **params):
+        if algorithm == 'K-Means':
+            return KMeans(n_clusters=params['clusters'], n_jobs=-1)
+        elif algorithm == 'DBSCAN':
+            return DBSCAN(eps=params['eps'])
+        elif algorithm == 'BIRCH':
+            raise NotImplementedError
+        else:
+            raise NotImplementedError
+
+    def analyze(self, date_from, date_to, algorithm='DBSCAN', db_session=None):
         print('Analyzing data')
         start_time = time()
 
@@ -233,28 +241,31 @@ class ActivityAnalyzer:
 
         min_max_scaler = preprocessing.MinMaxScaler()
         processed_devices = min_max_scaler.fit_transform(processed_devices)
+        device_clusters_amount = len(set(device_labels) - {-1})
 
-        # estimator = DBSCAN(eps=0.3)  # TODO: Scaling eps
-        device_estimator = KMeans(n_clusters=3, n_jobs=-1)
+        device_estimator = self.get_estimator(algorithm, eps=0.3, clusters=device_clusters_amount)
         device_estimator.fit(processed_devices)
         estimated_device_labels = device_estimator.labels_
 
-        labels_set = set(estimated_device_labels)
-        print('Estimated number of device clusters: %d' % (len(labels_set)))
-        print(labels_set)
+        device_labels_set = set(estimated_device_labels)
+        print('Estimated number of device clusters: %d' % (len(device_labels_set)))
+        print(device_labels_set)
 
         device_cluster_match = {}
         for i, device_id in enumerate(device_ids):
-            device_cluster_match[device_id] = estimated_device_labels[i]
+            if device_id != -1:  # ignoring noise points
+                device_cluster_match[device_id] = estimated_device_labels[i]
 
-        accounts_info, account_labels, device_masks, account_ids = self.get_accounts_info(device_cluster_match, 3)
+        accounts_info, account_labels, device_masks, account_ids = self.get_accounts_info(device_cluster_match,
+                                                                                          len(device_cluster_match))
         processed_accounts = vectorizer.fit_transform(accounts_info).toarray()
+        account_clusters_amount = len(set(account_labels))
 
         # Adding device clusters info to accounts
         processed_accounts = np.concatenate((processed_accounts, device_masks), axis=1)
         processed_accounts = min_max_scaler.fit_transform(processed_accounts)
 
-        account_estimator = KMeans(n_clusters=3, n_jobs=-1)
+        account_estimator = self.get_estimator(algorithm, eps=0.3, clusters=account_clusters_amount)
         account_estimator.fit(processed_accounts)
         estimated_account_labels = account_estimator.labels_
 
@@ -264,17 +275,20 @@ class ActivityAnalyzer:
 
         account_cluster_match = {}
         for i, account_id in enumerate(account_ids):
-            account_cluster_match[account_id] = estimated_account_labels[i]
+            if account_id != -1:
+                account_cluster_match[account_id] = estimated_account_labels[i]
 
-        customers_info, customer_labels, account_masks, customer_ids = self.get_customers_info(account_cluster_match, 3)
+        customers_info, customer_labels, account_masks, customer_ids = self.get_customers_info(account_cluster_match,
+                                                                                               len(account_cluster_match))
         processed_customers = vectorizer.fit_transform(customers_info).toarray()
+        customer_clusters_amount = len(set(customer_labels) - {-1})
 
         # Adding account clusters info to customers
         processed_customers = np.concatenate((processed_customers, account_masks), axis=1)
         processed_customers = min_max_scaler.fit_transform(processed_customers)
 
-        customer_estimator = KMeans(n_clusters=3, n_jobs=-1)
-        customer_estimator.fit_transform(processed_customers)
+        customer_estimator = self.get_estimator(algorithm, eps=0.3, clusters=customer_clusters_amount)
+        customer_estimator.fit(processed_customers)
         estimated_customer_labels = customer_estimator.labels_
 
         customer_labels_set = set(estimated_customer_labels)

@@ -10,5 +10,13 @@
   "Individual agreement 3": {
     "income_rating": 2,
     "accounts": ["Single tablet with small activity 1"]
+  },
+  "Individual agreement 4": {
+    "income_rating": 1,
+    "accounts": ["Smartphone with useless services usage 1"]
+  },
+  "Signaling agreement 1": {
+    "income_rating": 4,
+    "accounts": ["Signaling account 1"]
   }
 }

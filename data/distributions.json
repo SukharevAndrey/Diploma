@@ -52,6 +52,10 @@
       "max_values": 30,
       "probabilities": [8, 4, 5, 4, 5, 4, 9, 10, 9, 8, 7, 6, 5, 5, 5, 7, 5, 8, 7, 5, 5, 5, 3, 7, 10, 10, 11, 15, 20, 21]
     },
+    "Payment first day distribution 1": {
+      "max_values": 30,
+      "probabilities": [99, 1]
+    },
     "Uniform day distribution": {
       "max_values": 30,
       "probabilities": []
@@ -181,6 +185,16 @@
         "name": 1000,
         "percentage": 15.0
       }
+    ],
+    "Signaling sum distribution 1": [
+      {
+        "name": 300,
+        "percentage": 80.0
+      },
+      {
+        "name": 600,
+        "percentage": 20.0
+      }
     ]
   },
   "device": {
@@ -238,6 +252,12 @@
       {
         "name": "Super MTS",
         "percentage": 40.0
+      }
+    ],
+    "Signaling tariff distribution 1": [
+      {
+        "name": "Signaling",
+        "percentage": 100.0
       }
     ]
   },

@@ -163,7 +163,7 @@ class Account(Base):
 class Device(Base):
     __tablename__ = 'device'
     __table_args__ = (
-        db.CheckConstraint("type IN ('phone', 'smartphone', 'tablet', 'modem')"),
+        db.CheckConstraint("type IN ('phone', 'smartphone', 'tablet', 'modem', 'signaling')"),
     )
 
     id = db.Column(db.Integer, primary_key=True, index=True)

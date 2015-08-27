@@ -1,26 +1,42 @@
 {
-  "Group 1": {
+  "Customers with small activity": {
     "cluster_id": 1,
-    "size": 75,
+    "size": 100,
     "customer_type": "individual",
     "ages": "Age distribution 1",
     "gender": "Uniform gender distribution 1",
     "agreements": ["Individual agreement 1"]
   },
-  "Group 2": {
+  "Customers with high activity": {
     "cluster_id": 2,
-    "size": 75,
+    "size": 100,
     "customer_type": "individual",
     "ages": "Age distribution 1",
     "gender": "Uniform gender distribution 1",
     "agreements": ["Individual agreement 2"]
   },
-  "Group 3": {
+  "Tablet users": {
     "cluster_id": 3,
-    "size": 75,
+    "size": 100,
     "customer_type": "individual",
     "ages": "Age distribution 1",
     "gender": "Uniform gender distribution 1",
     "agreements": ["Individual agreement 3"]
+  },
+  "Customers with useless services": {
+    "cluster_id": 4,
+    "size": 100,
+    "customer_type": "individual",
+    "ages": "Age distribution 1",
+    "gender": "Uniform gender distribution 1",
+    "agreements": ["Individual agreement 4"]
+  },
+  "Signaling": {
+    "cluster_id": 5,
+    "size": 50,
+    "customer_type": "individual",
+    "ages": "Age distribution 1",
+    "gender": "Uniform gender distribution 1",
+    "agreements": ["Signaling agreement 1"]
   }
 }
