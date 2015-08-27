@@ -23,11 +23,12 @@ class ActivityAnalyzer:
         self.main_session = main_session
         self.test_session = test_session
 
-    def get_devices_info(self, date_from, date_to):
+    def get_devices_info(self, date_from, date_to, db_session):
         date_begin = datetime(date_from.year, date_from.month, date_from.day, 0, 0, 0)
         date_end = datetime(date_to.year, date_to.month, date_to.day, 23, 59, 59)
 
-        devices = self.main_session.query(Device).order_by(Device.id).all()
+        # devices = self.main_session.query(Device).order_by(Device.id).all()
+        devices = db_session.query(Device).order_by(Device.id).all()
         devices_info = []
         device_original_labels = []
         device_ids = []
@@ -39,12 +40,14 @@ class ActivityAnalyzer:
 
             # Getting device services, which could be used on given time period
             # TODO: Date from?
-            connected_services = self.main_session.query(DeviceService).\
+            # connected_services = self.main_session.query(DeviceService).\
+            connected_services = db_session.query(DeviceService).\
                 filter(and_(DeviceService.device_id == device.id,
                             or_(DeviceService.date_to.is_(None),
                                 DeviceService.date_to >= date_begin))).all()
 
-            requests = self.main_session.query(Service.name, Request.type, db.func.count(Request.id)).\
+            # requests = self.main_session.query(Service.name, Request.type, db.func.count(Request.id)).\
+            requests = db_session.query(Service.name, Request.type, db.func.count(Request.id)).\
                 join(Request, and_(Request.service_id == Service.id,
                                    Request.device_id == device.id,
                                    between(Request.date_from, date_begin, date_end))).\
@@ -59,7 +62,8 @@ class ActivityAnalyzer:
                     else:
                         device_info['other_requests'] += request_count
 
-            locations = self.main_session.query(Location).filter(and_(Location.device_id == device.id,
+            # locations = self.main_session.query(Location).filter(and_(Location.device_id == device.id,
+            locations = db_session.query(Location).filter(and_(Location.device_id == device.id,
                                                                       between(Location.date_from,
                                                                               date_begin, date_end))).all()
             device_info['location_changes'] = len(locations)
@@ -68,7 +72,8 @@ class ActivityAnalyzer:
             for device_service in connected_services:
                 service = device_service.service
                 try:
-                    total_usage, usage_amount = self.main_session.query(db.func.count(ServiceLog.id),
+                    # total_usage, usage_amount = self.main_session.query(db.func.count(ServiceLog.id),
+                    total_usage, usage_amount = db_session.query(db.func.count(ServiceLog.id),
                                                                         db.func.sum(ServiceLog.amount)).\
                         filter(and_(ServiceLog.device_service == device_service,
                                     ServiceLog.action_type == 'usage',
@@ -113,8 +118,9 @@ class ActivityAnalyzer:
             mask[cluster] += 1
         return mask
 
-    def get_accounts_info(self, device_cluster_match, device_clusters_amount):
-        accounts = self.main_session.query(Account).order_by(Account.id).all()
+    def get_accounts_info(self, device_cluster_match, device_clusters_amount, db_session):
+        # accounts = self.main_session.query(Account).order_by(Account.id).all()
+        accounts = db_session.query(Account).order_by(Account.id).all()
         account_infos = []
         account_original_labels = []
         account_ids = []
@@ -127,7 +133,8 @@ class ActivityAnalyzer:
                 'bill_group': account.bill_group,
                 'calc_method_id': account.calculation_method_id
             }
-            payments = self.main_session.query(Payment.method_id,
+            payments = db_session.query(Payment.method_id,
+            # payments = self.main_session.query(Payment.method_id,
                                                db.func.sum(Payment.amount), db.func.count(Payment.id)).\
                 join(PaymentMethod, PaymentMethod.id == Payment.method_id).\
                 join(Balance, Balance.id == Payment.balance_id).\
@@ -141,7 +148,8 @@ class ActivityAnalyzer:
                 else:
                     account_info['payment_sum'] += float(payment_sum)
 
-            devices = self.main_session.query(Device).filter_by(account_id=account.id).all()
+            devices = db_session.query(Device).filter_by(account_id=account.id).all()
+            # devices = self.main_session.query(Device).filter_by(account_id=account.id).all()
             account_info['devices_amount'] = len(devices)
             device_clusters = []
             for device in devices:
@@ -155,8 +163,9 @@ class ActivityAnalyzer:
 
         return account_infos, account_original_labels, device_masks, account_ids
 
-    def get_customers_info(self, account_cluster_match, account_clusters_amount):
-        customers = self.main_session.query(Customer).order_by(Customer.id).all()
+    def get_customers_info(self, account_cluster_match, account_clusters_amount, db_session):
+        # customers = self.main_session.query(Customer).order_by(Customer.id).all()
+        customers = db_session.query(Customer).order_by(Customer.id).all()
         customer_infos = []
         customer_original_labels = []
         customer_ids = []
@@ -174,13 +183,15 @@ class ActivityAnalyzer:
             else:
                 pass
 
-            agreements = self.main_session.query(CustomerAgreement).filter_by(customer_id=customer.id).all()
+            # agreements = self.main_session.query(CustomerAgreement).filter_by(customer_id=customer.id).all()
+            agreements = db_session.query(CustomerAgreement).filter_by(customer_id=customer.id).all()
             customer_info['agreements_amount'] = len(agreements)
 
             accounts_cluster_mask = np.zeros(account_clusters_amount)
             # Accumulating information about all accounts
             for agreement in agreements:
-                accounts = self.main_session.query(Account).filter_by(agreement_id=agreement.id).all()
+                # accounts = self.main_session.query(Account).filter_by(agreement_id=agreement.id).all()
+                accounts = db_session.query(Account).filter_by(agreement_id=agreement.id).all()
 
                 account_clusters = []
                 for account in accounts:
@@ -229,15 +240,21 @@ class ActivityAnalyzer:
         else:
             raise NotImplementedError
 
-    def analyze(self, date_from, date_to, algorithm='DBSCAN', db_session=None):
+    def analyze(self, date_from, date_to, base_type, algorithm='DBSCAN'):
+        if base_type == 'main':
+            db_session = self.main_session
+        else:
+            db_session = self.test_session
+
         print('Analyzing data')
         start_time = time()
 
         vectorizer = DictVectorizer()
 
         # Clustering devices
-        devices_info, device_labels, device_ids = self.get_devices_info(date_from, date_to)
+        devices_info, device_labels, device_ids = self.get_devices_info(date_from, date_to, db_session)
         processed_devices = vectorizer.fit_transform(devices_info).toarray()
+        print(processed_devices.shape)
 
         min_max_scaler = preprocessing.MinMaxScaler()
         processed_devices = min_max_scaler.fit_transform(processed_devices)
@@ -257,7 +274,8 @@ class ActivityAnalyzer:
                 device_cluster_match[device_id] = estimated_device_labels[i]
 
         accounts_info, account_labels, device_masks, account_ids = self.get_accounts_info(device_cluster_match,
-                                                                                          len(device_cluster_match))
+                                                                                          len(device_cluster_match),
+                                                                                          db_session)
         processed_accounts = vectorizer.fit_transform(accounts_info).toarray()
         account_clusters_amount = len(set(account_labels))
 
@@ -279,7 +297,8 @@ class ActivityAnalyzer:
                 account_cluster_match[account_id] = estimated_account_labels[i]
 
         customers_info, customer_labels, account_masks, customer_ids = self.get_customers_info(account_cluster_match,
-                                                                                               len(account_cluster_match))
+                                                                                               len(account_cluster_match),
+                                                                                               db_session)
         processed_customers = vectorizer.fit_transform(customers_info).toarray()
         customer_clusters_amount = len(set(customer_labels) - {-1})
 
@@ -318,6 +337,7 @@ class ActivityAnalyzer:
         # self.plot_data(processed_customers, estimated_customer_labels)
 
         return customer_clusters
+
 
 def main():
     pass

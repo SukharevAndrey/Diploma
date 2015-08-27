@@ -114,9 +114,9 @@ class MobileOperatorSimulator:
 
     def analyze_data(self, date_from, date_to, base_type='main'):
         if base_type == 'main':
-            self.customer_clusters = self.analyzer.analyze(date_from, date_to)
+            self.customer_clusters = self.analyzer.analyze(date_from, date_to, base_type)
         else:
-            self.analyzer.analyze(date_from, date_to)
+            self.analyzer.analyze(date_from, date_to, base_type)
 
 class MobileOperatorSystem:
     def __init__(self, session):
