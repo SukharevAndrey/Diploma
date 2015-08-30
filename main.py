@@ -2,6 +2,7 @@ from datetime import date, timedelta
 
 from operator_simulation import MobileOperatorSimulator
 from base import Base
+from analyzer import ClusteringAlgorithm
 
 def main1():
     base_schema = Base.metadata
@@ -36,9 +37,9 @@ def input_to_date(user_input):
 
 def get_period():
     while True:
-        start_date = input('Enter simulation period start: ')
+        start_date = input('Enter simulation period start (default - today): ')
         period_start = input_to_date(start_date)
-        end_date = input('Enter simulation period end: ')
+        end_date = input('Enter simulation period end (default - today): ')
         period_end = input_to_date(end_date)
         if period_start <= period_end:
             return period_start, period_end
@@ -57,11 +58,30 @@ def get_load_factor():
             continue
 
 
+def get_clustering_algorithm():
+    while True:
+        raw_algorithm = input('Enter clustering algorithm (K-Means, DBSCAN, BIRCH): ')
+        if raw_algorithm == 'K-Means':
+            return ClusteringAlgorithm(raw_algorithm)
+        elif raw_algorithm == 'DBSCAN':
+            selected_algorithm = ClusteringAlgorithm(raw_algorithm)
+            try:
+                eps = float(input('Enter epsilon: '))
+                selected_algorithm.params['eps'] = eps
+                return selected_algorithm
+            except ValueError:
+                print('Incorrect value')
+                continue
+        else:
+            print('Incorrect algorithm')
+            continue
+
 def main():
     base_schema = Base.metadata
     simulator = MobileOperatorSimulator(base_schema)
     period_start = None
     period_end = None
+    algorithm = None
     while True:
         print_menu()
         choice = input()
@@ -78,7 +98,9 @@ def main():
         elif choice == '4':
             if not period_start:
                 period_start, period_end = get_period()
-            simulator.analyze_data(period_start, period_end, base_type='main')
+            if not algorithm:
+                algorithm = get_clustering_algorithm()
+            simulator.analyze_data(period_start, period_end, 'main', algorithm)
         elif choice == '5':
             if not period_start:
                 period_start, period_end = get_period()
@@ -87,7 +109,9 @@ def main():
         elif choice == '6':
             if not period_start:
                 period_start, period_end = get_period()
-            simulator.analyze_data(period_start, period_end, base_type='test')
+            if not algorithm:
+                algorithm = get_clustering_algorithm()
+            simulator.analyze_data(period_start, period_end, 'test', algorithm)
         elif choice == '7':
             simulator.clear_main_base_data()
         elif choice == '8':

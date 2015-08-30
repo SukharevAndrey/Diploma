@@ -112,11 +112,11 @@ class MobileOperatorSimulator:
         self.metadata.drop_all(self.test_engine)
         self.generate_schema(self.test_engine)
 
-    def analyze_data(self, date_from, date_to, base_type='main'):
+    def analyze_data(self, date_from, date_to, base_type, algorithm):
         if base_type == 'main':
-            self.customer_clusters = self.analyzer.analyze(date_from, date_to, base_type)
+            self.customer_clusters = self.analyzer.analyze(date_from, date_to, base_type, algorithm)
         else:
-            self.analyzer.analyze(date_from, date_to, base_type)
+            self.analyzer.analyze(date_from, date_to, base_type, algorithm)
 
 class MobileOperatorSystem:
     def __init__(self, session):

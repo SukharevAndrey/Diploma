@@ -18,6 +18,23 @@ from sklearn import metrics
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
+
+class ClusteringAlgorithm:
+    def __init__(self, algorithm):
+        self.algorithm = algorithm
+        self.params = {}
+
+    def get_estimator(self):
+        if self.algorithm == 'K-Means':
+            return KMeans(n_clusters=self.params['clusters'], n_jobs=-1)
+        elif self.algorithm == 'DBSCAN':
+            return DBSCAN(eps=self.params['eps'])
+        elif self.algorithm == 'BIRCH':
+            raise NotImplementedError
+        else:
+            raise NotImplementedError
+
+
 class ActivityAnalyzer:
     def __init__(self, main_session, test_session):
         self.main_session = main_session
@@ -27,7 +44,6 @@ class ActivityAnalyzer:
         date_begin = datetime(date_from.year, date_from.month, date_from.day, 0, 0, 0)
         date_end = datetime(date_to.year, date_to.month, date_to.day, 23, 59, 59)
 
-        # devices = self.main_session.query(Device).order_by(Device.id).all()
         devices = db_session.query(Device).order_by(Device.id).all()
         devices_info = []
         device_original_labels = []
@@ -40,13 +56,11 @@ class ActivityAnalyzer:
 
             # Getting device services, which could be used on given time period
             # TODO: Date from?
-            # connected_services = self.main_session.query(DeviceService).\
             connected_services = db_session.query(DeviceService).\
                 filter(and_(DeviceService.device_id == device.id,
                             or_(DeviceService.date_to.is_(None),
                                 DeviceService.date_to >= date_begin))).all()
 
-            # requests = self.main_session.query(Service.name, Request.type, db.func.count(Request.id)).\
             requests = db_session.query(Service.name, Request.type, db.func.count(Request.id)).\
                 join(Request, and_(Request.service_id == Service.id,
                                    Request.device_id == device.id,
@@ -62,17 +76,15 @@ class ActivityAnalyzer:
                     else:
                         device_info['other_requests'] += request_count
 
-            # locations = self.main_session.query(Location).filter(and_(Location.device_id == device.id,
             locations = db_session.query(Location).filter(and_(Location.device_id == device.id,
-                                                                      between(Location.date_from,
-                                                                              date_begin, date_end))).all()
+                                                               between(Location.date_from,
+                                                                       date_begin, date_end))).all()
             device_info['location_changes'] = len(locations)
             # TODO: Parse locations
 
             for device_service in connected_services:
                 service = device_service.service
                 try:
-                    # total_usage, usage_amount = self.main_session.query(db.func.count(ServiceLog.id),
                     total_usage, usage_amount = db_session.query(db.func.count(ServiceLog.id),
                                                                         db.func.sum(ServiceLog.amount)).\
                         filter(and_(ServiceLog.device_service == device_service,
@@ -105,7 +117,6 @@ class ActivityAnalyzer:
                         device_info['other_usages'] += total_usage
 
             devices_info.append(device_info)
-            # print(device_info)
             device_ids.append(device.id)
             device_original_labels.append(device.cluster_id)
             i += 1
@@ -119,7 +130,6 @@ class ActivityAnalyzer:
         return mask
 
     def get_accounts_info(self, device_cluster_match, device_clusters_amount, db_session):
-        # accounts = self.main_session.query(Account).order_by(Account.id).all()
         accounts = db_session.query(Account).order_by(Account.id).all()
         account_infos = []
         account_original_labels = []
@@ -134,8 +144,7 @@ class ActivityAnalyzer:
                 'calc_method_id': account.calculation_method_id
             }
             payments = db_session.query(Payment.method_id,
-            # payments = self.main_session.query(Payment.method_id,
-                                               db.func.sum(Payment.amount), db.func.count(Payment.id)).\
+                                        db.func.sum(Payment.amount), db.func.count(Payment.id)).\
                 join(PaymentMethod, PaymentMethod.id == Payment.method_id).\
                 join(Balance, Balance.id == Payment.balance_id).\
                 join(Account, Account.id == Balance.account_id).\
@@ -149,7 +158,6 @@ class ActivityAnalyzer:
                     account_info['payment_sum'] += float(payment_sum)
 
             devices = db_session.query(Device).filter_by(account_id=account.id).all()
-            # devices = self.main_session.query(Device).filter_by(account_id=account.id).all()
             account_info['devices_amount'] = len(devices)
             device_clusters = []
             for device in devices:
@@ -164,7 +172,6 @@ class ActivityAnalyzer:
         return account_infos, account_original_labels, device_masks, account_ids
 
     def get_customers_info(self, account_cluster_match, account_clusters_amount, db_session):
-        # customers = self.main_session.query(Customer).order_by(Customer.id).all()
         customers = db_session.query(Customer).order_by(Customer.id).all()
         customer_infos = []
         customer_original_labels = []
@@ -183,14 +190,12 @@ class ActivityAnalyzer:
             else:
                 pass
 
-            # agreements = self.main_session.query(CustomerAgreement).filter_by(customer_id=customer.id).all()
             agreements = db_session.query(CustomerAgreement).filter_by(customer_id=customer.id).all()
             customer_info['agreements_amount'] = len(agreements)
 
             accounts_cluster_mask = np.zeros(account_clusters_amount)
             # Accumulating information about all accounts
             for agreement in agreements:
-                # accounts = self.main_session.query(Account).filter_by(agreement_id=agreement.id).all()
                 accounts = db_session.query(Account).filter_by(agreement_id=agreement.id).all()
 
                 account_clusters = []
@@ -240,7 +245,7 @@ class ActivityAnalyzer:
         else:
             raise NotImplementedError
 
-    def analyze(self, date_from, date_to, base_type, algorithm='DBSCAN'):
+    def analyze(self, date_from, date_to, base_type, algorithm: ClusteringAlgorithm):
         if base_type == 'main':
             db_session = self.main_session
         else:
@@ -260,7 +265,8 @@ class ActivityAnalyzer:
         processed_devices = min_max_scaler.fit_transform(processed_devices)
         device_clusters_amount = len(set(device_labels) - {-1})
 
-        device_estimator = self.get_estimator(algorithm, eps=0.3, clusters=device_clusters_amount)
+        algorithm.params['clusters'] = device_clusters_amount
+        device_estimator = algorithm.get_estimator()
         device_estimator.fit(processed_devices)
         estimated_device_labels = device_estimator.labels_
 
@@ -283,7 +289,8 @@ class ActivityAnalyzer:
         processed_accounts = np.concatenate((processed_accounts, device_masks), axis=1)
         processed_accounts = min_max_scaler.fit_transform(processed_accounts)
 
-        account_estimator = self.get_estimator(algorithm, eps=0.3, clusters=account_clusters_amount)
+        algorithm.params['clusters'] = account_clusters_amount
+        account_estimator = algorithm.get_estimator()
         account_estimator.fit(processed_accounts)
         estimated_account_labels = account_estimator.labels_
 
@@ -306,7 +313,8 @@ class ActivityAnalyzer:
         processed_customers = np.concatenate((processed_customers, account_masks), axis=1)
         processed_customers = min_max_scaler.fit_transform(processed_customers)
 
-        customer_estimator = self.get_estimator(algorithm, eps=0.3, clusters=customer_clusters_amount)
+        algorithm.params['clusters'] = customer_clusters_amount
+        customer_estimator = algorithm.get_estimator()
         customer_estimator.fit(processed_customers)
         estimated_customer_labels = customer_estimator.labels_
 
