@@ -4,15 +4,6 @@ from operator_simulation import MobileOperatorSimulator
 from base import Base
 from analyzer import ClusteringAlgorithm
 
-def main1():
-    base_schema = Base.metadata
-    simulator = MobileOperatorSimulator(base_schema)
-    simulator.generate_static_data()
-    simulator.generate_customers(date.today()-timedelta(days=1))
-    simulator.simulate_period(date.today(), date.today())
-    simulator.analyze_data(date.today(), date.today())
-    simulator.generate_test_load(date.today(), date.today(), 0.2)
-
 
 def print_menu():
     print('Select action:')
@@ -66,12 +57,33 @@ def get_clustering_algorithm():
         elif raw_algorithm == 'DBSCAN':
             selected_algorithm = ClusteringAlgorithm(raw_algorithm)
             try:
-                eps = float(input('Enter epsilon: '))
+                eps = float(input('Enter epsilon (floating point number): '))
                 selected_algorithm.params['eps'] = eps
                 return selected_algorithm
             except ValueError:
                 print('Incorrect value')
                 continue
+        elif raw_algorithm == 'BIRCH':
+            selected_algorithm = ClusteringAlgorithm(raw_algorithm)
+            raw_threshold = input('Enter threshold (radius of subcluster, default - 0.5): ')
+            threshold = 0.5
+            try:
+                threshold = float(raw_threshold)
+            except ValueError:
+                if raw_threshold:
+                    print('Incorrect value')
+                    continue
+            selected_algorithm.params['threshold'] = threshold
+            raw_branching = input('Enter branching factor (default - 50): ')
+            branching_factor = 50
+            try:
+                branching_factor = int(raw_branching)
+            except ValueError:
+                if raw_branching:
+                    print('Incorrect value')
+                    continue
+            selected_algorithm.params['branching'] = branching_factor
+            return selected_algorithm
         else:
             print('Incorrect algorithm')
             continue

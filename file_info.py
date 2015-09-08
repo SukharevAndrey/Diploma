@@ -1,4 +1,4 @@
-from tools import file_to_json
+from tools import file_to_json, file_to_config
 
 USER_GROUPS_FILE = 'data/clusters/customer_clusters.json'
 AGREEMENTS_FILE = 'data/clusters/agreement_clusters.json'
@@ -27,3 +27,4 @@ services_info = file_to_json(SERVICES_FILE_PATH)
 tariffs_info = file_to_json(TARIFFS_FILE_PATH)
 
 CONFIG_FILE = 'config.txt'
+config_info = file_to_config(CONFIG_FILE)

@@ -10,6 +10,15 @@ def file_to_json(file_name):
         return res
 
 
+def file_to_config(file_name):
+    with open(file_name, encoding='utf-8') as file:
+        raw_main = file.readline()
+        _, main_base_conf = list(map(str.strip, raw_main.split('=')))
+        raw_test = file.readline()
+        _, test_base_conf = list(map(str.strip, raw_test.split('=')))
+        return {'main': main_base_conf, 'test': test_base_conf}
+
+
 def distribution_from_list(records_info):
     record_names = []
     record_percentages = []

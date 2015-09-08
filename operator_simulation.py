@@ -13,7 +13,7 @@ from entities.location import *
 from entities.operator import *
 from entities.payment import *
 from entities.service import *
-from file_info import user_groups_info, agreements_info, accounts_info, devices_info, distributions_info
+from file_info import user_groups_info, agreements_info, accounts_info, devices_info, distributions_info, config_info
 from generator import MobileOperatorGenerator, AccountActivityGenerator, DeviceActivityGenerator
 from distribution import Distribution
 from random_data import *
@@ -35,8 +35,8 @@ class MobileOperatorSimulator:
     def __init__(self, metadata):
         self.metadata = metadata
         # TODO: From config
-        self.main_engine = create_engine('sqlite:///:memory:')
-        self.test_engine = create_engine('sqlite:///:memory:')
+        self.main_engine = create_engine(config_info['main'])
+        self.test_engine = create_engine(config_info['test'])
 
         self.generate_schema(self.main_engine)
         self.generate_schema(self.test_engine)

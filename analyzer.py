@@ -12,7 +12,7 @@ from entities.payment import *
 import numpy as np
 from sklearn.feature_extraction import DictVectorizer
 from sklearn import preprocessing
-from sklearn.cluster import KMeans, DBSCAN, MiniBatchKMeans
+from sklearn.cluster import KMeans, DBSCAN, MiniBatchKMeans, Birch
 from sklearn.decomposition import PCA
 from sklearn import metrics
 from mpl_toolkits.mplot3d import Axes3D
@@ -30,7 +30,8 @@ class ClusteringAlgorithm:
         elif self.algorithm == 'DBSCAN':
             return DBSCAN(eps=self.params['eps'])
         elif self.algorithm == 'BIRCH':
-            raise NotImplementedError
+            return Birch(n_clusters=self.params['clusters'],
+                         threshold=self.params['threshold'], branching_factor=self.params['branching'])
         else:
             raise NotImplementedError
 
@@ -216,8 +217,8 @@ class ActivityAnalyzer:
         ax = fig.add_subplot(111, projection='3d')
         pca = PCA(n_components=3)
         X = pca.fit_transform(data)
-        print('Projected components:')
-        print(pca.components_)
+        # print('Projected components:')
+        # print(pca.components_)
         print('Projected vectors variance:')
         print(pca.explained_variance_ratio_)
 
@@ -235,16 +236,6 @@ class ActivityAnalyzer:
         print("Silhouette Coefficient: %0.3f"
               % metrics.silhouette_score(data, labels))
 
-    def get_estimator(self, algorithm, **params):
-        if algorithm == 'K-Means':
-            return KMeans(n_clusters=params['clusters'], n_jobs=-1)
-        elif algorithm == 'DBSCAN':
-            return DBSCAN(eps=params['eps'])
-        elif algorithm == 'BIRCH':
-            raise NotImplementedError
-        else:
-            raise NotImplementedError
-
     def analyze(self, date_from, date_to, base_type, algorithm: ClusteringAlgorithm):
         if base_type == 'main':
             db_session = self.main_session
@@ -259,7 +250,6 @@ class ActivityAnalyzer:
         # Clustering devices
         devices_info, device_labels, device_ids = self.get_devices_info(date_from, date_to, db_session)
         processed_devices = vectorizer.fit_transform(devices_info).toarray()
-        print(processed_devices.shape)
 
         min_max_scaler = preprocessing.MinMaxScaler()
         processed_devices = min_max_scaler.fit_transform(processed_devices)
