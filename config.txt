@@ -1,2 +1,4 @@
 main_engine = sqlite:///:memory:
 test_engine = sqlite:///:memory:
+
+# Формат конфигурации можно посмотреть тут - http://docs.sqlalchemy.org/en/rel_1_0/core/engines.html
