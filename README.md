@@ -10,17 +10,24 @@
 
 - Установите интерпретатор Python 3 с официального сайта.
 
-- Установите необходимые библиотеки
+- Скачайте проект:
+  ```bash
+  git clone https://github.com/SukharevAndrey/Diploma
+  ```
+
+- Установите необходимые библиотеки.
   - MacOS X и Linux:
   
   ```bash
-  git clone https://github.com/SukharevAndrey/Diploma
   cd Diploma
   pip3 install -r requirements.txt
   ```
   - Windows:
   
-  Установите пакеты, указанные в requirements.txt, с сайта http://www.lfd.uci.edu/~gohlke/pythonlibs/
+  Скачайте пакеты, указанные в requirements.txt, с сайта http://www.lfd.uci.edu/~gohlke/pythonlibs/, и выполните для каждого пакета:
+  ```bash
+  pip3 install <имя_файла>.whl
+  ```
 
 ## Запуск
 
